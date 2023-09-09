@@ -71,6 +71,17 @@
     .dump {
       color: orange
     }
+
+    input[type="text"] {
+      font-size: 1.5rem;
+      letter-spacing: 2px;
+      font-family: monospace;
+      color: #aaa;
+      border-radius: 10px;
+      margin-bottom: 1em;
+      background-color: white;
+      padding: 1rem;
+    }
   </style>
 </head>
 
@@ -82,6 +93,7 @@
         <h2>debugging made easy</h2>
       </div>
     </header>
+    <input type="text" name="url" id="url" value="window.location.href">
     <form action="/test" method="POST">
       <div contenteditable="true" id="code" name="code" spellcheck="false">
         <pre>"Hello, world!"</div>

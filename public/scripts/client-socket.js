@@ -81,5 +81,6 @@ function executeCommand() {
 document.addEventListener('readystatechange', state => {
   console.log(state, window.location.pathname)
   document.getElementById('execute').addEventListener('click', executeCommand)
+  document.getElementById('url').value = window.location.href
   //.getElementById('clear').addEventListener('click', executeCommand)
 })
