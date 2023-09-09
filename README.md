@@ -1,15 +1,10 @@
-# Elysia with Bun runtime
+# [consoledump](https://consoledump.io).io
 
-## Getting Started
-To get started with this template, simply paste this command into your terminal:
-```bash
-bun create elysia ./elysia-example
-```
+The easiest way to debug online!
 
-## Development
-To start the development server run:
+- Click here for [Bun documentation](https://bun.sh/docs)
+- Click here for [Elysia documentation](https://elysiajs.com/)
+
 ```bash
 bun run dev
 ```
-
-Open http://localhost:3000/ with your browser to see the result.
