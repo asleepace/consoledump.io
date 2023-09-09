@@ -1,5 +1,5 @@
-const server = 'ws://localhost:3000/ws' + window.location.pathname
-const stdin = 'http://localhost:3000' + window.location.pathname
+const server = 'ws://localhost:8082/ws' + window.location.pathname
+const stdin = 'http://localhost:8082' + window.location.pathname
 const ws = new WebSocket(server)
 
 const appendToTable = (message) => {

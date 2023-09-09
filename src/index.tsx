@@ -68,7 +68,7 @@ const app = new Elysia()
   .get('/logo', ({ html }) => {
     return Bun.file("./src/html/logo.html").text()
   })
-  .listen(3000)
+  .listen(8082)
 
 console.log(`\n🦊 Elysia is running at http://${app.server?.hostname}:${app.server?.port}\n`)
 
