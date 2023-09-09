@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>consoledump.io</title>
+  <link rel="stylesheet" href="/public/css/styles.css" />
+  <link rel="stylesheet" href="/public/css/button.css" />
+  <style>
+    header {
+      margin-top: 2em;
+    }
+    .buttons {
+      margin-top: 2em;
+    }
+    form {
+      min-height: 400px;
+      width: 40vw;
+    }
+    #code:focus {
+      outline: none;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>console<span class="orange">dump</span></h1>
+  </header>
+  <main>
+    <form action="/test" method="POST">
+      <div contenteditable="true" id="code" name="code" spellcheck="false">
+        <pre>
+{
+  "data": "Hello, world!"
+}
+       </pre>
+      </div>
+    </form>
+    <div class="buttons">
+      <button class="btn-custom" type="submit">Submit</button>
+    </div>
+  </main>
+</body>
+
+</html>
