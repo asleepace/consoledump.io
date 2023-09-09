@@ -8,10 +8,20 @@
   <link rel="stylesheet" href="/public/css/button.css" />
   <link rel="stylesheet" href="/public/css/table.css" />
   <style>
+
+
     body {
       display: flex;
       flex-direction: row;
       flex: 1;
+    }
+
+    form {
+      border-radius: 20px;
+    }
+
+    header {
+      margin-bottom: 2em;
     }
 
     main {
@@ -49,10 +59,6 @@
       width: 100%;
       border-collapse: separate;
     }
-
-    stream tr {
-      border: 0.05ch solid rgba(255, 255, 255, 0.1);
-    }
   </style>
 </head>
 
@@ -65,12 +71,7 @@
     </header>
     <form action="/test" method="POST">
       <div contenteditable="true" id="code" name="code" spellcheck="false">
-        <pre>
-{
-"data": "Hello, world!"
-}
-</pre>
-      </div>
+        <pre>"Hello, world!"</div>
     </form>
     <div class="buttons">
       <button class="btn-custom" id="execute">execute</button>

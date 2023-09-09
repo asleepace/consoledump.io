@@ -5,7 +5,10 @@ const appendToTable = (message) => {
   const table = document.getElementById('output')
   const tr = document.createElement('tr')
   const td = document.createElement('td')
+  const tdate = document.createElement('td')
+  tdate.innerText = new Date().toLocaleTimeString()
   td.innerText = message
+  tr.appendChild(tdate)
   tr.appendChild(td)
   table.appendChild(tr)
   tr.scrollIntoView(false)
