@@ -1,7 +1,8 @@
-@import "buttons.css";
-@import "buttons.custom.css";
+@import "button.css";
+@import "website-logo.css";
 
 @custom-media --OSdark (prefers-color-scheme: dark);
+@import url('https://fonts.googleapis.com/css2?family=Anton&display=swap');
 
 html {
   block-size: 100%;
@@ -34,10 +35,12 @@ p {
 }
 
 form {
-  background: hsl(210deg 16% 93%);
-  border: 1px solid hsl(210deg 14% 89%);
+  background: hsl(0, 0%, 5%);
+  border: 1px solid hsl(180, 2%, 12%);
   border-radius: .5ch;
   padding: 8px;
+  color: #ddd;
+  font-size: 1.4em;
 
   @media (--OSdark) {
     background: hsl(210deg 10% 23%);
@@ -102,3 +105,6 @@ section {
     transform: rotate(10deg)
   }
 }
+
+/* fancy title */
+

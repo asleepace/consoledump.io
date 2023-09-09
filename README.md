@@ -10,3 +10,8 @@ The easiest way to debug online!
 ```bash
 bun run dev
 ```
+
+### Helpful Resources
+
+- [CSS Effects & Titles](https://freefrontend.com/css-text-effects/)
+- [Cool website title scss](https://codepen.io/wheatup/pen/mdwWvGq)

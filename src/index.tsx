@@ -12,6 +12,9 @@ const app = new Elysia()
   .get('/editor', ({ html }) => {
     return Bun.file("./src/html/editor.html").text()
   })
+  .get('/logo', ({ html }) => {
+    return Bun.file("./src/html/logo.html").text()
+  })
   .listen(3000)
 
 console.log(`🦊 Elysia is running at http://${app.server?.hostname}:${app.server?.port}`)

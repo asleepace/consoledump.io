@@ -5,17 +5,26 @@
   <title>consoledump.io</title>
   <link rel="stylesheet" href="/public/css/styles.css" />
   <link rel="stylesheet" href="/public/css/button.css" />
+  <link rel="stylesheet" href="/public/css/colorful.css" />
+
   <style>
+    html {
+      background-color: black;
+    }
+
     header {
       margin-top: 2em;
     }
+
     .buttons {
       margin-top: 2em;
     }
+
     form {
       min-height: 400px;
       width: 40vw;
     }
+
     #code:focus {
       outline: none;
     }
@@ -24,7 +33,9 @@
 
 <body>
   <header>
-    <h1>console<span class="orange">dump</span></h1>
+    <div class="codedump-logo-wrapper">
+      <h1>console<span class="orange">dump</span></h1>
+    </div>
   </header>
   <main>
     <form action="/test" method="POST">
