@@ -1,6 +1,15 @@
 const server = 'ws://localhost:3000/stdin'
 const ws = new WebSocket('ws://localhost:3000/stdin')
 
+const appendToTable = (message) => {
+  const table = document.getElementById('output')
+  const tr = document.createElement('tr')
+  const td = document.createElement('td')
+  td.innerText = message
+  tr.appendChild(td)
+  table.appendChild(tr)
+  tr.scrollIntoView(false)
+}
 
 ws.addEventListener('open', () => {
   console.log(`[websocket] connected to ${server}`);
@@ -18,15 +27,13 @@ ws.addEventListener('message', ({ data }) => {
     case 'symbol':
     case 'bigint':
       console.log(messages)
-      return
-
-    case 'function':
-      console.log(messages()) // dangerous?
+      appendToTable(messages)
       return
 
     case 'object':
       if (!Array.isArray(messages)) {
         console.log(messages)
+        appendToTable(JSON.parse(messages))
         return
       }
 
@@ -38,7 +45,9 @@ ws.addEventListener('message', ({ data }) => {
     const json = JSON.parse(message)
     if (Array.isArray(json)) {
       console.log(...json)
+      appendToTable(...json)
     } else {
+      appendToTable(message)
       console.log(json)
     }
   })

@@ -6,7 +6,14 @@
   <link rel="stylesheet" href="/public/css/round.css" />
   <link rel="stylesheet" href="/public/css/styles.css" />
   <link rel="stylesheet" href="/public/css/button.css" />
+  <link rel="stylesheet" href="/public/css/table.css" />
   <style>
+    body {
+      display: flex;
+      flex-direction: row;
+      flex: 1;
+    }
+
     main {
       display: flex;
       flex-direction: column;
@@ -29,21 +36,38 @@
       padding: 1em;
       margin: 0;
     }
+
+    stream {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      margin: 1rem;
+      min-width: 50%;
+    }
+
+    stream table {
+      width: 100%;
+      border-collapse: separate;
+    }
+
+    stream tr {
+      border: 0.05ch solid rgba(255, 255, 255, 0.1);
+    }
   </style>
 </head>
 
 <body>
-  <header>
-    <div class="logo">
-      <h1 data-text="consoledump">consoledump</h1>
-    </div>
-  </header>
   <main>
+    <header>
+      <div class="logo">
+        <h1 data-text="consoledump">consoledump</h1>
+      </div>
+    </header>
     <form action="/test" method="POST">
       <div contenteditable="true" id="code" name="code" spellcheck="false">
-<pre>
+        <pre>
 {
-  "data": "Hello, world!"
+"data": "Hello, world!"
 }
 </pre>
       </div>
@@ -51,9 +75,13 @@
     <div class="buttons">
       <button class="btn-custom" id="execute">execute</button>
       <input class="btn-custom" type="file" />
-
     </div>
+
   </main>
+  <stream>
+    <table class="styled-table" id="output">
+    </table>
+  </stream>
   <script src="/public/scripts/client-socket.js"></script>
 </body>
 
