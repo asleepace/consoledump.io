@@ -3,52 +3,55 @@
 
 <head>
   <title>consoledump.io</title>
+  <link rel="stylesheet" href="/public/css/round.css" />
   <link rel="stylesheet" href="/public/css/styles.css" />
   <link rel="stylesheet" href="/public/css/button.css" />
-  <link rel="stylesheet" href="/public/css/colorful.css" />
-
   <style>
-    html {
-      background-color: black;
+    main {
+      display: flex;
+      flex-direction: column;
+      min-height: 440px;
+      margin: 1rem;
+      flex: 1;
     }
 
-    header {
-      margin-top: 2em;
+    *:focus {
+      outline: none;
     }
 
     .buttons {
-      margin-top: 2em;
+      margin-top: 16px;
     }
 
-    form {
+    #code {
+      min-width: 720px;
       min-height: 400px;
-      width: 40vw;
-    }
-
-    #code:focus {
-      outline: none;
+      padding: 1em;
+      margin: 0;
     }
   </style>
 </head>
 
 <body>
   <header>
-    <div class="codedump-logo-wrapper">
-      <h1>console<span class="orange">dump</span></h1>
+    <div class="logo">
+      <h1 data-text="consoledump">consoledump</h1>
     </div>
   </header>
   <main>
     <form action="/test" method="POST">
       <div contenteditable="true" id="code" name="code" spellcheck="false">
-        <pre>
+<pre>
 {
   "data": "Hello, world!"
 }
-       </pre>
+</pre>
       </div>
     </form>
     <div class="buttons">
-      <button class="btn-custom" type="submit">Submit</button>
+      <button class="btn-custom" type="submit">execute</button>
+      <input class="btn-custom" type="file" />
+
     </div>
   </main>
 </body>

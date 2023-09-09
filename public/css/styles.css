@@ -1,5 +1,4 @@
 @import "button.css";
-@import "website-logo.css";
 
 @custom-media --OSdark (prefers-color-scheme: dark);
 @import url('https://fonts.googleapis.com/css2?family=Anton&display=swap');
@@ -7,14 +6,13 @@
 html {
   block-size: 100%;
   font-family: system-ui, sans-serif;
-  background-color: hsl(210deg 17% 98%);
 
   @media (--OSdark) {
     background-color: hsl(210deg 11% 15%);
   }
 }
 
-body {
+/* body {
   min-block-size: 100%;
   display: flex;
   flex-direction: column;
@@ -26,7 +24,7 @@ body {
   @media (width <=720px) {
     padding-block: 10vmin;
   }
-}
+} */
 
 body,
 h2,
