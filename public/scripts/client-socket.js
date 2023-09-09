@@ -17,6 +17,7 @@ const appendToTable = (message) => {
 
 ws.addEventListener('open', () => {
   console.log(`[websocket] connected to ${server}`);
+  sendMessage(["Connected to " + stdin])
 })
 
 ws.addEventListener('message', ({ data }) => {
@@ -69,6 +70,10 @@ function executeCommand() {
   const rawCode = document.getElementById('code').innerText.trim()
   if (!rawCode) return
   const json = JSON.parse(rawCode)
+  sendMessage(json)
+}
+
+function sendMessage(json) {
   fetch(stdin, {
     body: JSON.stringify(json),
     method: 'POST',
@@ -83,4 +88,7 @@ document.addEventListener('readystatechange', state => {
   document.getElementById('execute').addEventListener('click', executeCommand)
   document.getElementById('url').value = window.location.href
   //.getElementById('clear').addEventListener('click', executeCommand)
+  if (sate === 'ready') {
+    sendMessage(["Connecting to " + stdin])
+  }
 })

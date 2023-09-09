@@ -2,67 +2,27 @@ import { Elysia, t, ws } from 'elysia'
 import { html } from '@elysiajs/html'
 import { staticPlugin } from '@elysiajs/static'
 import { ElysiaWS, ElysiaWSContext, WSTypedSchema } from 'elysia/dist/ws'
+import { WebSocketConnections } from './api/server-sockets'
 
-type WebSocket = ElysiaWS<ElysiaWSContext<WSTypedSchema<never>>>
-type SessionId = string
-type SocketConnections = Record<SessionId, WebSocket[]>
+// status
+const Status = {
+  OK: {
+    status: 200,
+    body: 'OK'
+  },
+  NOT_FOUND: {
+    status: 404,
+    body: 'Not Found'
+  },
+  INTERNAL_SERVER_ERROR: {
+    status: 500,
+    body: 'Internal Server Error'
+  }
+}
 
 // a dictionary of all active connections for a given path, use this object
 // to store connections and broadcast messages to all active connections.
-const connections: SocketConnections = {}
-
-// extract the session id from the websocket path, the sessionId appears  after
-// the /ws/ part of the path and should be ten characters long.
-function getSessionId(ws: WebSocket): SessionId | undefined {
-  const { path } = ws.data
-  if (!path.startsWith('/ws/')) {
-    console.warn('[server] invalid path:', path)
-    return
-  }
-  const sessionId = path.slice(4)
-  return sessionId as SessionId
-}
-
-function addConnection(ws: WebSocket) {
-  const sessionId = getSessionId(ws)
-  if (!sessionId) {
-    console.warn('[server] invalid sessionId:', sessionId)
-    return
-  }
-  console.log('[server] adding connection:', sessionId)
-  connections[sessionId] ??= []
-  const isAlreadyOpen = connections[sessionId].some((socket) => ws.data.id === socket.data.id)
-  if (isAlreadyOpen) {
-    console.log('[server] connection already open, skipping!')
-  } else {
-    connections[sessionId].push(ws)
-  }
-  console.log('[server] number of connections for', sessionId, connections[sessionId].length)
-  ws.subscribe(sessionId)
-}
-
-function endConnection(ws: WebSocket) {
-  const sessionId = getSessionId(ws)
-  if (!sessionId) {
-    console.warn('[server] invalid sessionId:', sessionId)
-    return
-  }
-  console.log('[server] ending connection:', sessionId)
-  if (!connections[sessionId]) {
-    console.log('[server] no connections found, skipping!')
-    return
-  }
-  connections[sessionId] = connections[sessionId].filter((socket) => ws.data.id !== socket.data.id)
-  console.log('[server] number of connections for', sessionId, connections[sessionId].length)
-  ws.close()
-}
-
-
-function encode(data: any[]) {
-  return JSON.stringify(
-    data.map(item => JSON.stringify(item))
-  )
-}
+const connections = new WebSocketConnections()
 
 const app = new Elysia()
   .use(html())
@@ -78,48 +38,25 @@ const app = new Elysia()
   // remove when closed.
   .ws('/ws/*', {
     open(ws) {
-      addConnection(ws)
+      connections.add(ws)
     },
     message(ws, message) {
-      console.log('[server] received websocket message!')
+      console.warn('[server] received websocket message!')
       ws.send('123')
     },
     close(ws) {
-      endConnection(ws)
+      connections.close(ws)
     }
   })
-
   // handle POST requests to the server, we will broadcast the message to all
   // active connections for the given path.
   .post('/*', ({ body, path }) => {
-
-    const sessionId = path.slice(1)
-    console.log('[server] POST */ received message:', sessionId)
-
-    if (!connections[sessionId]) {
-      console.log('[server] connection not found for:', sessionId)
-      return {
-        body: 'Not Found',
-        status: 404,
-      }
-    }
-
-    // load all active connections for path
-    const sessions = connections[sessionId]
-    if (!sessions) {
-      console.warn('[server] no connections found for:', sessionId)
-      return
-    }
-
-    // console.log('[server] POST */ received message:', body)
-    sessions.forEach((ws) => {
-      console.log('[server] send message to all clients!')
-      ws.send([JSON.stringify(body)])
-    })
-
-    return {
-      status: 200,
-      body: 'OK'
+    try {
+      connections.broadcast(path, body)
+      return Status.OK
+    } catch (error) {
+      console.error('[server] error broadcasting message:', error)
+      return Status.INTERNAL_SERVER_ERROR
     }
   })
   .get('/*', ({ html, path }) => {
@@ -133,5 +70,5 @@ const app = new Elysia()
   })
   .listen(3000)
 
-console.log(`🦊 Elysia is running at http://${app.server?.hostname}:${app.server?.port}`)
+console.log(`\n🦊 Elysia is running at http://${app.server?.hostname}:${app.server?.port}\n`)
 
