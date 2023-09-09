@@ -1,5 +1,6 @@
-const server = 'ws://localhost:3000/stdin'
-const ws = new WebSocket('ws://localhost:3000/stdin')
+const server = 'ws://localhost:3000/ws' + window.location.pathname
+const stdin = 'http://localhost:3000' + window.location.pathname
+const ws = new WebSocket(server)
 
 const appendToTable = (message) => {
   const table = document.getElementById('output')
@@ -68,7 +69,7 @@ function executeCommand() {
   const rawCode = document.getElementById('code').innerText.trim()
   if (!rawCode) return
   const json = JSON.parse(rawCode)
-  fetch('http://localhost:3000/123', {
+  fetch(stdin, {
     body: JSON.stringify(json),
     method: 'POST',
     headers: {
@@ -78,5 +79,7 @@ function executeCommand() {
 }
 
 document.addEventListener('readystatechange', state => {
+  console.log(state, window.location.pathname)
   document.getElementById('execute').addEventListener('click', executeCommand)
+  //.getElementById('clear').addEventListener('click', executeCommand)
 })
