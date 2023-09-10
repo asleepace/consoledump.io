@@ -62,12 +62,12 @@ const app = new Elysia()
   })
   .post('/', ({ body }) => {
     console.log('[server] received message:', body)
-    connections.broadcast('stdin', body)
+    connections.dump('stdin', body)
     return Status.OK
   })
   .post('/stdin', ({ body }) => {
     console.log('[server] received message:', body)
-    connections.broadcast('stdin', body)
+    connections.dump('stdin', body)
     return Status.OK
   })
   // handle POST requests to the server, we will broadcast the message to all
