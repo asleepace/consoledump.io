@@ -41,7 +41,7 @@ function parse(message) {
 // returns an object which can be used to check if the connection is open.
 function connect() {
   const session = window.location.pathname.slice(1)
-  const stdin = window.location.href + '/stdin'
+  const stdin = window.location.href
   const stdout = IS_DEVELOPMENT ?
     'ws://localhost:8082/stdout' :
     'wss://consoledump.io/stdout'
@@ -63,7 +63,7 @@ function connect() {
     if (isConnected) return
     ws = new WebSocket(stdout)
     ws.onopen = () => {
-      post(["[client] connected to " + stdin])
+      post(["[client] connected to stdin!"])
       faviconUpdate('connected')
       isConnected = true
     }
