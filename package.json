@@ -8,6 +8,7 @@
     "start": "bun run src/index.tsx"
   },
   "dependencies": {
+    "@elysiajs/cors": "^0.6.0",
     "@elysiajs/html": "^0.6.4",
     "@elysiajs/static": "^0.6.0",
     "elysia": "latest",
