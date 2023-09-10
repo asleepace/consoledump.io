@@ -81,7 +81,13 @@ export class WebSocketConnections {
   }
 
   public dump(sender: string, data: any) {
-    this.connections['dump']?.forEach(socket => socket.send([JSON.stringify(sender), data]))
+    let json = data
+    try {
+      json = JSON.parse(data)
+    } catch (error) {
+      json = JSON.stringify(data)
+    }
+    this.connections['dump']?.forEach(socket => socket.send([JSON.stringify(sender), json]))
   }
 
 }
