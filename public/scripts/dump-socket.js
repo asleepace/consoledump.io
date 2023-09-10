@@ -1,7 +1,8 @@
 const server = 'wss://consoledump.io/stdout'
 const stdin = 'https://consoledump.io/stdin'
 
-const ws = new WebSocket(server)
+let ws = new WebSocket(server)
+let isConnected = false
 
 const colorForSession = {}
 
@@ -54,6 +55,7 @@ ws.addEventListener('open', () => {
   console.log(`[websocket] connected to ${server}`);
   sendMessage(["Connected to " + stdin])
   faviconUpdate('connected')
+  isConnected = true
 })
 
 ws.addEventListener('message', ({ data }) => {
@@ -68,7 +70,8 @@ ws.addEventListener('message', ({ data }) => {
 ws.addEventListener('close', () => {
   console.warn('[websocket] disconnected from the WebSocket server!');
   appendToTable('client', 'disconnected')
-  faviconUpdate('offline')
+  faviconUpdate('waiting')
+  isConnected = false
 })
 
 ws.addEventListener('error', (error) => {
@@ -123,3 +126,9 @@ function generateRandomNeonColor() {
   
   return `rgba(${r}, ${g}, ${b}, 0.9)`;
 }
+
+// reconnect to websocket when visibility changes
+document.addEventListener('visibilitychange', () => {
+  if (isConnected) return
+  ws = new WebSocket(server)
+}, false)

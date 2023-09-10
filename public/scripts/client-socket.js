@@ -1,6 +1,8 @@
 const server = 'wss://consoledump.io/ws' + window.location.pathname
 const stdin = 'https://consoledump.io' + window.location.pathname
-const ws = new WebSocket(server)
+
+let ws = new WebSocket(server)
+let isConnected = false
 
 function iconForStatus(status) {
   switch (status) {
@@ -38,8 +40,8 @@ const appendToTable = (message) => {
 
 ws.addEventListener('open', () => {
   faviconUpdate('connected')
-  console.log(`[websocket] connected to ${server}`);
   sendMessage(["Connected to " + stdin])
+  isConnected = true
 })
 
 ws.addEventListener('message', ({ data }) => {
@@ -82,7 +84,8 @@ ws.addEventListener('message', ({ data }) => {
 
 ws.addEventListener('close', () => {
   console.warn('[websocket] disconnected from the WebSocket server!');
-  faviconUpdate('offline')
+  faviconUpdate('waiting')
+  isConnected = false
 })
 
 ws.addEventListener('error', (error) => {
@@ -112,6 +115,12 @@ document.addEventListener('readystatechange', state => {
   document.getElementById('execute').addEventListener('click', executeCommand)
   document.getElementById('url').innerHTML = `<a href="${stdin}">${stdin}</a>`
   if (state === 'ready') {
-    sendMessage(["Connecting to " + stdin])
+    sendMessage(["[client] connecting to " + stdin])
   }
 })
+
+// reconnect to websocket when visibility changes
+document.addEventListener('visibilitychange', () => {
+  if (isConnected) return
+  ws = new WebSocket(server)
+}, false)
