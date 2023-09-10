@@ -60,6 +60,16 @@ const app = new Elysia()
   .get('/', conext => {
     return Bun.file("./src/html/homepage.html").text()
   })
+  .post('/', ({ body }) => {
+    console.log('[server] received message:', body)
+    connections.broadcast('stdin', body)
+    return Status.OK
+  })
+  .post('/stdin', ({ body }) => {
+    console.log('[server] received message:', body)
+    connections.broadcast('stdin', body)
+    return Status.OK
+  })
   // handle POST requests to the server, we will broadcast the message to all
   // active connections for the given path.
   .post('/*', ({ body, path }) => {
