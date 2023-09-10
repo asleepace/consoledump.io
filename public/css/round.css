@@ -1,16 +1,4 @@
 @import url("https://fonts.googleapis.com/css?family=Pirata+One|Rubik:900");
-body {
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  align-items: flex-start;
-  min-height: 100vh;
-  background-color: #141E30;
-  background: linear-gradient(to right, #24243e, #141E30, #0f0c29);
-  overflow: hidden;
-  padding: 2rem;
-  margin: 0;
-}
 
 .logo h1 {
   text-transform: Uppercase;

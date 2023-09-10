@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>consoledump.io</title>
+  <link rel="stylesheet" href="/public/css/global.css" />
+  <link rel="stylesheet" href="/public/css/button.css" />
+  <link rel="stylesheet" href="/public/css/round.css" />
+</head>
+
+<body>
+
+  <container>
+    <content>
+      <logo id="logo" class="logo">
+        <h1 data-text="consoledump">console<span class="orange">dump</span></h1>     
+      </logo>
+      <sidepanel>
+        <about>This is some text and will be displayed on the page, come check it out!</about>
+        <div class="darkframe">https://consoledump.io/</div>
+        <div contenteditable="true" class="editor" id="code" name="code" spellcheck="false">["Hello, world!"]</div>
+        <div class="buttons">
+          <button class="btn-custom" id="execute">execute</button>
+        </div>
+      </sidepanel>
+    </content>
+    <stream>
+      <table class="styled-table" id="output"></table>
+    </stream>
+  </container>
+  <script src="/public/scripts/client-socket.js"></script>
+  <script>
+    document.getElementById('logo').onclick = () => {
+      window.location.href = '/'
+    }
+  </script>
+</body>
+
+</html>

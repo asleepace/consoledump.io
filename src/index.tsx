@@ -76,6 +76,9 @@ const app = new Elysia()
   .get('/editor', ({ html }) => {
     return Bun.file("./src/html/editor.html").text()
   })
+  .get('/test', ({ html }) => {
+    return Bun.file("./src/html/test.html").text()
+  })
   .get('/logo', ({ html }) => {
     return Bun.file("./src/html/logo.html").text()
   })

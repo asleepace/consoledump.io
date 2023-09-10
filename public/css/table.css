@@ -1,6 +1,6 @@
 stream {
   border-radius: 20px;
-  overflow-y: auto;
+  overflow: auto;
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -72,6 +72,7 @@ table tr:last-child td:last-child {
 
 table {
   border: none;
+  white-space: nowrap;
 }
 
 table tr {
@@ -79,6 +80,9 @@ table tr {
   flex-direction: row;
   padding-left: 1em;
   border:none;
+}
+
+table td {
 }
 
 table, table td, table tr {

@@ -3,6 +3,8 @@ const stdin = 'http://localhost:8082/stdin'
 
 const ws = new WebSocket(server)
 
+const colorForSession = {}
+
 const appendToTable = (sessionId, message) => {
   const table = document.getElementById('output')
   const tr = document.createElement('tr')
@@ -12,8 +14,11 @@ const appendToTable = (sessionId, message) => {
 
   const id = JSON.parse(sessionId)
 
+  const color = colorForSession[id] || generateRandomNeonColor()
+  colorForSession[id] = color
+
   tdate.innerText = new Date().toLocaleTimeString()
-  tsession.innerHTML = `<a style="color:${generateRandomNeonColor()};" href="/${id}">@${id}</a>`
+  tsession.innerHTML = `<a style="color:${color};" href="/${id}">@${id}</a>`
   td.innerText = message
   tr.appendChild(tdate)
   tr.appendChild(tsession)

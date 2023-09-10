@@ -7,108 +7,7 @@
   <link rel="stylesheet" href="/public/css/styles.css" />
   <link rel="stylesheet" href="/public/css/button.css" />
   <link rel="stylesheet" href="/public/css/table.css" />
-  <style>
-    body {
-      display: flex;
-      flex-direction: row;
-      height: 100vh;
-      flex: 1;
-    }
-
-    form {
-      border-radius: 20px;
-    }
-
-    header {
-      margin-bottom: 2em;
-    }
-
-    main {
-      display: flex;
-      flex-direction: column;
-      margin: 1rem;
-      margin-right: 2rem;
-      flex: 1;
-    }
-
-    *:focus {
-      outline: none;
-    }
-
-    .buttons {
-      margin-top: 16px;
-    }
-
-    #code {
-      font-family: monospace;
-      min-width: 720px;
-      min-height: 400px;
-      padding: 1em;
-      margin: 0;
-    }
-
-    stream {
-      display: flex;
-      flex-direction: column;
-      flex: 1;
-      margin: 1rem;
-      min-width: 50%;
-    }
-
-    stream table {
-      width: 100%;
-      border-collapse: separate;
-    }
-
-    h2 {
-      text-align: right;
-      margin-right: 4em;
-    }
-
-    .dump {
-      color: orange
-    }
-
-    a {
-      text-decoration: none;
-      color: orange;
-    }
-
-    input[type="text"] {
-      font-size: 1.2rem;
-      letter-spacing: 2px;
-      font-family: monospace;
-      color: #666;
-      border-radius: 10px;
-      margin-bottom: 1em;
-      background-color: white;
-      padding: 1rem;
-    }
-    sessions {
-      display: flex;
-      flex-direction: column;
-      flex: 1;
-      background-color: black;
-      border-radius: 20px;
-    }
-
-    about {
-      display: flex;
-      flex-direction: column;
-      flex: 1;
-      color: rgba(255, 255, 255, 0.8);
-      letter-spacing: 1.1px;
-      line-height: 24px;
-      font-size: 1.2em;
-      padding: 1em;
-    }
-
-    about a {
-      text-decoration: none;
-      color: orange;
-    }
-
-  </style>
+  <link rel="stylesheet" href="/public/css/shared.css" />
 </head>
 
 <body>
@@ -118,17 +17,18 @@
         <h1 data-text="consoledump">console<span class="dump">dump</span></h1>
       </div>
     </header>
-    <about>
-      <p>Welcome to <a href="https://consoledump.io">consoledump.io</a>, a free service that allows you to share your terminal sessions with anyone you want!</p>
-    </about>
-    <br />
-    <br />
-    <button class="btn-custom" id="new">CREATE NEW SESSION</button>
-    <br />
-    <button class="button" id="how">HOW IT WORKS?</button>
+    <div class="centered-content">
+      <about>
+        <p>Welcome to <a href="https://consoledump.io">consoledump.io</a>, a free service that allows you to share your
+          terminal sessions with anyone you want!</p>
+      </about>
+      <div class="buttons">
+        <button class="btn-custom" id="new">CREATE NEW SESSION</button>
+      </div>
+    </div>
     <script src="/public/scripts/dump-socket.js"></script>
     <script>
-      document.getElementById("new").onclick = function() {
+      document.getElementById("new").onclick = function () {
         function generateRandomSession() {
           let session = "";
           let possible = "abcdefghijklmnopqrstuvwxyz0123456789";
@@ -144,8 +44,7 @@
     </script>
   </main>
   <stream>
-    <table class="styled-table" id="output">
-    </table>
+    <table class="styled-table" id="output"></table>
   </stream>
 </body>
 
