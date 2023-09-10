@@ -75,6 +75,7 @@ function connect() {
       console.warn('[client] disconnected from the WebSocket server!');
       faviconUpdate('waiting')
       isConnected = false
+      reconnect()
     }
     ws.onerror = (error) => {
       console.warn('[client] error: ', error)
