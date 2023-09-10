@@ -68,7 +68,7 @@ function connect() {
       isConnected = true
     }
     ws.onmessage = ({ data }) => {
-      faviconUpdate('waiting')
+      faviconUpdate('connected')
       parse(data)
     }
     ws.onclose = () => {
@@ -149,7 +149,7 @@ function execute() {
 
 document.addEventListener('readystatechange', state => {
   document.getElementById('execute').addEventListener('click', execute)
-  document.getElementById('url').innerHTML = `<a href="${client.stdin}">${client.stdin}</a>`
+  document.getElementById('url').innerHTML = `POST @ <a href="${client.stdin}">${client.stdin}</a> (json)`
   if (state === 'ready') {
     client.post(["[client] connecting to " + client.stdin])
   }
