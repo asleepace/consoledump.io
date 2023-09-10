@@ -33,8 +33,8 @@ p {
 }
 
 form {
-  background: hsl(0, 0%, 5%);
-  border: 1px solid hsl(180, 2%, 12%);
+  background: rgb(13, 13, 13);
+  border: 1px solid rgb(30, 31, 31);
   border-radius: .5ch;
   padding: 8px;
   color: #ddd;
