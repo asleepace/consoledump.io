@@ -36,6 +36,14 @@ const app = new Elysia()
   // bookkeeping here to keep track of all active connections. When opened
   // we will save the ws to connections with the corresponding path and
   // remove when closed.
+  .ws('/stdout', {
+    open(ws) {
+      connections.addDump(ws)
+    },
+    close(ws) {
+      connections.closeDump(ws)
+    }
+  })
   .ws('/ws/*', {
     open(ws) {
       connections.add(ws)
@@ -47,6 +55,9 @@ const app = new Elysia()
     close(ws) {
       connections.close(ws)
     }
+  })
+  .get('/', conext => {
+    return Bun.file("./src/html/homepage.html").text()
   })
   // handle POST requests to the server, we will broadcast the message to all
   // active connections for the given path.

@@ -1,15 +1,22 @@
-const server = 'ws://localhost:8082/ws' + window.location.pathname
-const stdin = 'http://localhost:8082' + window.location.pathname
+const server = 'ws://localhost:8082/stdout'
+const stdin = 'http://localhost:8082/stdin'
+
 const ws = new WebSocket(server)
 
-const appendToTable = (message) => {
+const appendToTable = (sessionId, message) => {
   const table = document.getElementById('output')
   const tr = document.createElement('tr')
   const td = document.createElement('td')
   const tdate = document.createElement('td')
+  const tsession = document.createElement('td')
+
+  const id = JSON.parse(sessionId)
+
   tdate.innerText = new Date().toLocaleTimeString()
+  tsession.innerHTML = `<a href="/${id}">${id}</a>`
   td.innerText = message
   tr.appendChild(tdate)
+  tr.appendChild(tsession)
   tr.appendChild(td)
   table.appendChild(tr)
   tr.scrollIntoView(false)
@@ -24,38 +31,10 @@ ws.addEventListener('message', ({ data }) => {
   const messages = JSON.parse(data)
   const kind = typeof messages
 
-  switch (kind) {
-    case 'number':
-    case 'string':
-    case 'boolean':
-    case 'undefined':
-    case 'symbol':
-    case 'bigint':
-      console.log(messages)
-      appendToTable(messages)
-      return
+  const [sessionId, ...rest] = messages
 
-    case 'object':
-      if (!Array.isArray(messages)) {
-        console.log(messages)
-        appendToTable(JSON.parse(messages))
-        return
-      }
-
-    default:
-      break;
-  }
-
-  messages.forEach((message) => {
-    const json = JSON.parse(message)
-    if (Array.isArray(json)) {
-      console.log(...json)
-      appendToTable(...json)
-    } else {
-      appendToTable(message)
-      console.log(json)
-    }
-  })
+  console.log(...rest)
+  appendToTable(sessionId, ...rest)
 })
 
 ws.addEventListener('close', () => {
@@ -84,10 +63,6 @@ function sendMessage(json) {
 }
 
 document.addEventListener('readystatechange', state => {
-  console.log(state, window.location.pathname)
-  document.getElementById('execute').addEventListener('click', executeCommand)
-  document.getElementById('url').value = window.location.href
-  //.getElementById('clear').addEventListener('click', executeCommand)
   if (state === 'ready') {
     sendMessage(["Connecting to " + stdin])
   }

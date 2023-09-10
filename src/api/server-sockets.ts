@@ -5,22 +5,32 @@ type SessionId = string
 type SocketConnections = Record<SessionId, WebSocket[]>
 
 const MAX_CONNECTIONS_PER_SESSION = 10
-const SESSION_ID_LENGTH = 14
+const SESSION_ID_LENGTH = 12
 const CLIENT_PREFIX = '/ws/'
-
 
 export class WebSocketConnections {
 
   constructor(
     private connections: SocketConnections = {},
     private numberOfConnections = 0,
-  ) {}
+  ) { }
+
+  public addDump(socket: WebSocket) {
+    this.connections['dump'] ??= []
+    this.connections['dump'].push(socket)
+  }
+
+  public closeDump(socket: WebSocket) {
+    const socketId = socket.data.id
+    this.connections['dump'] = this.connections['dump'].filter(({ data }) => data.id !== socketId)
+    socket.close()
+  }
 
   public sessionId({ data }: WebSocket): SessionId {
     console.log(data.path)
     const isReadWebsocket = data.path.startsWith(CLIENT_PREFIX)
     const isCorrectLength = data.path.length === SESSION_ID_LENGTH
-    console.log({ isReadWebsocket, isCorrectLength})
+    console.log({ isReadWebsocket, isCorrectLength })
 
     if (!isReadWebsocket || !isCorrectLength) {
       throw new Error(`Invalid session id "${data.path}".`)
@@ -30,7 +40,7 @@ export class WebSocketConnections {
     console.log(`[server-socket] session id ${sessionId}`)
     return sessionId
   }
-  
+
   public add(socket: WebSocket) {
     const sessionId = this.sessionId(socket)
     const socketId = socket.data.id
@@ -66,6 +76,9 @@ export class WebSocketConnections {
     }
     const data = JSON.stringify(message)
     sessions.forEach(socket => socket.send([data]))
+    
+    this.connections['dump']?.forEach(socket => socket.send([JSON.stringify(sessionId),data]))
+
     console.log(`[server-socket] message sent to ${sessions.length} sockets`)
   }
 

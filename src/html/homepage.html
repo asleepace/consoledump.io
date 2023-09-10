@@ -8,8 +8,6 @@
   <link rel="stylesheet" href="/public/css/button.css" />
   <link rel="stylesheet" href="/public/css/table.css" />
   <style>
-
-
     body {
       display: flex;
       flex-direction: row;
@@ -28,7 +26,6 @@
     main {
       display: flex;
       flex-direction: column;
-      min-height: 440px;
       margin: 1rem;
       margin-right: 2rem;
       flex: 1;
@@ -72,6 +69,11 @@
       color: orange
     }
 
+    a {
+      text-decoration: none;
+      color: orange;
+    }
+
     input[type="text"] {
       font-size: 1.2rem;
       letter-spacing: 2px;
@@ -82,38 +84,69 @@
       background-color: white;
       padding: 1rem;
     }
+    sessions {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      background-color: black;
+      border-radius: 20px;
+    }
+
+    about {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      color: rgba(255, 255, 255, 0.8);
+      letter-spacing: 1.1px;
+      line-height: 24px;
+      font-size: 1.2em;
+      padding: 1em;
+    }
+
+    about a {
+      text-decoration: none;
+      color: orange;
+    }
+
   </style>
 </head>
 
 <body>
   <main>
     <header>
-      <div class="logo" id="logo">
+      <div class="logo">
         <h1 data-text="consoledump">console<span class="dump">dump</span></h1>
-        <h2>debugging made easy</h2>
       </div>
     </header>
-    <input type="text" name="url" id="url" value="window.location.href">
-    <form action="/test" method="POST">
-      <div contenteditable="true" id="code" name="code" spellcheck="false">
-        <pre>"Hello, world!"</div>
-    </form>
-    <div class="buttons">
-      <button class="btn-custom" id="execute">execute</button>
-      <input class="btn-custom" type="file" />
-    </div>
+    <about>
+      <p>Welcome to <a href="https://consoledump.io">consoledump.io</a>, a free service that allows you to share your terminal sessions with anyone you want!</p>
+    </about>
+    <br />
+    <br />
+    <button class="btn-custom" id="new">CREATE NEW SESSION</button>
+    <br />
+    <button class="button" id="how">HOW IT WORKS?</button>
+    <script src="/public/scripts/dump-socket.js"></script>
+    <script>
+      document.getElementById("new").onclick = function() {
+        function generateRandomSession() {
+          let session = "";
+          let possible = "abcdefghijklmnopqrstuvwxyz0123456789";
 
+          for (var i = 0; i < 8; i++)
+            session += possible.charAt(Math.floor(Math.random() * possible.length));
+
+          return session;
+        }
+
+        location.href = ['/', generateRandomSession()].join('');
+      };
+    </script>
   </main>
   <stream>
     <table class="styled-table" id="output">
     </table>
   </stream>
-  <script src="/public/scripts/client-socket.js"></script>
-  <script>
-    document.getElementById('logo').onclick = () => {
-      window.location.href = '/'
-    }
-  </script>
 </body>
 
 </html>
