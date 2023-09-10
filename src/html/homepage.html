@@ -26,6 +26,14 @@
   <link rel="stylesheet" href="/public/css/button.css" />
   <link rel="stylesheet" href="/public/css/table.css" />
   <link rel="stylesheet" href="/public/css/shared.css" />
+  <style>
+    snippet {
+      background-color: black;
+      border-radius: 10px;
+      color: greenyellow;
+      padding: 2rem;
+    }
+  </style>
 </head>
 
 <body>
@@ -40,6 +48,9 @@
         <p>Welcome to <a href="https://consoledump.io">consoledump.io</a>, a free service that allows you to share your
           terminal sessions with anyone you want!</p>
       </about>
+      <snippet>
+        <pre><code>curl -X POST -H "Content-Type: application/json" -d '["Hello, world"]' https://consoledump.io/</code></pre>
+      </snippet>
       <div class="buttons">
         <button class="btn-custom" id="new">CREATE NEW SESSION</button>
       </div>
