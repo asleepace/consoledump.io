@@ -109,10 +109,8 @@ function sendMessage(json) {
 
 document.addEventListener('readystatechange', state => {
   faviconUpdate('waiting')
-  console.log(state, window.location.pathname)
   document.getElementById('execute').addEventListener('click', executeCommand)
-  document.getElementById('url').value = window.location.href
-  //.getElementById('clear').addEventListener('click', executeCommand)
+  document.getElementById('url').innerHTML = `<a href="${stdin}">${stdin}</a>`
   if (state === 'ready') {
     sendMessage(["Connecting to " + stdin])
   }
