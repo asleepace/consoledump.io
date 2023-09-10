@@ -71,11 +71,11 @@ export class WebSocketConnections {
   public broadcast(path: string, message: any) {
     const sessionId = path.slice(1)
     const sessions = this.connections[sessionId]
-    this.dump(sessionId, message) // dump to stdin
+    const data = JSON.stringify(message)
+    this.dump(sessionId, data) // dump to stdin
     if (!sessions) {
       throw new Error(`Session "${sessionId}" not found for broadcast`)
     }
-    const data = JSON.stringify(message)
     sessions.forEach(socket => socket.send([data]))
     console.log(`[server-socket] message sent to ${sessions.length} sockets`)
   }
