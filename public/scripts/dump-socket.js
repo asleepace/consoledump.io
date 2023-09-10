@@ -13,7 +13,7 @@ const appendToTable = (sessionId, message) => {
   const id = JSON.parse(sessionId)
 
   tdate.innerText = new Date().toLocaleTimeString()
-  tsession.innerHTML = `<a href="/${id}">${id}</a>`
+  tsession.innerHTML = `<a href="/${id}">@${id}</a>`
   td.innerText = message
   tr.appendChild(tdate)
   tr.appendChild(tsession)
@@ -30,15 +30,15 @@ ws.addEventListener('open', () => {
 ws.addEventListener('message', ({ data }) => {
   const messages = JSON.parse(data)
   const kind = typeof messages
-
   const [sessionId, ...rest] = messages
-
-  console.log(...rest)
-  appendToTable(sessionId, ...rest)
+  const items = JSON.parse(...rest)
+  console.log(items)
+  appendToTable(sessionId, items)
 })
 
 ws.addEventListener('close', () => {
   console.warn('[websocket] disconnected from the WebSocket server!');
+  appendToTable('client', 'disconnected')
 })
 
 ws.addEventListener('error', (error) => {
