@@ -3,6 +3,7 @@ import { html } from '@elysiajs/html'
 import { staticPlugin } from '@elysiajs/static'
 import { ElysiaWS, ElysiaWSContext, WSTypedSchema } from 'elysia/dist/ws'
 import { WebSocketConnections } from './api/server-sockets'
+import { cors } from '@elysiajs/cors'
 
 // status
 const Status = {
@@ -27,6 +28,7 @@ const connections = new WebSocketConnections()
 const app = new Elysia()
   .use(html())
   .use(ws())
+  .use(cors({ origin: true }))
   .use(staticPlugin())
   // .onRequest((context) => {
 
