@@ -1,8 +1,103 @@
-const server = 'wss://consoledump.io/ws' + window.location.pathname
-const stdin = 'https://consoledump.io' + window.location.pathname
+const IS_DEVELOPMENT = false
 
-let ws = new WebSocket(server)
-let isConnected = false
+function handleArray(json) {
+  json.forEach(item => {
+    console.log(json, item, typeof item)
+    if (Array.isArray(item)) {
+      appendToTable(...json)
+      console.log(...item)
+    } else if (typeof item === 'object') {
+      appendToTable(JSON.stringify(item))
+      console.log(item)
+    } else {
+      try {
+        parse(item)
+      } catch (error) {
+        appendToTable(item)
+        console.log(item)
+      }
+    }
+  })
+}
+
+function parse(message) {
+  const json = JSON.parse(message)
+  // handle array elements recursively
+  if (Array.isArray(json)) {
+    return handleArray(json)
+  }
+  // handle element is an object
+  if (typeof json === 'object') {
+    appendToTable(JSON.parse(json))
+    console.log(json)
+    return
+  }
+  // handle everything else
+  appendToTable(json)
+  console.log(json)
+}
+
+// establich websocket connection and handle various lifecycle events.
+// returns an object which can be used to check if the connection is open.
+function connect() {
+  const session = window.location.pathname.slice(1)
+  const stdin = window.location.href
+  const stdout = IS_DEVELOPMENT ?
+    'ws://localhost:8082/ws' + window.location.pathname :
+    'wss://consoledump.io/ws' + window.location.pathname
+
+  let ws;
+  let isConnected = false
+
+  function post(message) {
+    fetch(stdin, {
+      body: JSON.stringify(message),
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+    })
+  }
+
+  function reconnect() {
+    if (isConnected) return
+    ws = new WebSocket(stdout)
+    ws.onopen = () => {
+      post(["[client] connected to " + stdin])
+      faviconUpdate('connected')
+      isConnected = true
+    }
+    ws.onmessage = ({ data }) => {
+      parse(data)
+    }
+    ws.onclose = () => {
+      console.warn('[client] disconnected from the WebSocket server!');
+      faviconUpdate('waiting')
+      isConnected = false
+    }
+    ws.onerror = (error) => {
+      console.warn('[client] error: ', error)
+      parse(JSON.stringify(error))
+    }
+  }
+
+  // make sure to call this
+  reconnect()
+
+  return ({
+    socket: ws,
+    isConnected,
+    session,
+    reconnect,
+    stdout,
+    stdin,
+    post,
+  })
+}
+
+// connect the client websocket
+const client = connect()
+
 
 function iconForStatus(status) {
   switch (status) {
@@ -38,89 +133,28 @@ const appendToTable = (message) => {
   tr.scrollIntoView(false)
 }
 
-ws.addEventListener('open', () => {
-  faviconUpdate('connected')
-  sendMessage(["Connected to " + stdin])
-  isConnected = true
-})
 
-ws.addEventListener('message', ({ data }) => {
-  const messages = JSON.parse(data)
-  const kind = typeof messages
-
-  switch (kind) {
-    case 'number':
-    case 'string':
-    case 'boolean':
-    case 'undefined':
-    case 'symbol':
-    case 'bigint':
-      console.log(messages)
-      appendToTable(messages)
-      return
-
-    case 'object':
-      if (!Array.isArray(messages)) {
-        console.log(messages)
-        appendToTable(JSON.parse(messages))
-        return
-      }
-
-    default:
-      break;
+function execute() {
+  const code = document.getElementById('code')
+  const text = code.innerText.trim()
+  try {
+    client.post(JSON.parse(text))
+  } catch (error) {
+    client.post(text)
   }
-
-  messages.forEach((message) => {
-    const json = JSON.parse(message)
-    if (Array.isArray(json)) {
-      console.log(...json)
-      appendToTable(...json)
-    } else {
-      appendToTable(message)
-      console.log(json)
-    }
-  })
-})
-
-ws.addEventListener('close', () => {
-  console.warn('[websocket] disconnected from the WebSocket server!');
-  faviconUpdate('waiting')
-  isConnected = false
-})
-
-ws.addEventListener('error', (error) => {
-  console.warn('[websocket] error: ', error)
-  faviconUpdate('offline')
-})
-
-function executeCommand() {
-  const rawCode = document.getElementById('code').innerText.trim()
-  if (!rawCode) return
-  const json = JSON.parse(rawCode)
-  sendMessage(json)
 }
 
-function sendMessage(json) {
-  fetch(stdin, {
-    body: JSON.stringify(json),
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-  })
-}
 
 document.addEventListener('readystatechange', state => {
   faviconUpdate('waiting')
-  document.getElementById('execute').addEventListener('click', executeCommand)
-  document.getElementById('url').innerHTML = `<a href="${stdin}">${stdin}</a>`
+  document.getElementById('execute').addEventListener('click', execute)
+  document.getElementById('url').innerHTML = `<a href="${client.stdin}">${client.stdin}</a>`
   if (state === 'ready') {
-    sendMessage(["[client] connecting to " + stdin])
+    client.post(["[client] connecting to " + client.stdin])
   }
 })
 
-// reconnect to websocket when visibility changes
-document.addEventListener('visibilitychange', () => {
-  if (isConnected) return
-  ws = new WebSocket(server)
-}, false)
+// reconnect on focus changes
+document.addEventListener('focus', () => {
+  client.reconnect()
+})
