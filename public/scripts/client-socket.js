@@ -5,11 +5,11 @@ const ws = new WebSocket(server)
 function iconForStatus(status) {
   switch (status) {
     case 'connected':
-      return '/online.svg'
+      return '/public/images/online.svg'
     case 'waiting':
-      return '/waiting.svg'
+      return '/public/images/waiting.svg'
     default:
-      return '/offline.svg'
+      return '/public/images/offline.svg'
   }
 }
 
