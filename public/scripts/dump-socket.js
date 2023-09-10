@@ -168,8 +168,7 @@ document.addEventListener('readystatechange', state => {
   }
 })
 
-// reconnect on focus changes
-document.addEventListener('focus', () => {
+window.addEventListener('focus', () => {
   client.reconnect()
 })
 
