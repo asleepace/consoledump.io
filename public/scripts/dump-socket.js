@@ -17,7 +17,7 @@ function iconForStatus(status) {
 }
 
 function faviconUpdate(status) {
-  const link = document.querySelector("link[rel~='icon']");
+  let link = document.querySelector("link[rel~='icon']");
   if (!link) {
     link = document.createElement('link');
     link.rel = 'icon';
