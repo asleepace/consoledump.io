@@ -5,6 +5,29 @@ const ws = new WebSocket(server)
 
 const colorForSession = {}
 
+function iconForStatus(status) {
+  switch (status) {
+    case 'connected':
+      return '/online.svg'
+    case 'waiting':
+      return '/waiting.svg'
+    default:
+      return '/offline.svg'
+  }
+}
+
+function faviconUpdate(status) {
+  const link = document.querySelector("link[rel~='icon']");
+  if (!link) {
+    link = document.createElement('link');
+    link.rel = 'icon';
+    document.head.appendChild(link);
+  }
+  link.href = iconForStatus(status);
+}
+
+faviconUpdate('waiting')
+
 const appendToTable = (sessionId, message) => {
   const table = document.getElementById('output')
   const tr = document.createElement('tr')
@@ -30,6 +53,7 @@ const appendToTable = (sessionId, message) => {
 ws.addEventListener('open', () => {
   console.log(`[websocket] connected to ${server}`);
   sendMessage(["Connected to " + stdin])
+  faviconUpdate('connected')
 })
 
 ws.addEventListener('message', ({ data }) => {
@@ -44,10 +68,12 @@ ws.addEventListener('message', ({ data }) => {
 ws.addEventListener('close', () => {
   console.warn('[websocket] disconnected from the WebSocket server!');
   appendToTable('client', 'disconnected')
+  faviconUpdate('offline')
 })
 
 ws.addEventListener('error', (error) => {
   console.warn('[websocket] error: ', error)
+  faviconUpdate('offline')
 })
 
 function executeCommand() {

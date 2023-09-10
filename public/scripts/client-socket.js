@@ -2,6 +2,27 @@ const server = 'wss://consoledump.io/ws' + window.location.pathname
 const stdin = 'https://consoledump.io' + window.location.pathname
 const ws = new WebSocket(server)
 
+function iconForStatus(status) {
+  switch (status) {
+    case 'connected':
+      return '/online.svg'
+    case 'waiting':
+      return '/waiting.svg'
+    default:
+      return '/offline.svg'
+  }
+}
+
+function faviconUpdate(status) {
+  const link = document.querySelector("link[rel~='icon']");
+  if (!link) {
+    link = document.createElement('link');
+    link.rel = 'icon';
+    document.head.appendChild(link);
+  }
+  link.href = iconForStatus(status);
+}
+
 const appendToTable = (message) => {
   const table = document.getElementById('output')
   const tr = document.createElement('tr')
@@ -16,6 +37,7 @@ const appendToTable = (message) => {
 }
 
 ws.addEventListener('open', () => {
+  faviconUpdate('connected')
   console.log(`[websocket] connected to ${server}`);
   sendMessage(["Connected to " + stdin])
 })
@@ -60,10 +82,12 @@ ws.addEventListener('message', ({ data }) => {
 
 ws.addEventListener('close', () => {
   console.warn('[websocket] disconnected from the WebSocket server!');
+  faviconUpdate('offline')
 })
 
 ws.addEventListener('error', (error) => {
   console.warn('[websocket] error: ', error)
+  faviconUpdate('offline')
 })
 
 function executeCommand() {
@@ -84,6 +108,7 @@ function sendMessage(json) {
 }
 
 document.addEventListener('readystatechange', state => {
+  faviconUpdate('waiting')
   console.log(state, window.location.pathname)
   document.getElementById('execute').addEventListener('click', executeCommand)
   document.getElementById('url').value = window.location.href
