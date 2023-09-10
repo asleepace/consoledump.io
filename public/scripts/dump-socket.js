@@ -13,7 +13,7 @@ const appendToTable = (sessionId, message) => {
   const id = JSON.parse(sessionId)
 
   tdate.innerText = new Date().toLocaleTimeString()
-  tsession.innerHTML = `<a href="/${id}">@${id}</a>`
+  tsession.innerHTML = `<a style="color:${generateRandomNeonColor()};" href="/${id}">@${id}</a>`
   td.innerText = message
   tr.appendChild(tdate)
   tr.appendChild(tsession)
@@ -67,3 +67,28 @@ document.addEventListener('readystatechange', state => {
     sendMessage(["Connecting to " + stdin])
   }
 })
+
+function generateRandomNeonColor() {
+  const randomChannelValue = () => Math.floor(Math.random() * 256);
+  
+  // Pick a random channel to maximize (set to 255)
+  const maxChannel = Math.floor(Math.random() * 3);
+
+  let r, g, b;
+  
+  if (maxChannel === 0) {
+    r = 255;
+    g = randomChannelValue();
+    b = randomChannelValue();
+  } else if (maxChannel === 1) {
+    r = randomChannelValue();
+    g = 255;
+    b = randomChannelValue();
+  } else {
+    r = randomChannelValue();
+    g = randomChannelValue();
+    b = 255;
+  }
+  
+  return `rgba(${r}, ${g}, ${b}, 0.9)`;
+}
