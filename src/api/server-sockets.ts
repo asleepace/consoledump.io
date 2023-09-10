@@ -80,13 +80,7 @@ export class WebSocketConnections {
     console.log(`[server-socket] message sent to ${sessions.length} sockets`)
   }
 
-  public dump(sender: string, data: any) {
-    let json = data
-    try {
-      json = JSON.parse(data)
-    } catch (error) {
-      json = JSON.stringify(data)
-    }
+  public dump(sender: string, json: string) {
     this.connections['dump']?.forEach(socket => socket.send([JSON.stringify(sender), json]))
   }
 
