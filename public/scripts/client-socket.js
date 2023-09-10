@@ -68,6 +68,7 @@ function connect() {
       isConnected = true
     }
     ws.onmessage = ({ data }) => {
+      faviconUpdate('waiting')
       parse(data)
     }
     ws.onclose = () => {
@@ -77,6 +78,7 @@ function connect() {
     }
     ws.onerror = (error) => {
       console.warn('[client] error: ', error)
+      faviconUpdate('offline')
       parse(JSON.stringify(error))
     }
   }
@@ -146,7 +148,6 @@ function execute() {
 
 
 document.addEventListener('readystatechange', state => {
-  faviconUpdate('waiting')
   document.getElementById('execute').addEventListener('click', execute)
   document.getElementById('url').innerHTML = `<a href="${client.stdin}">${client.stdin}</a>`
   if (state === 'ready') {

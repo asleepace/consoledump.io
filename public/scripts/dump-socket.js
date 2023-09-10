@@ -74,6 +74,7 @@ function connect() {
       const items = JSON.parse(...rest)
       console.log(items)
       appendToTable(sessionId, items)
+      faviconUpdate('connected')
     }
     ws.onclose = () => {
       console.warn('[client] disconnected from the WebSocket server!');
@@ -162,7 +163,6 @@ function execute() {
 
 
 document.addEventListener('readystatechange', state => {
-  faviconUpdate('waiting')
   if (state === 'ready') {
     client.post(["[client] connecting to " + client.stdin])
   }
