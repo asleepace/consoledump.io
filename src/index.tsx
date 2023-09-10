@@ -28,10 +28,9 @@ const app = new Elysia()
   .use(html())
   .use(ws())
   .use(staticPlugin())
-  .onRequest((context) => {
-    console.log('[server] onRquest message!')
-    //context.publish('123', 'hello')
-  })
+  // .onRequest((context) => {
+
+  // })
   // handle websocket connection from the client, we want to do some
   // bookkeeping here to keep track of all active connections. When opened
   // we will save the ws to connections with the corresponding path and

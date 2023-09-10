@@ -1,4 +1,4 @@
-const server = 'ws://consoledump.io/stdout'
+const server = 'wss://consoledump.io/stdout'
 const stdin = 'https://consoledump.io/stdin'
 
 const ws = new WebSocket(server)
