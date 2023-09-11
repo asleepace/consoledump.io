@@ -16,6 +16,14 @@
   /* -webkit-text-fill-color: transparent; */
 }
 
+.logo a {
+  text-decoration: none;
+}
+
+.logo a:hover {
+  text-decoration: none;
+}
+
 .logo h1:before,
 .logo h1:after {
   content: attr(data-text);

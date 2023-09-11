@@ -97,9 +97,9 @@ function connect() {
     ws.onopen = () => {
       if (numberOfReconnects === 0) {
         if (IS_HOMEPAGE) {
-          post(["connected!"])
+          post("connected!")
         } else {
-          post(["started!"])
+          post("started!")
         }
       }
       setFavicon('connected')
@@ -107,14 +107,16 @@ function connect() {
       isConnected = true
     }
     ws.onmessage = ({ data }) => {
-      console.log(data)
       setFavicon('connected')
       if (IS_HOMEPAGE) {
         const [sessionId, messages] = JSON.parse(data)
         const output = deepParse(messages)
         renderTableRowHomepage(sessionId, output)
+        console.log(output)
       } else {
-        renderTableRow(deepParse(data))
+        const [output] = deepParse(data)
+        renderTableRow(output)
+        console.log(output)
       }
     }
     ws.onclose = () => {
@@ -163,13 +165,44 @@ function setFavicon(status) {
   favicon.href = FAVICONS[status]
 }
 
+function renderElementFor(data) {
+  if (Array.isArray(data)) {
+    return renderArray(data)
+  } else if (typeof data === 'object') {
+    return renderObject(data)
+  } else {
+    return renderPrimitive(data)
+  }
+}
+
+function renderPrimitive(data) {
+  const element = document.createElement('span')
+  element.innerText = String(data)
+  return element
+}
+
+function renderArray(arr) {
+  const element = document.createElement('span')
+  element.style.color = 'orange'
+  element.innerText = '[' + arr.map(item => JSON.stringify(item)).join(", ") + ']'
+  return element
+}
+
+function renderObject(obj) {
+  const element = document.createElement('span')
+  element.style.color = '#5777f7'
+  element.innerText = JSON.stringify(obj)
+  return element
+}
+
 function renderTableRow(message) {
   const table = document.getElementById('output')
   const tr = document.createElement('tr')
   const td = document.createElement('td')
   const tdate = document.createElement('td')
   tdate.innerText = new Date().toLocaleTimeString()
-  td.innerText = String(message)
+  // td.innerText = String(message)
+  td.appendChild(renderElementFor(message))
   tr.appendChild(tdate)
   tr.appendChild(td)
   table.appendChild(tr)
@@ -187,7 +220,8 @@ function renderTableRowHomepage(sessionId, message) {
   colorForSession[id] = color
   tdate.innerText = new Date().toLocaleTimeString()
   tsession.innerHTML = `<a style="color:${color};" href="/${id}">@${id}</a>`
-  td.innerText = message
+  td.appendChild(renderElementFor(message))
+  // td.innerText = message
   tr.appendChild(tdate)
   tr.appendChild(tsession)
   tr.appendChild(td)
@@ -210,7 +244,7 @@ function execute() {
 document.addEventListener('readystatechange', state => {
   if (!IS_HOMEPAGE) {
     document.getElementById('execute')?.addEventListener('click', execute)
-    document.getElementById('url').innerHTML = `POST @ <a href="${client.stdin}">${client.stdin}</a> (json)`
+    document.getElementById('url').innerHTML = `POST <span style="color: rgba(255, 255, 255, 0.3)">@</span> <a href="${client.stdin}">${client.stdin}</a> <span style="color: rgba(255, 255, 255, 0.3)">(json)</a>`
   }
 })
 
