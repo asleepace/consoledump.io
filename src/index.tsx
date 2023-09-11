@@ -30,9 +30,16 @@ const app = new Elysia()
   .use(ws())
   .use(cors({ origin: true }))
   .use(staticPlugin())
-  // .onRequest((context) => {
-
-  // })
+  .state('ip', 'localhost')
+  .derive(({ request: { headers }, store }) => {
+    return {
+      authorization: headers.get('Authorization'),
+      ip: headers.get('X-Forwarded-For') || headers.get('x-forwarded-for') || store.ip,
+    }
+  })
+  .onRequest((context) => {
+    console.log(context)
+  })
   // handle websocket connection from the client, we want to do some
   // bookkeeping here to keep track of all active connections. When opened
   // we will save the ws to connections with the corresponding path and
@@ -60,14 +67,14 @@ const app = new Elysia()
   .get('/', conext => {
     return Bun.file("./src/html/homepage.html").text()
   })
-  .post('/', ({ body }) => {
+  .post('/', ({ body, ip }) => {
     console.log('[server] received message:', body)
-    connections.dump('stdin', JSON.stringify(body))
+    connections.dump(ip, JSON.stringify(body))
     return Status.OK
   })
-  .post('/stdin', ({ body }) => {
+  .post('/stdin', ({ body, ip }) => {
     console.log('[server] received message:', body)
-    connections.dump('stdin', JSON.stringify(body))
+    connections.dump(ip, JSON.stringify(body))
     return Status.OK
   })
   // handle POST requests to the server, we will broadcast the message to all
@@ -82,15 +89,19 @@ const app = new Elysia()
     }
   })
   .get('/*', ({ html, path }) => {
+
     return Bun.file("./src/html/index.html").text()
   })
   .get('/editor', ({ html }) => {
+
     return Bun.file("./src/html/editor.html").text()
   })
   .get('/test', ({ html }) => {
+
     return Bun.file("./src/html/test.html").text()
   })
   .get('/logo', ({ html }) => {
+
     return Bun.file("./src/html/logo.html").text()
   })
   .listen(8082)
