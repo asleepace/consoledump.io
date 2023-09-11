@@ -255,6 +255,13 @@ document.addEventListener('readystatechange', state => {
   if (!IS_HOMEPAGE) {
     document.getElementById('execute')?.addEventListener('click', execute)
     document.getElementById('url').innerHTML = `POST <span style="color: rgba(255, 255, 255, 0.3)">@</span> <a href="${client.stdin}">${client.stdin}</a> <span style="color: rgba(255, 255, 255, 0.3)">(json)</a>`
+  } else {
+    document.getElementById('js-snippet').innerHTML = `<span style="color:orange">fetch(</span>'${client.stdin}'<span style="color:gray;">, {
+  <span style="color: white;">method</span>: <span style="color: #FF1F4F;">'POST'</span>,
+  <span style="color: white;">body</span>: <span style="color: #8EA8FF;">JSON</span>.<span style="color: orange">stringify(</span>{
+    'hello world'<span style="color:orange">
+  })</span>,
+}</span><span style="color:orange">)</span>`
   }
 })
 
