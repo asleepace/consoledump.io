@@ -91,6 +91,7 @@ const app = new Elysia()
   })
   .post('/', ({ body, ip }) => {
     console.log('[server] received message:', body)
+    // un-comment this line to broadcast all messages to stdin
     //connections.dump(ip, JSON.stringify(body))
     return Status.OK
   })

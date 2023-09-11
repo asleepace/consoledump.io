@@ -95,6 +95,7 @@ function connect() {
     }
     ws = new WebSocket(stdout)
     ws.onopen = () => {
+      isConnected = true
       if (numberOfReconnects === 0) {
         if (IS_HOMEPAGE) {
           post("connected!")
