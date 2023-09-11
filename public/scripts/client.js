@@ -270,14 +270,25 @@ document.addEventListener('readystatechange', state => {
     document.getElementById('execute')?.addEventListener('click', execute)
     document.getElementById('url').innerHTML = `POST <span style="color: rgba(255, 255, 255, 0.3)">@</span> <a href="${client.stdin}">${client.stdin}</a> <span style="color: rgba(255, 255, 255, 0.3)">(json)</a>`
   }
-  document.getElementById('js-snippet').innerHTML = `<span style="color: orange;">fetch(</span>'${client.stdin}'<span style="color:white;">, {
-  method:</span> <span style="color: greenyellow">'POST'</span><span style="color:white">,
-  body:</span> <span style="color: #f2777a;">JSON</span>.<span style="color: orange;">stringify(</span><span style="color: white;">{
-    data: </span><span style="color:greenyellow;">'hello world'</span>
-  <span style="color:white">}</span><span style="color: orange;">)</span>
-<span style="color:white">}</span><span style="color: orange;">)</span>`
+  //   document.getElementById('js-snippet').innerHTML = `<span style="color: orange;">fetch(</span>'${client.stdin}'<span style="color:white;">, {
+  //   method:</span> <span style="color: greenyellow">'POST'</span><span style="color:white">,
+  //   body:</span> <span style="color: #f2777a;">JSON</span>.<span style="color: orange;">stringify(</span><span style="color: white;">{
+  //     data: </span><span style="color:greenyellow;">'hello world'</span>
+  //   <span style="color:white">}</span><span style="color: orange;">)</span>
+  // <span style="color:white">}</span><span style="color: orange;">)</span>`
 
+  const jsSnippet = document.getElementById('js-snippet')
+
+  jsSnippet.innerHTML = `<span style="color:white;">fetch('${client.stdin}', {
+  method: 'POST',
+  body: JSON.stringify({
+    data: "hello world"
+  })
 })
+</span>`
+})
+
+
 
 // reconnect on focus changes
 window.addEventListener('focus', () => {
