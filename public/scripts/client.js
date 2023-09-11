@@ -219,7 +219,7 @@ function renderTableRowHomepage(sessionId, message) {
   const color = colorForSession[id] || generateRandomNeonColor()
   colorForSession[id] = color
   tdate.innerText = new Date().toLocaleTimeString()
-  tsession.innerHTML = `<a style="color:${color};" href="/${id}">@${id}</a>`
+  tsession.innerHTML = `<a style="color:${color};" href="/${id}">${id}</a>`
   td.appendChild(renderElementFor(message))
   // td.innerText = message
   tr.appendChild(tdate)
