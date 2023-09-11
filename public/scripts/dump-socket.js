@@ -1,46 +1,47 @@
 const IS_DEVELOPMENT = false
+const MAX_RECONNECTS = 100
 
-function handleArray(json) {
-  json.forEach(item => {
-    console.log(json, item, typeof item)
-    if (Array.isArray(item)) {
-      appendToTable(...json)
-      console.log(...item)
-    } else if (typeof item === 'object') {
-      appendToTable(JSON.stringify(item))
-      console.log(item)
-    } else {
-      try {
-        parse(item)
-      } catch (error) {
-        appendToTable(item)
-        console.log(item)
-      }
+// Data Parsing
+//
+// Eecursively parse JSON strings and each element of an array,
+// or value of an object, and return the parsed data.
+//
+function deepParse(data) {
+  // handle edge cases
+  if (data === undefined)
+    return undefined;
+  if (data === null)
+    return null;
+  if (Number.isNaN(data))
+    return NaN;
+  // handle case where data is string or json
+  if (typeof data === 'string') {
+    try {
+      const json = JSON.parse(data);
+      return deepParse(json);
     }
-  })
-}
-
-function parse(message) {
-  const json = JSON.parse(message)
-  // handle array elements recursively
-  if (Array.isArray(json)) {
-    return handleArray(json)
+    catch (error) {
+      return data;
+    }
   }
-  // handle element is an object
-  if (typeof json === 'object') {
-    appendToTable(JSON.parse(json))
-    console.log(json)
-    return
+  // handle array of values
+  if (Array.isArray(data))
+    return data.map(deepParse);
+  // handle object
+  if (typeof data === 'object') {
+    return Object.entries(data).reduce((output, [key, value]) => {
+      output[key] = deepParse(value);
+      return output;
+    }, {});
   }
-  // handle everything else
-  appendToTable(json)
-  console.log(json)
+  // otherwise return data "as is"
+  return data;
 }
 
 // establich websocket connection and handle various lifecycle events.
 // returns an object which can be used to check if the connection is open.
 function connect() {
-  const session = window.location.pathname.slice(1)
+  const session = 'sdtin'
   const stdin = window.location.href
   const stdout = IS_DEVELOPMENT ?
     'ws://localhost:8082/stdout' :
@@ -48,6 +49,7 @@ function connect() {
 
   let ws;
   let isConnected = false
+  let numberOfReconnects = 0
 
   function post(message) {
     fetch(stdin, {
@@ -61,19 +63,32 @@ function connect() {
 
   function reconnect() {
     if (isConnected) return
+    if (numberOfReconnects >= MAX_RECONNECTS) {
+      console.warn('[client] max number of reconnects reached!')
+      faviconUpdate('offline')
+      return
+    }
     ws = new WebSocket(stdout)
     ws.onopen = () => {
-      post(["[client] connected to stdin!"])
+      if (numberOfReconnects === 0) {
+        post(["[client] connected to " + session])
+      }
       faviconUpdate('connected')
+      numberOfReconnects++
       isConnected = true
     }
     ws.onmessage = ({ data }) => {
       const messages = JSON.parse(data)
       const kind = typeof messages
       const [sessionId, ...rest] = messages
-      const items = JSON.parse(...rest)
-      console.log(items)
-      appendToTable(sessionId, items)
+      const items = deepParse(...rest)
+      if (Array.isArray(items)) {
+        appendToTable(sessionId, ...items)
+        console.log(...items)
+      } else {
+        appendToTable(sessionId, items)
+        console.log(items)
+      }
       faviconUpdate('connected')
     }
     ws.onclose = () => {
@@ -176,12 +191,8 @@ window.addEventListener('focus', () => {
 
 function generateRandomNeonColor() {
   const randomChannelValue = () => Math.floor(Math.random() * 256);
-
-  // Pick a random channel to maximize (set to 255)
   const maxChannel = Math.floor(Math.random() * 3);
-
   let r, g, b;
-
   if (maxChannel === 0) {
     r = 255;
     g = randomChannelValue();
@@ -195,6 +206,5 @@ function generateRandomNeonColor() {
     g = randomChannelValue();
     b = 255;
   }
-
   return `rgba(${r}, ${g}, ${b}, 0.9)`;
 }
