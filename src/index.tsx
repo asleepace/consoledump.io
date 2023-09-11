@@ -91,7 +91,7 @@ const app = new Elysia()
   })
   .post('/', ({ body, ip }) => {
     console.log('[server] received message:', body)
-    connections.dump(ip, JSON.stringify(body))
+    //connections.dump(ip, JSON.stringify(body))
     return Status.OK
   })
   .post('/stdin', ({ body, ip }) => {
