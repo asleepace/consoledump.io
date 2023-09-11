@@ -4,6 +4,7 @@ import { staticPlugin } from '@elysiajs/static'
 import { ElysiaWS, ElysiaWSContext, WSTypedSchema } from 'elysia/dist/ws'
 import { WebSocketConnections } from './api/server-sockets'
 import { cors } from '@elysiajs/cors'
+import { request } from 'http';
 
 // status
 const Status = {
@@ -31,14 +32,26 @@ const app = new Elysia()
   .use(cors({ origin: true }))
   .use(staticPlugin())
   .state('ip', 'localhost')
+  .state('consoleDumpEncoding', 'no')
   .derive(({ request: { headers }, store }) => {
     return {
+      consoleDumpEncoding: headers.get('X-Console-Dump-Encoding') || headers.get('x-console-dump-encoding') || store.consoleDumpEncoding,
       authorization: headers.get('Authorization'),
       ip: headers.get('X-Forwarded-For') || headers.get('x-forwarded-for') || store.ip,
     }
   })
-  .onRequest((context) => {
-    console.log(context)
+  .onParse(({ request }, contentTye) => {
+    const consoleDumpEncoding = request.headers.get('x-console-dump-encoding') === 'yes'
+    return request.text()
+      .then(text => {
+        console.log('[server] onParse text:', text.length, { consoleDumpEncoding, })
+        if (consoleDumpEncoding) {
+          const [decoded] = JSON.parse(text)
+          return decoded
+        } else {
+          return text
+        }
+      })
   })
   // static routes go here so that they won't be overriden by the wildcard, same
   // goes for the websocket routes.

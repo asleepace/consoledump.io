@@ -111,12 +111,22 @@ function connect() {
       if (IS_HOMEPAGE) {
         const [sessionId, messages] = JSON.parse(data)
         const output = deepParse(messages)
-        renderTableRowHomepage(sessionId, output)
-        console.log(output)
+        if (Array.isArray(output)) {
+          renderTableRowHomepage(sessionId, ...output)
+          console.log(...output)
+        } else {
+          renderTableRowHomepage(sessionId, output)
+          console.log(output)
+        }
       } else {
         const [output] = deepParse(data)
-        renderTableRow(output)
-        console.log(output)
+        if (Array.isArray(output)) {
+          renderTableRow(...output)
+          console.log(...output)
+        } else {
+          renderTableRow(output)
+          console.log(output)
+        }
       }
     }
     ws.onclose = () => {
