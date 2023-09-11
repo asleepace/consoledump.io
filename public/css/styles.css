@@ -18,24 +18,18 @@ a {
 html {
   background-color: #11112c;
   background: linear-gradient(to right, #24243e, #141E30, #0f0c29);
+  font-family: system-ui, sans-serif;
   background-attachment: fixed;
   overflow-x: hidden;
   overflow-y: auto;
-  min-height: calc(100vh - 4em);
-  /* width: calc(100vw - 4em); */
-  /* overflow: hidden; */
-  /* margin: 2em; */
-  padding: 2em;
-}
-
-
-html {
-  /* block-size: 100%; */
-  font-family: system-ui, sans-serif;
-
+  height: 100svh;
   @media (--OSdark) {
     background-color: hsl(210deg 11% 15%);
   }
+  /* min-height: calc(100vh - 4em); */
+  /* width: calc(100vw - 4em); */
+  /* overflow: hidden; */
+  /* margin: 2em; */
 }
 
 body,
@@ -43,6 +37,80 @@ h2,
 p {
   margin: 0;
 }
+
+body {
+  display: flex;
+  flex-direction: row;
+  column-gap: 2em;
+  flex: 1;
+  /* height: 100%; */
+  margin-bottom: 2em;
+  flex-basis: fill;
+  height: 100%;
+  width: 100%;
+  font-size: 1em;
+}
+
+header {
+  margin-bottom: 2em;
+}
+
+main {
+  display: flex;
+  flex-direction: column;
+  /* min-height: 440px;
+  max-width: 50%; */
+  margin: 1rem;
+  row-gap: 1em;
+  flex-shrink: 1;
+}
+
+stream {
+  display: flex;
+  flex-direction: column;
+  /* flex: 1; */
+  margin: 1rem;
+  margin-right: 2em;
+  overflow: auto;
+}
+
+snippet {
+  background-color: black;
+  border-radius: 10px;
+  color: greenyellow;
+  overflow-x: auto;
+  padding: 2rem;
+}
+
+@media only screen and (max-width: 800px) {
+  .logo {
+    justify-content: center;
+    align-items: center;
+  }
+  html {
+    max-width: none;
+    margin: none;
+  }
+  body {
+    flex-direction: column;
+    overflow-y: scroll;
+    /* row-gap: 1em; */
+  }
+  main {
+    max-width: 100%;
+    margin: none;
+    padding: none;
+    row-gap: none;
+    height: fit-content;
+  }
+  stream {
+    font-size: 1.5vw;
+    margin: none;
+    flex-shrink: 1;
+    flex: none;
+  }
+}
+
 
 form {
   background: rgb(13, 13, 13);
@@ -58,78 +126,10 @@ form {
   }
 }
 
-body {
-  display: flex;
-  flex-direction: row;
-  column-gap: 2em;
-  flex: 1;
-  /* height: 100%; */
-  margin-bottom: 2em;
-  flex-basis: fill;
-  height: 100%;
-  width: 100%;
-}
-
 form {
   border-radius: 20px;
 }
 
-header {
-  margin-bottom: 2em;
-}
-
-main {
-  display: flex;
-  flex-direction: column;
-  min-height: 440px;
-  max-width: 50%;
-  row-gap: 2em;
-  flex: 1;
-}
-
-stream {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  margin: 1rem;
-  min-width: 50%;
-  height: 100%;
-  margin-right: 2em;
-}
-
-snippet {
-  background-color: black;
-  font-size: 1vw;
-  border-radius: 10px;
-  color: greenyellow;
-  overflow-x: auto;
-  padding: 2rem;
-}
-
-@media only screen and (max-width: 800px) {
-  html {
-    max-width: none;
-    margin: none;
-  }
-  body {
-    flex-direction: column;
-    overflow-y: scroll;
-    row-gap: 1em;
-  }
-  main {
-    max-width: 100%;
-    max-height: 40%;
-    margin: none;
-    padding: none;
-    row-gap: none;
-  }
-  stream {
-    font-size: 1.5vw;
-    max-height: 30%;
-    margin: none;
-    margin-top: 2em;
-  }
-}
 
 .buttons {
   margin-top: 16px;
@@ -334,6 +334,10 @@ section {
   font-size: 6vw;
   color: #E4E5E6;
   margin: 0;
+}
+
+.logo {
+  display: flex;
 }
 
 .logo h1 {
