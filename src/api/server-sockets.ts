@@ -95,7 +95,8 @@ export class WebSocketConnections {
     const data = JSON.stringify(message)
     this.dump(sessionId, data) // dump to stdin
     if (!sessions) {
-      throw new Error(`Session "${sessionId}" not found for broadcast`)
+      console.warn(`[server-socket] session "${sessionId}" not found for broadcast`)
+      return
     }
     sessions.forEach(socket => socket.send([data]))
     console.log(`[server-socket] message sent to ${sessions.length} sockets`)
