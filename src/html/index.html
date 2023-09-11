@@ -41,8 +41,13 @@
         </a>
       </div>
     </header>
-    <div id="url" class="link">https://consoledump.io/</div>
-    <div contenteditable="true" class="editor" id="code" name="code" spellcheck="false">"Hello, world!"</div>
+    <snippet>
+      <div id="url" class="link">https://consoledump.io/</div>
+    </snippet>
+    <snippet>
+      <pre><code id="js-snippet" contenteditable="true" spellcheck="no"></code></pre>
+    </snippet>
+    <!-- <div contenteditable="true" class="editor" id="code" name="code" spellcheck="false">"Hello, world!"</div> -->
     <div class="buttons">
       <button class="btn-custom" id="execute">execute</button>
     </div>
@@ -52,11 +57,6 @@
     <table class="styled-table" id="output"></table>
   </stream>
   <script src="/public/scripts/client.js"></script>
-  <script>
-    document.getElementById('logo').onclick = () => {
-      window.location.href = '/'
-    }
-  </script>
 </body>
 
 </html>

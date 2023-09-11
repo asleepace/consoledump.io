@@ -65,7 +65,6 @@ function getSession() {
   }
 }
 
-
 // establich websocket connection and handle various lifecycle events.
 // returns an object which can be used to check if the connection is open.
 function connect() {
@@ -74,6 +73,7 @@ function connect() {
   let ws;
   let isConnected = false
   let numberOfReconnects = 0
+  let numberOfRetries = 0
 
   function post(message) {
     fetch(stdin, {
@@ -104,6 +104,7 @@ function connect() {
       }
       setFavicon('connected')
       numberOfReconnects++
+      numberOfRetries = 0
       isConnected = true
     }
     ws.onmessage = ({ data }) => {
@@ -132,7 +133,7 @@ function connect() {
     ws.onclose = () => {
       console.warn('[client] disconnected from the WebSocket server!');
       setFavicon('waiting')
-      if (isConnected) {
+      if (numberOfRetries++ < 10) {
         reconnect()
       }
       isConnected = false
@@ -240,7 +241,7 @@ function renderTableRowHomepage(sessionId, message) {
 }
 
 
-function execute() {
+function executeOld() {
   const code = document.getElementById('code')
   const text = code.innerText.trim()
   try {
@@ -250,19 +251,31 @@ function execute() {
   }
 }
 
+function execute() {
+  try {
+    const code = document.getElementById('js-snippet').innerText;
+    console.log('[client] executing: ', code)
+    eval(code)
+    //client.post(JSON.parse(text))
+  } catch (error) {
+    console.error('[client] error: ', error)
+    //client.post(text)
+  }
+}
+
 
 document.addEventListener('readystatechange', state => {
   if (!IS_HOMEPAGE) {
     document.getElementById('execute')?.addEventListener('click', execute)
     document.getElementById('url').innerHTML = `POST <span style="color: rgba(255, 255, 255, 0.3)">@</span> <a href="${client.stdin}">${client.stdin}</a> <span style="color: rgba(255, 255, 255, 0.3)">(json)</a>`
-  } else {
-    document.getElementById('js-snippet').innerHTML = `<span style="color:orange">fetch(</span>'${client.stdin}'<span style="color:gray;">, {
-  <span style="color: white;">method</span>: <span style="color: #FF1F4F;">'POST'</span>,
-  <span style="color: white;">body</span>: <span style="color: #8EA8FF;">JSON</span>.<span style="color: orange">stringify(</span>{
-    'hello world'<span style="color:orange">
-  })</span>,
-}</span><span style="color:orange">)</span>`
   }
+  document.getElementById('js-snippet').innerHTML = `<span style="color: orange;">fetch(</span>'${client.stdin}'<span style="color:white;">, {
+  method:</span> <span style="color: greenyellow">'POST'</span><span style="color:white">,
+  body:</span> <span style="color: #f2777a;">JSON</span>.<span style="color: orange;">stringify(</span><span style="color: white;">{
+    data: </span><span style="color:greenyellow;">'hello world'</span>
+  <span style="color:white">}</span><span style="color: orange;">)</span>
+<span style="color:white">}</span><span style="color: orange;">)</span>`
+
 })
 
 // reconnect on focus changes

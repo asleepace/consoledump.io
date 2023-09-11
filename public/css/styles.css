@@ -124,9 +124,9 @@ snippet {
   word-break: break-all;
   font-family: monospace;
   min-width: 720px;
-  min-height: 400px;
+  /* min-height: 400px; */
   width: calc(100% - 2em);
-  height: calc(100% - 2em);
+  /* height: calc(100% - 2em); */
   padding: 1em;
   margin: 0;
 }
@@ -175,6 +175,13 @@ about {
   padding: 1em;
 }
 
+.normal {
+  color: rgba(255, 255, 255, 0.8);
+  letter-spacing: 1.1px;
+  line-height: 32px;
+  font-size: 1.2em;
+}
+
 about a {
   text-decoration: none;
   color: orange;
@@ -210,11 +217,13 @@ about a {
 }
 
 .link {
-  padding: 2rem;
+  /* padding: 2rem;
   background-color: rgba(0, 0, 0, 0.1);
   border-radius: 10px;
   font-family: monospace;
   font-size: 1rem;
+  color: rgba(255, 255, 255, 0.7); */
+  font-family: monospace;
   color: rgba(255, 255, 255, 0.7);
 }
 
