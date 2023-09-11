@@ -40,6 +40,15 @@ const app = new Elysia()
   .onRequest((context) => {
     console.log(context)
   })
+  // static routes go here so that they won't be overriden by the wildcard, same
+  // goes for the websocket routes.
+  .get('/create', ({ set, ip }) => {
+    const sessionId = connections.createSession()
+    connections.dump(ip, JSON.stringify(`created session ${sessionId}`))
+    set.redirect = `/${sessionId}`
+    set.status = 302
+    return "redirecting..."
+  })
   // handle websocket connection from the client, we want to do some
   // bookkeeping here to keep track of all active connections. When opened
   // we will save the ws to connections with the corresponding path and

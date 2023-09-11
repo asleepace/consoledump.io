@@ -12,6 +12,10 @@ html {
   }
 }
 
+a {
+  text-decoration: none;
+}
+
 /* body {
   min-block-size: 100%;
   display: flex;

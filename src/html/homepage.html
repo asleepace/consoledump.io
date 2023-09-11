@@ -52,25 +52,10 @@
         <pre><code>curl -X POST -H "Content-Type: application/json" -d '["Hello, world"]' https://consoledump.io/</code></pre>
       </snippet>
       <div class="buttons">
-        <button class="btn-custom" id="new">CREATE NEW SESSION</button>
+        <a href="/create"><button class="btn-custom" id="new">CREATE NEW SESSION</button></a>
       </div>
     </div>
-    <script src="/public/scripts/client-socket.js"></script>
-    <script>
-      document.getElementById("new").onclick = function () {
-        function generateRandomSession() {
-          let session = "";
-          let possible = "abcdefghijklmnopqrstuvwxyz0123456789";
-
-          for (var i = 0; i < 8; i++)
-            session += possible.charAt(Math.floor(Math.random() * possible.length));
-
-          return session;
-        }
-
-        location.href = ['/', generateRandomSession()].join('');
-      };
-    </script>
+    <script src="/public/scripts/client.js"></script>
   </main>
   <stream>
     <table class="styled-table" id="output"></table>

@@ -15,6 +15,27 @@ export class WebSocketConnections {
     private numberOfConnections = 0,
   ) { }
 
+  public createSession(): SessionId {
+    let loopCount = 0
+    let sessionId = this.generateSessionId()
+    while (this.checkIfExists(sessionId) && loopCount++ < 100) {
+      sessionId = this.generateSessionId()
+    }
+    return sessionId
+  }
+
+  public generateSessionId(): SessionId {
+    let session = "";
+    let possible = "abcdefghijklmnopqrstuvwxyz0123456789";
+    for (var i = 0; i < 8; i++)
+      session += possible.charAt(Math.floor(Math.random() * possible.length));
+    return session;
+  }
+
+  public checkIfExists(sessionId: string): boolean {
+    return !!this.connections[sessionId]
+  }
+
   public addDump(socket: WebSocket) {
     this.connections['dump'] ??= []
     this.connections['dump'].push(socket)
