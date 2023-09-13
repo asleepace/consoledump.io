@@ -3,7 +3,7 @@
   "version": "1.0.50",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "bun run --watch src/index.tsx",
+    "dev": "bun run --watch index.tsx",
     "build": "bun build",
     "start": "bun run src/index.tsx"
   },
@@ -12,10 +12,30 @@
     "@elysiajs/html": "^0.6.4",
     "@elysiajs/static": "^0.6.0",
     "elysia": "latest",
-    "sass": "^1.66.1"
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "sass": "^1.66.1",
+    "web-vitals": "^3.4.0"
   },
   "devDependencies": {
+    "@types/react": "^18.0.15",
+    "@types/react-dom": "^18.0.6",
+    "react-refresh": "0.10.0",
+    "react-scripts": "^4.0.1",
+    "typescript": "^5.2.2",
     "bun-types": "latest"
   },
-  "module": "src/index.js"
+  "module": "src/index.js",
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
 }

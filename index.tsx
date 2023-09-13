@@ -2,9 +2,13 @@ import { Elysia, t, ws } from 'elysia'
 import { html } from '@elysiajs/html'
 import { staticPlugin } from '@elysiajs/static'
 import { ElysiaWS, ElysiaWSContext, WSTypedSchema } from 'elysia/dist/ws'
-import { WebSocketConnections } from './api/server-sockets'
+import ReactDOMServer from "react-dom/server";
+import { WebSocketConnections } from './server-sockets'
 import { cors } from '@elysiajs/cors'
-import { request } from 'http';
+import * as React from "react";
+import { renderToReadableStream } from "react-dom/server";
+import { createRoot } from 'react-dom/client';
+import { App } from './src/react/App'
 
 // status
 const Status = {
@@ -88,6 +92,35 @@ const app = new Elysia()
   })
   .get('/', conext => {
     return Bun.file("./src/html/homepage.html").text()
+  })
+  .get('/react', async context => {
+    // const reactElemt = React.createElement(App, null)
+    // const stream = await renderToReadableStream(reactElemt, {
+
+    // })
+    return Bun.file("./public/index.html").text()
+      .then(indexHtml => {
+        return indexHtml.replace(
+          '<div id="root"></div>',
+          `<div id="root">${ReactDOMServer.renderToString(React.createElement(App, null))}</div>`
+        )
+
+      })
+
+
+
+    // return new Response(stream, {
+    //   headers: { "Content-Type": "text/html" },
+    // })
+    // return Bun.file("./public/index.html").text()
+    //   .then(indexHtml => {
+    //     return indexHtml.replace(
+    //       '<div id="root"></div>',
+    //       `<div id="root">${ReactDOMServer.renderToString(<React.StrictMode>
+    //         <App />
+    //       </React.StrictMode>)}</div>`
+    //     )
+    //   })
   })
   .post('/', ({ body, ip }) => {
     console.log('[server] received message:', body)
