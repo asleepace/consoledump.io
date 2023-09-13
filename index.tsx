@@ -10,6 +10,9 @@ import { renderToReadableStream } from "react-dom/server";
 import { createRoot } from 'react-dom/client';
 import { App } from './src/react/App'
 
+// readable-stream
+const reactAppElement = React.createElement(App, null)
+
 // status
 const Status = {
   OK: {
@@ -93,18 +96,28 @@ const app = new Elysia()
   .get('/', conext => {
     return Bun.file("./src/html/homepage.html").text()
   })
+  .get('/react-stream', async context => {
+    const reactElement = React.createElement(App, null)
+    const stream = await renderToReadableStream(reactElement, {
+      bootstrapScripts: ['/public/bundle.js']
+    });
+    return new Response(stream, {
+      headers: { 'content-type': 'text/html' },
+    });
+  })
   .get('/react', async context => {
     // const reactElemt = React.createElement(App, null)
     // const stream = await renderToReadableStream(reactElemt, {
 
     // })
+    const reactAppElement = React.createElement(App, null)
+    const renderedString = ReactDOMServer.renderToString(reactAppElement)
     return Bun.file("./public/index.html").text()
       .then(indexHtml => {
         return indexHtml.replace(
           '<div id="root"></div>',
-          `<div id="root">${ReactDOMServer.renderToString(React.createElement(App, null))}</div>`
+          `<div id="root">${renderedString}</div>`
         )
-
       })
 
 
