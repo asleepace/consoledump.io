@@ -7,7 +7,13 @@ import { WebSocketConnections } from './src/server-sockets'
 import { cors } from '@elysiajs/cors'
 import { renderToReadableStream } from "react-dom/server";
 import { App } from './src/react/App'
-import { createElement } from 'react';
+import React, { createElement } from 'react';
+
+// bundle react code
+await Bun.build({
+  entrypoints: ['./src/react/index.tsx'],
+  outdir: './public/',
+})
 
 // status
 const Status = {
