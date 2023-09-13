@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
-    "target": "ESNext",
-    "jsx": "react-jsx",
+    "target": "ES2021",
+    "jsx": "react",
     "jsxFactory": "React.createElement",
     "jsxFragmentFactory": "React.Fragment",
     "lib": [
@@ -9,7 +9,7 @@
       "dom.iterable",
       "esnext"
     ],
-    "module": "esnext",
+    "module": "ES2022",
     "moduleResolution": "node",
     "types": [
       "bun-types",
@@ -26,7 +26,11 @@
     "allowSyntheticDefaultImports": true,
     "noFallthroughCasesInSwitch": true,
     "isolatedModules": true,
+    "jsxImportSource": "react",
     "noEmit": true
+  },
+  "paths": {
+    "react": [ "./node_modules/@types/react" ]
   },
   "include": [
     "**/*.ts",

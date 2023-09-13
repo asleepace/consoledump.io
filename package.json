@@ -1,11 +1,12 @@
 {
   "name": "consoledump.io",
   "version": "1.0.50",
+  "module": "src/react/index.tsx",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "bun run --watch index.tsx",
+    "dev": "bun run --watch ./index.tsx",
     "build": "bun build",
-    "start": "bun run src/index.tsx",
+    "start": "bun run ./index.tsx",
     "build:react": "bun build --outfile ./public/bundle.js ./src/react/index.tsx"
   },
   "dependencies": {
@@ -13,20 +14,18 @@
     "@elysiajs/html": "^0.6.4",
     "@elysiajs/static": "^0.6.0",
     "elysia": "latest",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
+    "react": "*",
+    "react-dom": "*",
+    "react-jsx": "^1.0.0",
     "sass": "^1.66.1",
     "web-vitals": "^3.4.0"
   },
   "devDependencies": {
-    "@types/react": "^18.0.15",
-    "@types/react-dom": "^18.0.6",
-    "react-refresh": "0.10.0",
-    "react-scripts": "^4.0.1",
+    "@types/react": "*",
+    "@types/react-dom": "*",
     "typescript": "^5.2.2",
     "bun-types": "latest"
   },
-  "module": "src/index.js",
   "browserslist": {
     "production": [
       ">0.2%",

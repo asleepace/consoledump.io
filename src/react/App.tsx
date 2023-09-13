@@ -1,8 +1,7 @@
-import * as React from 'react';
-
+import React, { useState } from 'react';
 
 export function App() {
-  const [state, setState] = React.useState(0)
+  const [state, setState] = useState(0)
   return (
     <html>
       <head>
