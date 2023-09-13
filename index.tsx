@@ -97,8 +97,8 @@ const app = new Elysia()
     return Bun.file("./src/html/homepage.html").text()
   })
   .get('/react-stream', async context => {
-    const reactElement = React.createElement(App, null)
-    const stream = await renderToReadableStream(reactElement, {
+    // const reactElement = React.createElement(App, null)
+    const stream = await renderToReadableStream(<App />, {
       bootstrapScripts: ['/public/bundle.js']
     });
     return new Response(stream, {

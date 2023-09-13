@@ -23479,17 +23479,39 @@ var React = __toESM(require_react(), 1);
 var jsx_dev_runtime = __toESM(require_jsx_dev_runtime(), 1);
 function App() {
   const [state, setState] = React.useState(0);
-  return jsx_dev_runtime.jsxDEV("div", {
+  return jsx_dev_runtime.jsxDEV("html", {
     children: [
-      jsx_dev_runtime.jsxDEV("h1", {
+      jsx_dev_runtime.jsxDEV("head", {
         children: [
-          "Hello, world ",
-          state
+          jsx_dev_runtime.jsxDEV("meta", {
+            charSet: "utf-8"
+          }, undefined, false, undefined, this),
+          jsx_dev_runtime.jsxDEV("meta", {
+            name: "viewport",
+            content: "width=device-width, initial-scale=1"
+          }, undefined, false, undefined, this),
+          jsx_dev_runtime.jsxDEV("link", {
+            rel: "stylesheet",
+            href: "/public/css/global.css"
+          }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      jsx_dev_runtime.jsxDEV("button", {
-        onClick: () => setState((s) => s + 1),
-        children: "ADD"
+      jsx_dev_runtime.jsxDEV("body", {
+        children: jsx_dev_runtime.jsxDEV("div", {
+          id: "root",
+          children: [
+            jsx_dev_runtime.jsxDEV("h1", {
+              children: [
+                "Hello, world ",
+                state
+              ]
+            }, undefined, true, undefined, this),
+            jsx_dev_runtime.jsxDEV("button", {
+              onClick: () => setState((s) => s + 1),
+              children: "ADD"
+            }, undefined, false, undefined, this)
+          ]
+        }, undefined, true, undefined, this)
       }, undefined, false, undefined, this)
     ]
   }, undefined, true, undefined, this);
@@ -23497,5 +23519,4 @@ function App() {
 
 // src/react/index.tsx
 var jsx_dev_runtime2 = __toESM(require_jsx_dev_runtime(), 1);
-var root = client.createRoot(document.getElementById("root"));
-root.render(jsx_dev_runtime2.jsxDEV(App, {}, undefined, false, undefined, this));
+client.hydrateRoot(document, jsx_dev_runtime2.jsxDEV(App, {}, undefined, false, undefined, this));
