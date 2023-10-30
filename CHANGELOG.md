@@ -1,5 +1,7 @@
 # CHANGELOG
 
+The following versions and associated changes for [consoledump.io](https://consoledump.io) are listed below.
+
 ## [Version 1.1.0](https://github.com/asleepace/consoledump.io/tree/version/1.1)
 
 *By Colin Teahan on 2020-10-30*
