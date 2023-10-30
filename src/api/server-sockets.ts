@@ -5,6 +5,7 @@ type SessionId = string
 type SocketConnections = Record<SessionId, WebSocket[]>
 
 const MAX_CONNECTIONS_PER_SESSION = 10
+const MAX_SESSION_RETRIES = 100
 const SESSION_ID_LENGTH = 12
 const CLIENT_PREFIX = '/ws/'
 
@@ -18,7 +19,7 @@ export class WebSocketConnections {
   public createSession(): SessionId {
     let loopCount = 0
     let sessionId = this.generateSessionId()
-    while (this.checkIfExists(sessionId) && loopCount++ < 100) {
+    while (this.checkIfExists(sessionId) && loopCount++ < MAX_SESSION_RETRIES) {
       sessionId = this.generateSessionId()
     }
     return sessionId
