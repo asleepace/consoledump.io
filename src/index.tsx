@@ -57,7 +57,7 @@ const app = new Elysia()
         }
       })
   })
-  // static routes go here so that they won't be overriden by the wildcard, same
+  // static routes go here so that they won't be overridden by the wildcard, same
   // goes for the websocket routes.
   .get('/create', ({ set, ip }) => {
     const sessionId = connections.createSession()
