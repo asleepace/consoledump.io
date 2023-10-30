@@ -2,6 +2,13 @@
 
 The following versions and associated changes for [consoledump.io](https://consoledump.io) are listed below.
 
+## [Version 1.2.0](https://github.com/asleepace/consoledump.io/tree/version/1.2)
+
+Adds support for automated deployments via GitHub actions and a deploy script.
+
+- Added GitHub actions workflow
+- Added `./deploy.sh` script
+
 ## [Version 1.1.0](https://github.com/asleepace/consoledump.io/tree/version/1.1)
 
 *By Colin Teahan on 2020-10-30*
