@@ -65,7 +65,7 @@ function getSession() {
   }
 }
 
-// establich websocket connection and handle various lifecycle events.
+// establish websocket connection and handle various lifecycle events.
 // returns an object which can be used to check if the connection is open.
 function connect() {
   const { session, stdin, stdout } = getSession()
