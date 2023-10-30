@@ -6,6 +6,8 @@ import { WebSocketConnections } from './api/server-sockets'
 import { cors } from '@elysiajs/cors'
 import { request } from 'http';
 
+const TEN_MINUTES = 600 // in seconds
+
 // status
 const Status = {
   OK: {
@@ -28,7 +30,9 @@ const connections = new WebSocketConnections()
 
 const app = new Elysia()
   .use(html())
-  .use(ws())
+  .use(ws({
+    idleTimeout: TEN_MINUTES,
+  }))
   .use(cors({ origin: true }))
   .use(staticPlugin())
   .state('ip', 'localhost')
