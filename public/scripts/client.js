@@ -279,7 +279,9 @@ document.addEventListener('readystatechange', state => {
 
   const jsSnippet = document.getElementById('js-snippet')
 
-  jsSnippet.innerHTML = `<span style="color:white;">fetch('${client.stdin}', {
+  const url = IS_HOMEPAGE ? 'https://consoledump.io/stdin' : client.stdin
+
+  jsSnippet.innerHTML = `<span style="color:white;">fetch('${url}', {
   method: 'POST',
   body: JSON.stringify({
     data: "hello world"
