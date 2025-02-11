@@ -1,6 +1,6 @@
 # [consoledump](https://consoledump.io).io
 
-Hosted on the same server as [asleepace.com][https://asleepace.com] at `192.241.216.26`, to connect run the following
+Hosted on the same server as [asleepace.com](https://asleepace.com) at `192.241.216.26`, to connect run the following
 
 ```bash
 # connect to remote server
