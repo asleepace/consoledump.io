@@ -1,0 +1,37 @@
+---
+import Layout from "@/layouts/Layout.astro"
+import { ConsoleContainer, type ConsoleMessage } from '@/components/client/ConsoleContainer'
+import { CodeSnippet } from '@/components/react/CodeSnippet'
+
+export const prerender = false;
+
+const { slug } = Astro.params
+
+console.log('params:', Astro.params)
+console.log('props:', Astro.props)
+
+
+const messages: ConsoleMessage[] = [
+  {
+    createdAt: new Date(),
+    message: `session started ${slug}`
+  }
+]
+
+const sessionId = slug || 'abc123'
+
+---
+<Layout>
+  <main class="flex flex-row flex-1 min-h-screen pt-17">
+    <div class="flex flex-1 flex-col basis-1/8 gap-y-6 border-white/10 border-r-1 bg-slate-850 p-8 text-white">
+      <h1 class="text-md tracking-wide font-bold text-orange-400 uppercase mx-1">How to connect</h1>
+      <p class="text-white/50 mx-1">To connect to this online terminal session simply make an HTTP request to the following url:</p>
+      <p class="bg-slate-950 rounded border-white/10 border-1 p-2 font-mono font-semibold text-green-600">{"https://consoledump.io/"}<span class="text-orange-500">{sessionId}</span></p>
+      <div class="h-[1px] bg-white/20 my-4"></div>
+      <h1 class="mx-1 tracking-wide font-semibold text-xs text-white uppercase">Example Code</h1>
+      <p class="text-white/50 mx-1">Try pasting the following into your browsers debug console and watch the logs populate the screen on the right!</p>
+      <CodeSnippet className="bg-slate-950" sessionId={sessionId} />
+    </div>
+    <ConsoleContainer sessionId={sessionId} initialMessages={messages} client:load />
+  </main>
+</Layout>

@@ -1,12 +1,9 @@
 ---
 import { NavigationButton } from "./react/NavigationButton"
 import { NavigationLogo } from "./react/NavigationLogo"
-import { IconWaveSine } from '@tabler/icons-react'
 ---
-<nav class="absolute left-0 top-0 right-0 p-4 px-48 bg-slate-950/30 border-b-1 border-b-white/10 backdrop-blur-3xl">
-
+<nav class="absolute z-50 left-0 top-0 right-0 p-4 px-48 bg-slate-950/30 border-b-1 border-b-white/10 backdrop-blur-3xl">
   <div class="flex flex-row mx-auto items-center justify-between">
-
     <NavigationLogo client:load />
     <NavigationButton title="New Session" client:load />
   </div>
