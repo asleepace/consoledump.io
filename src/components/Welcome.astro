@@ -1,0 +1,20 @@
+---
+import { Button } from "./core/button";
+import { IconCloudCode } from '@tabler/icons-react'
+---
+<main class="flex flex-col flex-1 h-full items-center pt-36">
+  <div class="flex flex-col gap-y-6 items-center">
+    <IconCloudCode className="m-8 text-white/30" size={128} client:load />
+    <p class="text-blue-500 font-bold uppercase">Free Developer tools</p>
+    <h1 class="text-5xl text-white/90 font-black">
+      Online <span class="text-orange-400 underline">Debugging</span> Made Simple.
+    </h1>
+    <h1 class="text-3xl text-white/60 text-center">
+      Pipe your logs from anywhere and view them here!
+    </h1>
+    <div class="flex flex-row gap-x-4 pt-8">
+      <Button className="border-1 border-blue-200/10 bg-blue-500 shadow-2xl" client:load>Create New Session</Button>
+      <Button className="border-1 border-white/10 bg-gray-900 shadow-2xl" client:load>Read Documentaion</Button>
+    </div>
+  </div>
+</main>

@@ -1,0 +1,52 @@
+{
+  "files.associations": {
+    "*.css": "tailwindcss"
+  },
+  "editor.quickSuggestions": {
+    "strings": true
+  },
+  "editor.formatOnSaveMode": "file",
+  // "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  "typescript.format.semicolons": "remove",
+  "prettier.singleQuote": true,
+  "prettier.semi": false,
+  "editor.formatOnSave": true,
+  "cSpell.ignoreWords": [
+    "Astro",
+    "Codespaces",
+    "Elysia",
+    "asleepace",
+    "astrojs",
+    "bunx",
+    "changefreq",
+    "classNames",
+    "consts",
+    "elysiajs",
+    "frontmatter",
+    "htmx",
+    "lastmod",
+    "mkdir",
+    "outdir",
+    "preact",
+    "rgb",
+    "rgba",
+    "rngs",
+    "tailwindcss",
+    "tsconfigs"
+  ],
+  "cSpell.words": [
+    "Ballin",
+    "beara",
+    "bidi",
+    "clsx",
+    "extar",
+    "grayscale",
+    "KHTML",
+    "lucide",
+    "mailgod",
+    "nowrap",
+    "Segoe",
+    "smushed"
+  ]
+}
