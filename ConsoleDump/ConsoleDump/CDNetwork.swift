@@ -4,18 +4,23 @@
 //
 //  Created by Colin Teahan on 5/19/24.
 //
+//  Test incomming connections:
+//
+//  echo “Hello World” | nc -u -w1 localhost 4000
+//
 
 import Foundation
 import Network
 
 class CDNetwork {
-  
+    
   var udpListener:NWListener?
   var backgroundQueueUdpListener   = DispatchQueue(label: "udp-lis.bg.queue", attributes: [])
   var backgroundQueueUdpConnection = DispatchQueue(label: "udp-con.bg.queue", attributes: [])
-
   var connections = [NWConnection]()
   
+  var onMessage: ((_ message: String) -> Void)? = nil
+    
   init() {
     print("[cd] initializing!")
     self.udpListener = try! NWListener(using: .udp, on: 4000)
@@ -66,6 +71,7 @@ class CDNetwork {
         if let string = String(data: data, encoding: .utf8) {
           print("- + - + - + - + - + - + - + - + - + - + - + - +")
           print(string)
+          self.onMessage?(string)
         }
       }
       print ("[cd] isComplete: \(isComplete)")

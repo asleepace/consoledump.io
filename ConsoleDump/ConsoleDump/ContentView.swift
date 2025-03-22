@@ -8,17 +8,18 @@
 import SwiftUI
 
 struct ContentView: View {
-    var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
-        }
-        .padding()
+  
+  @Binding var messages: [CDMessage]
+  
+  func onAppear() {
+    print("[ContentView] onAppear!")
+  }
+  
+  var body: some View {
+    VStack {
+      List(messages, id: \.uniqueId) { msg in
+        Text(msg.text)
+      }
     }
-}
-
-#Preview {
-    ContentView()
+  }
 }

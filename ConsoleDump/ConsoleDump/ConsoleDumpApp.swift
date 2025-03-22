@@ -10,11 +10,21 @@ import SwiftUI
 @main
 struct ConsoleDumpApp: App {
   
-  let network = CDNetwork()
+  @State var messages: [CDMessage] = []
+  
+  var network = CDNetwork()
+  
+  func onMessage(_ message: String) {
+    print("[ConsoleDumpApp] onMessage: \(message)")
+    messages.append(CDMessage(text: message))
+  }
   
   var body: some Scene {
     WindowGroup {
-        ContentView()
+        ContentView(messages: $messages)
+        .onAppear(perform: {
+          network.onMessage = self.onMessage(_:)
+        })
     }
   }
 }

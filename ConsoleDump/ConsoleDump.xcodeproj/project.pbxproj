@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		264640932BFAEAF900FBCEC7 /* CDMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 264640922BFAEAF900FBCEC7 /* CDMessage.swift */; };
 		26DBE0642BFA606D003D4C5C /* ConsoleDumpApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26DBE0632BFA606D003D4C5C /* ConsoleDumpApp.swift */; };
 		26DBE0662BFA606D003D4C5C /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26DBE0652BFA606D003D4C5C /* ContentView.swift */; };
 		26DBE0682BFA606E003D4C5C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 26DBE0672BFA606E003D4C5C /* Assets.xcassets */; };
@@ -15,6 +16,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		264640922BFAEAF900FBCEC7 /* CDMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CDMessage.swift; sourceTree = "<group>"; };
 		26DBE0602BFA606D003D4C5C /* ConsoleDump.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ConsoleDump.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		26DBE0632BFA606D003D4C5C /* ConsoleDumpApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConsoleDumpApp.swift; sourceTree = "<group>"; };
 		26DBE0652BFA606D003D4C5C /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -57,6 +59,7 @@
 				26DBE0632BFA606D003D4C5C /* ConsoleDumpApp.swift */,
 				26DBE0652BFA606D003D4C5C /* ContentView.swift */,
 				26DBE0722BFA60EF003D4C5C /* CDNetwork.swift */,
+				264640922BFAEAF900FBCEC7 /* CDMessage.swift */,
 				26DBE0672BFA606E003D4C5C /* Assets.xcassets */,
 				26DBE0692BFA606E003D4C5C /* ConsoleDump.entitlements */,
 				26DBE06A2BFA606E003D4C5C /* Preview Content */,
@@ -144,6 +147,7 @@
 			files = (
 				26DBE0662BFA606D003D4C5C /* ContentView.swift in Sources */,
 				26DBE0642BFA606D003D4C5C /* ConsoleDumpApp.swift in Sources */,
+				264640932BFAEAF900FBCEC7 /* CDMessage.swift in Sources */,
 				26DBE0732BFA60EF003D4C5C /* CDNetwork.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
