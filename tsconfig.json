@@ -1,10 +1,11 @@
 {
   "extends": "astro/tsconfigs/strict",
   "include": [".astro/types.d.ts", "**/*"],
-  "exclude": ["dist"],
+  "exclude": ["dist", ".github", "node_modules"],
+  "content": ["src/**/*.{js,jsx,ts,tsx,astro}"],
   "compilerOptions": {
+    "target": "ESNext",
     "module": "ESNext",
-    "moduleResolution": "bundler",
     "jsx": "react-jsx",
     "jsxImportSource": "react",
     "baseUrl": ".",

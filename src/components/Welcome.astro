@@ -1,7 +1,23 @@
 ---
 import { Button } from "./core/button";
 import { IconCloudCode } from '@tabler/icons-react'
-import BackgroundParticles from './BakcgroundParticles.astro'
+
+const allowedCharacters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+const totalLength = allowedCharacters.length;
+
+const randChar = () => {
+  const index = Math.floor((totalLength + 1) * Math.random())
+  return allowedCharacters.at(index)
+}
+
+function newSession() {
+  const sessionId = Array(6).fill(0).map(() => randChar())
+  console.log('[welcome] created sessionId: ', sessionId)
+  return `/${sessionId}`
+}
+
+const randomSessionId = newSession()
+
 ---
 <div class="h-screen w-full overflow-hidden">
   <main class="flex flex-col z-10 flex-1 h-full absolute inset-0 items-center py-40">
@@ -15,8 +31,12 @@ import BackgroundParticles from './BakcgroundParticles.astro'
         Pipe your logs from anywhere and view them here!
       </h1>
       <div class="flex flex-row gap-x-4 pt-8">
-        <Button className="border-1 border-blue-200/10 bg-blue-500 shadow-2xl" client:load>Create New Session</Button>
-        <Button className="border-1 border-white/10 bg-gray-900 shadow-2xl" client:load>Read Documentaion</Button>
+        <a href={randomSessionId}>
+          <Button className="border-1 border-blue-200/10 bg-blue-500 shadow-2xl" client:load>Create New Session</Button>
+        </a>
+        <a href="/docs">
+          <Button className="border-1 border-white/10 bg-gray-900 shadow-2xl" client:load>Read Documentaion</Button>
+        </a>
       </div>
     </div>
   </main>

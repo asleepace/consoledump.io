@@ -22,15 +22,17 @@ const sessionId = slug || 'abc123'
 
 ---
 <Layout>
-  <main class="flex flex-row flex-1 min-h-screen pt-17">
-    <div class="flex flex-1 flex-col basis-1/8 gap-y-6 border-white/10 border-r-1 bg-slate-850 p-8 text-white">
-      <h1 class="text-md tracking-wide font-bold text-orange-400 uppercase mx-1">How to connect</h1>
-      <p class="text-white/50 mx-1">To connect to this online terminal session simply make an HTTP request to the following url:</p>
-      <p class="bg-slate-950 rounded border-white/10 border-1 p-2 font-mono font-semibold text-green-600">{"https://consoledump.io/"}<span class="text-orange-500">{sessionId}</span></p>
-      <div class="h-[1px] bg-white/20 my-4"></div>
-      <h1 class="mx-1 tracking-wide font-semibold text-xs text-white uppercase">Example Code</h1>
-      <p class="text-white/50 mx-1">Try pasting the following into your browsers debug console and watch the logs populate the screen on the right!</p>
-      <CodeSnippet className="bg-slate-950" sessionId={sessionId} />
+  <main class="flex flex-row flex-1 max-h-screen">
+    <div class="flex flex-1 flex-col min-w-sm gap-y-6 border-slate-800 border-r-1 bg-slate-850 p-8 text-white">
+      <h1 class="text-4xl font-black text-white"><span class="text-gray-700">{`ID #`}</span><span class="text-orange-400 ml-2">{sessionId}</span></h1>
+      <div class="h-[1px] bg-slate-800 my-4"></div>
+      <h1 class="mx-1 tracking-wider font-bold text-xs text-white/80 uppercase">HTTP Endpoint</h1>
+      <p class="text-white/50 tracking-wide mx-1">To connect to this online terminal session simply make an HTTP request to the following url:</p>
+      <p class="bg-slate-950 rounded-lg border-slate-800 border-1 p-2 font-mono font-semibold text-blue-500">{"https://consoledump.io/"}<span class="text-blue-400">{sessionId}</span></p>
+      <div class="h-[1px] bg-slate-800 my-4"></div>
+      <h1 class="mx-1 tracking-wider font-bold text-xs text-white/80 uppercase">Example Code</h1>
+      <p class="text-white/50 mx-1 tracking-wide">Try pasting the following into your browsers debug console and watch the logs populate the screen on the right!</p>
+      <CodeSnippet className="bg-slate-950 border-slate-800 rounded-lg" sessionId={sessionId} />
     </div>
     <ConsoleContainer sessionId={sessionId} initialMessages={messages} client:load />
   </main>

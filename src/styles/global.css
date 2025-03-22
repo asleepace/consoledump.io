@@ -3,14 +3,6 @@
 
 @custom-variant dark (&:is(.dark *));
 
-@font-face {
-  font-family: 'Inter';
-  src: url('/fonts/Inter-VariableFont_opsz,wght.ttf');
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-
 :root {
   --radius: 0.625rem;
   --background: oklch(1 0 0);
@@ -118,11 +110,6 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
-@theme {
-  /* my custom themes */
-  --font-display: 'Inter', 'Noto San', 'sans-serif';
-}
-
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -132,25 +119,19 @@
   }
 }
 
-/* Alternative with dotted grid pattern (uncomment to use) */
 html,
 body {
-  font-family: 'Inter';
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
   overscroll-behavior: none;
-  /* background-color: #010101; */
-  /* background-image: 
-    radial-gradient(
-      rgba(255, 255, 255, 0.1) 1px, 
-      transparent 1px
-    ); */
-  /* background-size: 30px 30px; */
+  line-height: 1.5;
   min-height: 100vh;
   width: 100%;
   margin: 0;
   padding: 0;
 }
 
-/* Optional: Add a slight glow to the grid lines */
-.grid-glow {
-  box-shadow: 0 0 20px rgba(255, 255, 255, 0.05);
+* {
+  scrollbar-width: thin; /* thin, auto, none */
+  scrollbar-color: oklch(0.208 0.042 265.755) oklch(0.129 0.042 264.695); /* thumb and track color */
 }
