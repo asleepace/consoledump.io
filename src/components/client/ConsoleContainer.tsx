@@ -18,7 +18,7 @@ export function ConsoleContainer({
   const { messages } = useConsoleDump(sessionId)
 
   return (
-    <div className="w-full flex flex-col flex-1 border-1 basis-1/2 border-white/10 pt-2 overflow-x-hidden bg-slate-950 overflow-y-auto">
+    <div className="w-full max-h-screen flex flex-col flex-1 border-1 basis-1/2 border-white/10 pt-2 overflow-x-hidden bg-slate-950 overflow-y-auto">
       {messages.map((msg, index) => {
         return (
           <div
