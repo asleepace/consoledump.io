@@ -50,8 +50,9 @@ export const POST: APIRoute = async (context) => {
 
   const pipeToStream = subscriptions.get(sessionId)
 
-  if (!pipeToStream)
+  if (!pipeToStream) {
     return Response.json({ error: 'Stream not found!' }, { status: 404 })
+  }
 
   const text = await context.request.text()
   pipeToStream(text)

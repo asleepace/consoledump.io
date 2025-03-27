@@ -11,7 +11,7 @@ const randChar = () => {
 }
 
 function newSession() {
-  const sessionId = Array(6).fill(0).map(() => randChar())
+  const sessionId = Array(6).fill(0).map(() => randChar()).join("")
   console.log('[welcome] created sessionId: ', sessionId)
   return `/${sessionId}`
 }

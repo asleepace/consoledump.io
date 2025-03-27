@@ -1,11 +1,12 @@
 import { cn } from '@/lib/utils'
 
 type Props = {
+  endpoint: string
   className?: string
   sessionId: string
 }
 
-export function CodeSnippet({ sessionId, className }: Props) {
+export function CodeSnippet({ sessionId, className, endpoint }: Props) {
   return (
     <div
       className={cn(
@@ -14,11 +15,11 @@ export function CodeSnippet({ sessionId, className }: Props) {
       )}
     >
       <span className="text-blue-500">{'fetch('}</span>
-      <span className="text-green-500">{`"https://consoledump.io/${sessionId}"`}</span>
+      <span className="text-green-500">{`"${endpoint}${sessionId}"`}</span>
       <span className="text-gray-500">{', {'}</span>
       <br />
       <span className="text-white/95 ml-4">{'method: '}</span>
-      <span className="text-orange-500">{"'POST'"}</span>
+      <span className="text-orange-500">{'"POST"'}</span>
       <span className="text-gray-500">{','}</span>
       <br />
       <span className="text-white/95 ml-4">{'body: '}</span>

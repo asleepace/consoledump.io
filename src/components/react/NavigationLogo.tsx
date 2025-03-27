@@ -7,7 +7,7 @@ export function NavigationLogo() {
       onClick={() => (window.location.href = '/')}
     >
       <IconWaveSine size={24} color="white" />
-      <p className='text-white text-lg font-semibold'>Console Dump</p>
+      <p className='text-white text-md font-black tracking-tight uppercase'>Console<span className='text-orange-500'>Dump</span></p>
     </div>
   )
 }

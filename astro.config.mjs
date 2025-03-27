@@ -15,6 +15,9 @@ export default defineConfig({
   security: {
     checkOrigin: false,
   },
+  server: {
+    cors: false,
+  },
   build: {
     inlineStylesheets: 'never',
   },
