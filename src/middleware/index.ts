@@ -1,4 +1,4 @@
-import { defineMiddleware } from 'astro:middleware'
+import { defineMiddleware } from "astro:middleware"
 
 /**
  *  ## Middleware
@@ -9,12 +9,8 @@ import { defineMiddleware } from 'astro:middleware'
 export const onRequest = defineMiddleware((context, next) => {
   const url = new URL(context.request.url)
   const method = context.request.method
-  console.log(`[${method}] onRequest:`, url.pathname)
-
   const path = url.pathname
-
   context.locals.sessions ??= new Map()
   context.locals.sessions.set(path, {})
-
   return next()
 })

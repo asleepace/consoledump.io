@@ -1,5 +1,7 @@
-import { useState } from 'react'
-import { useConsoleDump } from './useConsoleDump'
+import { useState } from "react"
+import { useConsoleDump } from "../../hooks/useConsoleDump"
+import { useDataStream } from "@/hooks/useDataStream"
+import clsx from "clsx"
 
 export type ConsoleMessage = {
   createdAt: Date
@@ -15,10 +17,19 @@ export function ConsoleContainer({
   sessionId,
   initialMessages = [],
 }: ConsoleContainerProps) {
-  const { messages } = useConsoleDump(sessionId)
+  // const { messages } = useConsoleDump(sessionId)
+
+  const { isConnected, messages } = useDataStream(sessionId)
 
   return (
-    <div className="w-full max-h-screen flex flex-col flex-1 basis-1/2 pt-2 overflow-x-hidden bg-slate-950 overflow-y-auto">
+    <div
+      className={clsx(
+        "w-full max-h-screen flex flex-col flex-1 basis-1/2 pt-2 overflow-x-hidden bg-slate-950 overflow-y-auto",
+        {
+          "border-1 border-green-400": !isConnected,
+        }
+      )}
+    >
       {messages.map((msg, index) => {
         return (
           <div
@@ -26,8 +37,8 @@ export function ConsoleContainer({
             key={String(`message-${index}`)}
           >
             <p className="text-white/40 text-sm">
-              {msg.createdAt.toLocaleString('en-US', {
-                timeStyle: 'medium',
+              {msg.createdAt.toLocaleString("en-US", {
+                timeStyle: "medium",
               })}
             </p>
             <p>{msg.message}</p>

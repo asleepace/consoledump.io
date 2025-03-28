@@ -26,17 +26,17 @@ const endpoint = isDev ? 'http://localhost:4321/' : 'https://consoledump.io/'
 ---
 <Layout>
   <main class="flex flex-row flex-1 max-h-screen">
-    <div class="flex flex-1 flex-col min-w-sm gap-y-6 border-slate-800 border-r-1 bg-indigo-950 p-8 text-white">
+    <div aria-label="side-panel" class="flex flex-1 flex-col min-w-sm max-w-md gap-y-6 h-full border-slate-800 border-r-1 bg-slate-900 p-8 text-white overflow-auto">
       <h1 class="text-4xl font-black text-white"><span class="text-gray-700">{`ID #`}</span><span class="text-orange-400 ml-2">{sessionId}</span></h1>
       <div class="h-[1px] bg-slate-800 my-4"></div>
       <h1 class="mx-1 tracking-wider font-bold text-xs text-white/80 uppercase">HTTP Endpoint</h1>
       <p class="text-white/50 tracking-wide mx-1">To connect to this online terminal session simply make an HTTP request to the following url:</p>
-      <p class="bg-slate-950 rounded-lg border-slate-800 border-1 p-2 font-mono font-semibold text-blue-500">{endpoint}<span class="text-blue-400">{sessionId}</span></p>
+      <p class="bg-slate-950 overflow-x-auto rounded-lg border-slate-800 border-1 p-2 font-mono font-semibold text-blue-500">{endpoint}<span class="text-blue-400">{sessionId}</span></p>
       <div class="h-[1px] bg-slate-800 my-4"></div>
       <h1 class="mx-1 tracking-wider font-bold text-xs text-white/80 uppercase">Example Code</h1>
       <p class="text-white/50 mx-1 tracking-wide">Try pasting the following into your browsers debug console and watch the logs populate the screen on the right!</p>
-      <CodeSnippet endpoint={endpoint} sessionId={sessionId} className="bg-slate-950 border-slate-800 rounded-lg" />
+      <CodeSnippet endpoint={endpoint} sessionId={sessionId} className="bg-slate-950 border-slate-800 rounded-lg" client:only="react" />
     </div>
-    <ConsoleContainer sessionId={sessionId} initialMessages={messages} client:load />
+    <ConsoleContainer sessionId={sessionId} initialMessages={messages} client:only="react" />
   </main>
 </Layout>
