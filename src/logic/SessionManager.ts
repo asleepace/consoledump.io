@@ -46,6 +46,10 @@ export class SessionManager {
     return session
   }
 
+  /**
+   * POST a message to all event stream subscribers.
+   * @param request
+   */
   public async post(request: Request) {
     const session = this.get(request)
     const data = await request.text()
@@ -54,10 +58,11 @@ export class SessionManager {
 
   /**
    * Adds a subscription for the session.
+   * @param request
    */
   public stream(request: Request): ReadableStream {
     const { sessionId, tabId } = getIds(request)
-    console.log('[manager] stream:', { sessionId, tabId })
+    console.log("[manager] stream:", { sessionId, tabId })
 
     if (!sessionId || !tabId) {
       throw new Error("Missing sessionId or tabId!")
@@ -75,15 +80,19 @@ export class SessionManager {
     // create readable stream
     return new ReadableStream({
       start(controller) {
+        // add the controller to the session subscriptions
         console.log("[manager] stream started:", tabId)
         session.subscribe(tabId, (encoded) => {
           controller.enqueue(encoded)
         })
+
+        // register an abort signal
         request.signal.onabort = () => {
           console.log("[manager] stream aborted:", tabId)
           this.cancel?.("aborted")
         }
 
+        // send first message
         session.broadcast(`client connected: ${tabId}`)
       },
       cancel() {
