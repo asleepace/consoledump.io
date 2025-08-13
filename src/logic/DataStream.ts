@@ -47,6 +47,7 @@ export class DataStream {
       this.handleStart(e)
     }
     this.eventSource.onerror = (e) => {
+      console.log("[DataStream] on error!")
       this.handleError(e)
     }
     this.eventSource.onmessage = (e) => {

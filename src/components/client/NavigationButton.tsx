@@ -1,5 +1,5 @@
-import { Button } from '@/components/core/button'
-import { IconPlus, IconWaveSine } from '@tabler/icons-react'
+import { Button } from "@/components/ui/button"
+import { IconPlus, IconWaveSine } from "@tabler/icons-react"
 
 type IconProps = typeof IconPlus
 

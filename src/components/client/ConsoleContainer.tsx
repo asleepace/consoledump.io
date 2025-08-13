@@ -17,8 +17,6 @@ export function ConsoleContainer({
   sessionId,
   initialMessages = [],
 }: ConsoleContainerProps) {
-  // const { messages } = useConsoleDump(sessionId)
-
   const { isConnected, messages } = useDataStream(sessionId)
 
   return (
