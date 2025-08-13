@@ -18,7 +18,7 @@ export function useConsoleDump(sessionId: string) {
   useEffect(() => {
     if (!tabId) return
 
-    const sessionWithTabId = `/${sessionId}?stream=${tabId}`
+    const sessionWithTabId = `/api/${sessionId}?stream=${tabId}`
     addMessage(`connecting to ${sessionWithTabId}`)
 
     const eventSource = new EventSource(sessionWithTabId)

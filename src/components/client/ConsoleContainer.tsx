@@ -1,5 +1,3 @@
-import { useState } from "react"
-import { useConsoleDump } from "../../hooks/useConsoleDump"
 import { useDataStream } from "@/hooks/useDataStream"
 import clsx from "clsx"
 

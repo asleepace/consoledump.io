@@ -1,7 +1,7 @@
 {
   "name": "consoledump",
   "type": "module",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "scripts": {
     "dev": "bunx --bun astro dev",
     "build": "bunx --bun astro build",
@@ -27,5 +27,8 @@
     "tailwindcss": "^4.0.17",
     "tw-animate-css": "^1.2.4",
     "typescript": "^5.8.2"
+  },
+  "devDependencies": {
+    "@astrojs/sitemap": "^3.4.2"
   }
 }

@@ -10,7 +10,8 @@ const toMessage = (data: string): ConsoleMessage => ({
 
 /**
  * Hook which connects to a remote data stream for events.
- * @param sessionId
+ *
+ * @param {String} sessionId - id of the session.
  */
 export function useDataStream(sessionId: string) {
   const [messages, setMessages] = useState<ConsoleMessage[]>([])

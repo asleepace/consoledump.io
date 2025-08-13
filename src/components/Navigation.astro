@@ -1,16 +1,21 @@
 ---
 import { NavigationButton } from "@/components/client/NavigationButton"
-import { IconWaveSine } from "@tabler/icons-react";
+import { IconWaveSine } from "@tabler/icons-react"
 ---
+
 <nav class="py-2 px-4 min-h-12 bg-slate-900 border-b-1 border-b-slate-800">
   <!-- navigation bar title & logo -->
   <div class="flex flex-row mx-auto items-center justify-between">
     <div class="flex flex-row items-center px-4 gap-x-2 justify-between">
-      <IconWaveSine size={24} color="white" client:only="react" />
-      <p class='text-white text-md font-black tracking-tight uppercase'>Console<span class='text-orange-500'>Dump</span></p>
+      <div class="w-6 aspect-square">
+        <IconWaveSine size={24} color="white" />
+      </div>
+      <p class="text-white text-md font-black tracking-tight uppercase">
+        Console<span class="text-orange-500">Dump</span>
+      </p>
     </div>
 
     <!-- nav bar buttons -->
-    <NavigationButton title="New Session" client:only="react" />
+    <NavigationButton title="New Session" />
   </div>
 </nav>
