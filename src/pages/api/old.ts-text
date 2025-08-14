@@ -5,7 +5,7 @@ export const prerender = false
 const subscriptions = new Map<string, (data: string) => void>()
 
 /**
- * Handle POST messages to this route.
+ * Handle messages to this route.
  */
 export const GET: APIRoute = async (context) => {
   const url = new URL(context.request.url)

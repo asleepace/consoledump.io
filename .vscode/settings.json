@@ -1,5 +1,8 @@
 {
   "editor.gotoLocation.multipleDefinitions": "goto",
   "editor.formatOnSave": true,
-  "prettier.semi": false
+  "prettier.semi": false,
+  "prettier.tabWidth": 2,
+  "prettier.enable": true,
+  "prettier.singleQuote": true
 }

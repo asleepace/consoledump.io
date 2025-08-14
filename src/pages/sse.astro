@@ -1,0 +1,274 @@
+---
+// Astro component for demonstrating the client
+
+export const prerender = false
+
+console.log('[sse] rendering:', Astro.url)
+---
+
+<div
+  id="duplex-demo"
+  class="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-lg"
+>
+  <h1 class="text-3xl font-bold mb-8 text-gray-800">DuplexStream Demo</h1>
+
+  <!-- Connection Status -->
+  <div class="mb-6 p-4 bg-gray-50 rounded-lg">
+    <h2 class="text-xl font-semibold mb-4">Connection</h2>
+    <div class="flex items-center gap-4 mb-4">
+      <div class="flex items-center gap-2">
+        <div id="status-indicator" class="w-3 h-3 rounded-full bg-red-500">
+        </div>
+        <span id="status-text" class="text-sm font-medium">Disconnected</span>
+      </div>
+      <span id="stream-id" class="text-xs text-gray-500 font-mono"></span>
+    </div>
+
+    <div class="flex gap-2">
+      <button
+        id="connect-btn"
+        class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+      >
+        Connect
+      </button>
+      <button
+        id="disconnect-btn"
+        class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
+        disabled
+      >
+        Disconnect
+      </button>
+      <button
+        id="status-btn"
+        class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+      >
+        Show Status
+      </button>
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="mb-6 p-4 bg-gray-50 rounded-lg">
+    <h2 class="text-xl font-semibold mb-4">Quick Actions</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <button
+        id="fetch-posts-btn"
+        class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+        disabled
+      >
+        Fetch Posts (1-3)
+      </button>
+      <button
+        id="fetch-users-btn"
+        class="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50"
+        disabled
+      >
+        Fetch Users (1-5)
+      </button>
+      <button
+        id="fetch-mixed-btn"
+        class="px-4 py-2 bg-orange-600 text-white rounded hover:bg-orange-700 disabled:opacity-50"
+        disabled
+      >
+        Mixed APIs
+      </button>
+    </div>
+  </div>
+
+  <!-- Task Status -->
+  <div class="mb-6 p-4 bg-gray-50 rounded-lg">
+    <h2 class="text-xl font-semibold mb-4">Tasks</h2>
+    <div id="task-stats" class="grid grid-cols-4 gap-4 mb-4 text-center">
+      <div class="p-2 bg-blue-100 rounded">
+        <div class="text-lg font-bold text-blue-800" id="active-tasks">0</div>
+        <div class="text-sm text-blue-600">Active</div>
+      </div>
+      <div class="p-2 bg-green-100 rounded">
+        <div class="text-lg font-bold text-green-800" id="completed-tasks">
+          0
+        </div>
+        <div class="text-sm text-green-600">Completed</div>
+      </div>
+      <div class="p-2 bg-red-100 rounded">
+        <div class="text-lg font-bold text-red-800" id="error-tasks">0</div>
+        <div class="text-sm text-red-600">Errors</div>
+      </div>
+      <div class="p-2 bg-gray-100 rounded">
+        <div class="text-lg font-bold text-gray-800" id="total-tasks">0</div>
+        <div class="text-sm text-gray-600">Total</div>
+      </div>
+    </div>
+    <button
+      id="clear-tasks-btn"
+      class="px-3 py-1 text-sm bg-gray-500 text-white rounded hover:bg-gray-600"
+    >
+      Clear Tasks
+    </button>
+  </div>
+
+  <!-- Events Log -->
+  <div class="mb-6">
+    <div class="flex justify-between items-center mb-2">
+      <h2 class="text-xl font-semibold">Events</h2>
+      <div class="flex gap-2">
+        <button
+          id="clear-log-btn"
+          class="px-3 py-1 text-sm bg-gray-500 text-white rounded hover:bg-gray-600"
+        >
+          Clear Log
+        </button>
+        <label class="flex items-center gap-2 text-sm">
+          <input type="checkbox" id="auto-scroll-checkbox" checked />
+          Auto-scroll
+        </label>
+      </div>
+    </div>
+    <div
+      id="events-log"
+      class="h-64 overflow-y-auto border border-gray-300 rounded p-3 bg-gray-50 font-mono text-sm"
+    >
+      <!-- Events will appear here -->
+    </div>
+  </div>
+</div>
+
+<script>
+  type SSEventOpen = {
+    type: 'open'
+    data: { streamId: string }
+  }
+
+  type SSEventClose = {
+    type: 'close'
+    data: undefined
+  }
+
+  type SSEventError = {
+    type: 'error'
+    data: Error | undefined
+  }
+
+  type SSEventData = {
+    type: 'data'
+    data: string
+  }
+
+  type SSEvent = SSEventOpen | SSEventClose | SSEventError | SSEventData
+  type SSEventType = SSEvent['type']
+  type SSEDataType<K extends SSEventType> = Extract<
+    SSEvent,
+    { type: K }
+  >['data']
+
+  class SSEClientStream {
+    static async initializeConnection() {
+      const response = await fetch('/api/sse', {
+        method: 'HEAD',
+      })
+      console.log('[SSEClientSream] HEAD response:', response)
+      const streamId = response.headers.get('X-Stream-ID')
+      console.log('[SSEClientSream] HEAD streamId:', streamId)
+      if (!response.ok || !streamId) {
+        throw new Error('Failed to connect to stream!')
+      }
+      return new SSEClientStream(streamId)
+    }
+
+    public readonly eventSource: EventSource | undefined
+    public isConnected: boolean = false
+    public handlers = new Map<SSEvent['type'], any[]>()
+
+    constructor(public streamId: string) {
+      console.log('[Client] streamId:', streamId)
+
+      if (!streamId) throw new Error('Missing or invalid stream id!')
+
+      const url = new URL('/api/sse', window.location.origin)
+      url.searchParams.set('streamId', streamId)
+
+      console.log('[Client] endpoint:', url.href)
+
+      this.eventSource = new EventSource(url)
+      this.eventSource.onopen = () => {
+        this.isConnected = true
+        this.handleEvent({ type: 'open', data: { streamId } })
+      }
+      this.eventSource.onerror = (ev) => {
+        this.isConnected = false
+        this.handleEvent({
+          type: 'error',
+          data: new Error('Event source error!'),
+        })
+      }
+      this.eventSource.onmessage = (ev) => {
+        this.handleEvent({
+          type: 'data',
+          data: ev.data,
+        })
+      }
+    }
+
+    private handleEvent<T extends SSEvent>(event: T) {
+      const handlers = this.handlers.get(event.type) ?? []
+      handlers.forEach((handler) => {
+        handler(event)
+      })
+    }
+
+    on<T extends SSEventType>(
+      type: T,
+      handler: (data: SSEDataType<T>) => Promise<void> | void
+    ): this {
+      const prev = this.handlers.get(type) ?? []
+      const next = [...prev, handler] as any
+      this.handlers.set(type, next)
+      return this
+    }
+  }
+
+  async function initialize() {
+    const stream = await SSEClientStream.initializeConnection()
+    const output = document.getElementById('events-log')
+
+    stream.on('open', ({ streamId }) => {
+      console.log('[client] opened:', streamId)
+    })
+
+    stream.on('error', (data) => {
+      console.warn('[client] error:', data)
+    })
+
+    stream.on('data', (data) => {
+      console.log('[client] data:', data)
+      const item = document.createElement('div')
+      item.setAttribute(
+        'style',
+        'flex flex-row items-center justify-start font-mono'
+      )
+      item.textContent = data
+      output?.appendChild(item)
+    })
+  }
+
+  initialize().catch(console.warn)
+</script>
+
+<style>
+  #events-log::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  #events-log::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+  }
+
+  #events-log::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+  }
+
+  #events-log::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+  }
+</style>

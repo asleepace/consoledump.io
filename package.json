@@ -27,7 +27,7 @@
     "tailwind-merge": "^3.0.2",
     "tailwindcss": "^4.0.17",
     "tw-animate-css": "^1.2.4",
-    "typescript": "^5.8.2"
+    "typescript": "^5.9.2"
   },
   "devDependencies": {
     "@astrojs/sitemap": "^3.4.2"
