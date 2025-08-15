@@ -72,14 +72,7 @@ export const POST: APIRoute = ({ request }) => {
   const stream = Streams.manager.getStreamFor(request)
   const taskId = crypto.randomUUID()
 
-  stream.addTask({
-    taskId,
-    eventPrefix: 'POST',
-    work: async () => {
-      if (!request.body) throw new Error('Missing body stream!')
-      return request.body
-    },
-  })
+  stream.pipeRequest(request)
 
   return Response.json({ taskId })
 }

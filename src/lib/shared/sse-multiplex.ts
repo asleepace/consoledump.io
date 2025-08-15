@@ -52,6 +52,8 @@ export class MultiplexStream {
   // instance properties
 
   private readonly reader: ReadableStream
+  private writer: WritableStream | undefined
+
   readonly streamId: string
 
   private tasks: StreamTaskChunk[] = [new GloablEvents()]
@@ -62,10 +64,19 @@ export class MultiplexStream {
   constructor(streamId: string) {
     this.streamId = streamId
     this.reader = new ReadableStream<Uint8Array>({
-      start: () => {
+      start: (controller) => {
         console.log('[sse-multiplex] start...')
         this.isOpened = true
         this.sendEvent({ data: { streamId } })
+        let writeId = 0
+        this.writer = new WritableStream({
+          write: (chunk) => {
+            const data = JSON.parse(new TextDecoder().decode(chunk))
+            console.log('[sse-multiplex] writeable chunk:', chunk)
+            const text = this.text.encode(`id: ${++writeId}\ndata: ${data}\n\n`)
+            controller.enqueue(text)
+          },
+        })
       },
       pull: (controller) => {
         console.log('[sse-multiplex] pull:', this.tasks)
@@ -112,6 +123,23 @@ export class MultiplexStream {
 
   public getTask(taskId: string) {
     return this.tasks.find((task) => task.id === taskId)
+  }
+
+  public async pipeRequest(request: Request) {
+    try {
+      if (!request.body) throw new Error('Missing request body!')
+      if (!this.writer) throw new Error('Missing writer')
+      await request.body.pipeTo(this.writer, {
+        preventAbort: true,
+        preventCancel: true,
+        preventClose: true,
+      })
+      await request.body.cancel()
+    } catch (e) {
+      console.warn('[sse-multiplex] error:', e)
+    } finally {
+      await request.body?.cancel()
+    }
   }
 
   toResponse() {
