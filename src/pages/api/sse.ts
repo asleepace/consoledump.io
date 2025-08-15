@@ -57,9 +57,7 @@ export const HEAD: APIRoute = ({ request }) => {
  */
 export const GET: APIRoute = (ctx) => {
   console.log('GET /api/sse:', ctx.request.url)
-
   const stream = Streams.manager.getStreamFor(ctx.request)
-
   return stream.toResponse()
 }
 
@@ -74,9 +72,14 @@ export const POST: APIRoute = ({ request }) => {
   const stream = Streams.manager.getStreamFor(request)
   const taskId = crypto.randomUUID()
 
-  if (request.body) {
-    stream.pipe(request.body)
-  }
+  stream.addTask({
+    taskId,
+    eventPrefix: 'POST',
+    work: async () => {
+      if (!request.body) throw new Error('Missing body stream!')
+      return request.body
+    },
+  })
 
   return Response.json({ taskId })
 }

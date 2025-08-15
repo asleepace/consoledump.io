@@ -1,100 +1,212 @@
-import { SSEStream } from "./sse-event"
-
-type TaskPayload = {
-  url: string | URL
-  method?: RequestInit["method"]
-  body?: BodyInit
-  headers?: HeadersInit
+/**
+ * Basic Stream Task Chunk
+ */
+export interface StreamTaskChunk {
+  id: string | undefined
+  isReady: boolean
+  isFinished: boolean
+  getEvents(): string[]
+  start?: () => Promise<void>
 }
 
-type TaskResult = {
+export interface StreamTaskConfig<T = any> {
   taskId: string
-  status: "started" | "chunk" | "completed" | "error"
-  data?: any
-  error?: string
+  work: () => Promise<ReadableStream<Uint8Array>>
+
+  // Encoding configuration
+  encoder?: {
+    decode: (chunk: Uint8Array) => T
+    encode: (data: T) => string
+  }
+
+  // Streaming behavior
+  waitUntilFinished?: boolean
+  chunkSize?: number
+
+  // Event configuration
+  eventPrefix?: string
+  includeProgress?: boolean
 }
 
-export class TaskQueue {
-  private tasks: Array<{ id: string; payload: TaskPayload }> = []
+export type StreamTaskStatus =
+  | 'pending'
+  | 'running'
+  | 'streaming'
+  | 'completed'
+  | 'error'
 
-  constructor(private stream: SSEStream) {}
+export interface StreamTaskEvent {
+  id: number
+  event: string
+  data: string
+  timestamp: number
+}
 
-  schedule(payload: TaskPayload): string {
-    const taskId = crypto.randomUUID()
-    this.tasks.push({ id: taskId, payload })
-    return taskId
-  }
+export class StreamTask<T = string> implements StreamTaskChunk {
+  public readonly id: string
+  public status: StreamTaskStatus = 'pending'
+  public error?: Error
+  public progress = { current: 0, total: 0 }
 
-  async executeAll(): Promise<void> {
-    for (const task of this.tasks) {
-      await this.executeTask(task.id, task.payload)
+  private config: Required<StreamTaskConfig<T>>
+  private stream?: ReadableStream<Uint8Array>
+  private reader?: ReadableStreamDefaultReader<Uint8Array>
+  private buffer: T[] = []
+  private eventQueue: StreamTaskEvent[] = []
+  private eventIdCounter = 0
+
+  constructor(config: StreamTaskConfig<T>) {
+    this.id = config.taskId
+    this.config = {
+      encoder: {
+        decode: (chunk) => new TextDecoder().decode(chunk) as T,
+        encode: (data) => String(data),
+      },
+      waitUntilFinished: false,
+      chunkSize: 1024 * 8, // 8KB chunks
+      eventPrefix: config.taskId,
+      includeProgress: false,
+      ...config,
     }
-    this.stream.close()
   }
 
-  private async executeTask(
-    taskId: string,
-    payload: TaskPayload
-  ): Promise<void> {
+  async start(): Promise<void> {
+    if (this.status !== 'pending') {
+      throw new Error(`Task ${this.id} already started`)
+    }
+
     try {
-      this.stream.sendEvent({
-        taskId,
-        status: "started",
-      })
+      this.status = 'running'
+      this.queueEvent('started', '')
 
-      const response = await fetch(payload.url, {
-        method: payload.method || "GET",
-        body: payload.body,
-        headers: payload.headers,
-      })
+      // Execute the work function
+      this.stream = await this.config.work()
+      this.reader = this.stream.getReader()
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      this.status = 'streaming'
+      this.queueEvent('streaming', '')
+
+      if (this.config.waitUntilFinished) {
+        await this.consumeEntireStream()
+      } else {
+        // Start consuming in background
+        this.consumeStreamChunks().catch((err) => this.handleError(err))
       }
+    } catch (error) {
+      this.handleError(error)
+    }
+  }
 
-      if (response.body) {
-        const reader = response.body.getReader()
+  private async consumeEntireStream(): Promise<void> {
+    while (true) {
+      const { done, value } = await this.reader!.read()
 
-        try {
-          while (this.stream.isConnected) {
-            const { done, value } = await reader.read()
-            if (done) break
+      if (done) break
 
-            const chunk = new TextDecoder().decode(value)
-            this.stream.sendEvent({
-              taskId,
-              status: "chunk",
-              data: chunk,
-            })
-          }
-        } finally {
-          reader.releaseLock()
+      if (value) {
+        const decoded = this.config.encoder.decode(value)
+        this.buffer.push(decoded)
+        this.progress.current += value.length
+
+        if (this.config.includeProgress) {
+          this.queueEvent('progress', JSON.stringify(this.progress))
         }
       }
+    }
 
-      this.stream.sendEvent({
-        taskId,
-        status: "completed",
-      })
-    } catch (error) {
-      this.stream.sendEvent({
-        taskId,
-        status: "error",
-        error: error instanceof Error ? error.message : "Unknown error",
-      })
+    this.status = 'completed'
+    this.queueEvent('completed', '')
+  }
+
+  private async consumeStreamChunks(): Promise<void> {
+    while (this.status === 'streaming') {
+      const { done, value } = await this.reader!.read()
+
+      if (done) {
+        this.status = 'completed'
+        this.queueEvent('completed', '')
+        break
+      }
+
+      if (value) {
+        const decoded = this.config.encoder.decode(value)
+        this.buffer.push(decoded)
+        this.progress.current += value.length
+
+        if (this.config.includeProgress) {
+          this.queueEvent('progress', JSON.stringify(this.progress))
+        }
+      }
     }
   }
-}
 
-// Usage example:
-export function createSSETaskRunner(eventType?: string) {
-  const stream = new SSEStream(eventType)
-  const queue = new TaskQueue(stream)
+  private handleError(error: unknown): void {
+    this.status = 'error'
+    this.error = error instanceof Error ? error : new Error(String(error))
+    this.queueEvent('error', this.error.message)
+  }
 
-  return {
-    response: stream.response,
-    schedule: (payload: TaskPayload) => queue.schedule(payload),
-    execute: () => queue.executeAll(),
-    stream,
+  private queueEvent(type: string, data: string): void {
+    this.eventQueue.push({
+      id: ++this.eventIdCounter,
+      event: `${this.config.eventPrefix}-${type}`,
+      data,
+      timestamp: Date.now(),
+    })
+  }
+
+  // Check if task has data ready to be consumed
+  get isReady(): boolean {
+    return this.buffer.length > 0 || this.eventQueue.length > 0
+  }
+
+  // Check if task is finished (completed or error)
+  get isFinished(): boolean {
+    return this.status === 'completed' || this.status === 'error'
+  }
+
+  // Consume available data (non-blocking)
+  consumeData(): { events: StreamTaskEvent[]; data: T[] } {
+    const events = [...this.eventQueue]
+    const data = [...this.buffer]
+
+    this.eventQueue.length = 0
+    this.buffer.length = 0
+
+    return { events, data }
+  }
+
+  // Get encoded SSE events for immediate streaming
+  getEvents(): string[] {
+    const { events, data } = this.consumeData()
+    const sseEvents: string[] = []
+
+    // Add queued events
+    for (const event of events) {
+      sseEvents.push(
+        `id: ${event.id}\n` +
+          `event: ${event.event}\n` +
+          `data: ${event.data}\n\n`
+      )
+    }
+
+    // Add data events
+    for (const item of data) {
+      const encoded = this.config.encoder.encode(item)
+      sseEvents.push(
+        `id: ${++this.eventIdCounter}\n` +
+          `event: ${this.config.eventPrefix}-data\n` +
+          `data: ${encoded}\n\n`
+      )
+    }
+
+    return sseEvents
+  }
+
+  async cleanup(): Promise<void> {
+    if (this.reader) {
+      await this.reader.cancel()
+      this.reader.releaseLock()
+    }
   }
 }

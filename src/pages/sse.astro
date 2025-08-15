@@ -192,6 +192,21 @@ console.log('[sse] rendering:', Astro.url)
       this.eventSource.onopen = () => {
         this.isConnected = true
         this.handleEvent({ type: 'open', data: { streamId } })
+
+        // @ts-ignore
+        window.fetchStream = async (...args: any[]) => {
+          const resp = await fetch(`/api/sse?streamId=${streamId}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(args),
+          })
+          console.log('[client] POST:', resp.status)
+          const { taskId } = (await resp.json()) as { taskId: string }
+          console.log('[client] taskId:', taskId)
+          return taskId
+        }
       }
       this.eventSource.onerror = (ev) => {
         this.isConnected = false
