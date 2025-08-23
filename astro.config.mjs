@@ -7,6 +7,24 @@ import react from "@astrojs/react"
 // https://astro.build/config
 export default defineConfig({
   site: "https://consoledump.io",
+  integrations: [react(), sitemap()],
+  output: 'server',
+  adapter: node({
+    mode: "standalone",
+  }),
+  security: {
+    checkOrigin: false,
+  },
+  server: {
+    cors: false,
+  },
+  build: {
+    inlineStylesheets: "never",
+  },
+  // Reduce HTML size in production builds
+  compressHTML: true,
+  // Slightly reduces dev overhead
+  devToolbar: { enabled: false },
   vite: {
     plugins: [tailwindcss()],
     optimizeDeps: {
@@ -44,21 +62,4 @@ export default defineConfig({
       },
     },
   },
-  integrations: [react(), sitemap()],
-  adapter: node({
-    mode: "standalone",
-  }),
-  security: {
-    checkOrigin: false,
-  },
-  server: {
-    cors: false,
-  },
-  build: {
-    inlineStylesheets: "never",
-  },
-  // Reduce HTML size in production builds
-  compressHTML: true,
-  // Slightly reduces dev overhead
-  devToolbar: { enabled: false },
 })

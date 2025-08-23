@@ -1,64 +1,60 @@
 import type { APIRoute } from 'astro'
-import { MultiplexStream } from '@/lib/shared/sse-multiplex'
+import { Stream2 } from '@/lib/server/stream'
 
 export const prerender = false
 
-class Streams {
-  static manager = new Streams()
-  private instances = new Map<MultiplexStream['streamId'], MultiplexStream>()
-
-  public createStream() {
-    const streamId = crypto.randomUUID().replaceAll('-', '').slice(8)
-    const stream = new MultiplexStream(streamId)
-    this.instances.set(stream.streamId, stream)
-    return stream
-  }
-
-  public getStreamForId(streamId: string) {
-    return this.instances.get(streamId)
-  }
-
-  public getStreamFor(request: Request) {
-    const streamId = new URL(request.url).searchParams.get('streamId')
-    if (!streamId) {
-      console.log(request)
-      throw new Error(`Missing streamId on ${request.method}: ${request.url}`)
-    }
-    const stream = this.instances.get(streamId)
-    if (!stream) throw new Error(`No stream found for streamId: "${streamId}"`)
-    return stream
-  }
-}
+const HEADERS = (stream: Stream2, headersInit: HeadersInit = {}) => ({
+  ...headersInit,
+  'content-type': 'text/event-stream',
+  'transfer-encoding': 'chunked',
+  'x-accel-buffering': 'no',
+  'x-stream-id': stream.id,
+})
 
 /**
- * HEAD /api/sse
+ * HEAD /api/see
  *
- * This route create a new MultiplexStream instance and returns the
- * streamId in the headers as `"X-Stream-ID"`
+ * Creats a new stream and returns the stream id in the request headers,
+ * this stream can later be accessed with this id.
  */
-export const HEAD: APIRoute = ({ request }) => {
-  const stream = Streams.manager.createStream()
+export const HEAD: APIRoute = () => {
+  const stream = Stream2.new()
+
   return new Response(null, {
-    status: 200,
-    headers: {
-      'X-Stream-ID': stream.streamId,
-      'Cache-Control': 'no-cache',
-      Connection: 'keep-alive',
-      'Access-Control-Allow-Origin': '*',
-    },
+    headers: HEADERS(stream),
   })
 }
 
 /**
- * GET /api/see?streamId="<stream_id>"
+ * GET /api/see?id="<stream_id>"
  *
- * This route returns the current stream with the specified streamId
+ * This route returns the current stream with the specified `id`
  * as a text/event-event stream.
  */
-export const GET: APIRoute = (ctx) => {
-  console.log('GET /api/sse:', ctx.request.url)
-  const stream = Streams.manager.getStreamFor(ctx.request)
-  return stream.toResponse()
+export const GET: APIRoute = ({ url }) => {
+  const id = url.searchParams.get('id')
+
+  if (!Stream2.has(id)) {
+    const stream = Stream2.use(id)
+    return new Response(stream.pull(), {
+      headers: HEADERS(stream),
+    })
+  }
+
+  const stream = Stream2.get(id)
+
+  if (!stream || stream.isClosed) {
+    return new Response(null, {
+      status: 500,
+      statusText: `Failed to find stream with id: ${id}`,
+    })
+  }
+
+  stream.json({ status: 'client-connected', streamId: id })
+
+  return new Response(stream.pull(), {
+    headers: HEADERS(stream),
+  })
 }
 
 /**
@@ -67,12 +63,31 @@ export const GET: APIRoute = (ctx) => {
  * This route enables posting data to the MultiplexStream with streamID
  * and the data will be piped to the event stream returned by the GET.
  */
-export const POST: APIRoute = ({ request }) => {
-  console.log('[POST] href:', request.url)
-  const stream = Streams.manager.getStreamFor(request)
-  const taskId = crypto.randomUUID()
+export const POST: APIRoute = async ({ url, request }) => {
+  const id = url.searchParams.get('id')
+  const stream = Stream2.get(id)
 
-  stream.pipeRequest(request)
+  if (!request.body || request.bodyUsed) {
+    return new Response(null, {
+      status: 500,
+      statusText: `Invalid request request body`,
+    })
+  }
 
-  return Response.json({ taskId })
+  if (!stream || stream.isClosed) {
+    return new Response(null, {
+      status: 500,
+      statusText: `Failed to find stream with id: ${id}`,
+    })
+  }
+
+  stream.push(request.body).catch((error) => {
+    console.warn('[sse] stream push error:', error)
+  })
+
+  return new Response(null, {
+    status: 200,
+    statusText: 'Ok',
+    headers: HEADERS(stream),
+  })
 }

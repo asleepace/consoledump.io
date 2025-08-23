@@ -4,6 +4,7 @@
     "": {
       "name": "consoledump",
       "dependencies": {
+        "@asleepace/mutex": "^1.0.2",
         "@asleepace/try": "^0.2.1",
         "@astrojs/check": "^0.9.4",
         "@astrojs/node": "9.4.0",
@@ -31,6 +32,8 @@
   },
   "packages": {
     "@ampproject/remapping": ["@ampproject/remapping@2.3.0", "", { "dependencies": { "@jridgewell/gen-mapping": "^0.3.5", "@jridgewell/trace-mapping": "^0.3.24" } }, "sha512-30iZtAPgz+LTIYoeivqYo853f02jBYSd5uGnGpkFV0M3xOt9aN73erkgYAmZU43x4VfqcnLxW9Kpg3R5LC4YYw=="],
+
+    "@asleepace/mutex": ["@asleepace/mutex@1.0.2", "", { "peerDependencies": { "typescript": ">=5.0.0" }, "optionalPeers": ["typescript"] }, "sha512-34X4u7+a5/6xQw+DoVzIjLN1X5RCK2sViGJLbnQDY0PVGwvDX37IBDXX0q+v3Q6W727o4cGHBKYFGhMCiMJgRw=="],
 
     "@asleepace/try": ["@asleepace/try@0.2.1", "", { "peerDependencies": { "typescript": "^5" } }, "sha512-0lqcXCkrubACXhCkSaWiFEYnfIDodh8n/Ivr7N8i23EmmG9lucc7awzpBTGPWApqKefMbZx+PSHwnJKDiYbSlA=="],
 

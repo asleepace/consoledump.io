@@ -1,9 +1,19 @@
 ---
-import Welcome from '@/components/Welcome.astro';
-import Layout from '@/layouts/Layout.astro';
+import { Stream2 } from '@/lib/server/stream'
+import Layout from '@/layouts/Layout.astro'
 
+export const prerender = false
+
+const stream = Stream2.new()
+
+if (!stream.id) throw new Error('Invalid stream id')
+
+console.log('[route:index] created stream:', stream.id)
+
+Astro.rewrite(`/${stream.id}`)
 ---
 
-<Layout client:visible>
-  <Welcome />
-</Layout>
+<Layout />
+<script define:vars={{ path: stream.id }}>
+  window.location.pathname += path
+</script>
