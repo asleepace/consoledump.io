@@ -53,13 +53,13 @@ export class MultiplexStream {
 
   private readonly reader: ReadableStream
   private writer: WritableStream | undefined
+  private text: TextEncoder = new TextEncoder()
 
   readonly streamId: string
 
   private tasks: StreamTaskChunk[] = [new GloablEvents()]
 
   public isOpened: boolean = false
-  private text: TextEncoder = new TextEncoder()
 
   constructor(streamId: string) {
     this.streamId = streamId
@@ -129,11 +129,12 @@ export class MultiplexStream {
     try {
       if (!request.body) throw new Error('Missing request body!')
       if (!this.writer) throw new Error('Missing writer')
-      await request.body.pipeTo(this.writer, {
-        preventAbort: true,
-        preventCancel: true,
-        preventClose: true,
-      })
+      if (this.writer.locked)
+        await request.body.pipeTo(this.writer, {
+          preventAbort: true,
+          preventCancel: true,
+          preventClose: true,
+        })
       await request.body.cancel()
     } catch (e) {
       console.warn('[sse-multiplex] error:', e)
