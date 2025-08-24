@@ -11,7 +11,7 @@ export type NavigationButtonProps = {
 export function NavigationButton({ title, onPress }: NavigationButtonProps) {
   return (
     <Button
-      className="flex flex-row border-1 border-white/10 hover:border-orange-400 items-center px-2 hover:bg-white/10 justify-between *:text-white/75 hover:*:text-orange-400"
+      className="flex backdrop-blur-lg flex-row border-1 border-white/10 hover:border-orange-400 items-center px-2 hover:bg-white/10 justify-between *:text-white/75 hover:*:text-orange-400"
       onClick={onPress}
     >
       <div className="border-r-1 border-r-white/10 pl-1 pr-1.5">

@@ -1,23 +1,6 @@
-class StreamMessage {
-  public readonly json?: any
-  public readonly text?: string
-
-  constructor(data: any) {
-    try {
-      this.text = String(data)
-      this.json = JSON.parse(this.text)
-      this.text = undefined
-      console.log('[stream-message] json:', this.json)
-    } catch (e) {
-      console.warn('[stream-message] decoding issue:', e, data)
-    }
-  }
-
-  public format(): string {
-    if (this.json) return JSON.stringify(this.json, null, 2)
-    return this.text ?? '<empty>'
-  }
-}
+import { Try } from '@asleepace/try'
+import { StreamMessage } from './stream-message'
+export { StreamMessage }
 
 type StreamMessageHandler = (message: StreamMessage) => Promise<void> | void
 
@@ -42,8 +25,22 @@ export class StreamClient extends EventTarget {
     console.log('[stream-client] message:', message)
   }
 
+  public async fetch(...args: any[]) {
+    return Try.catch(async () => {
+      return fetch(`/${this.id}`, {
+        method: 'POST',
+        body: JSON.stringify(args),
+      })
+    })
+  }
+
   constructor(public readonly id: string) {
     super()
+
+    // @ts-ignore
+    console.dump = (...args: any[]) => {
+      this.fetch(...args).catch(console.warn)
+    }
 
     const source = new EventSource(`/api/sse?id=${id}`, {
       withCredentials: true,

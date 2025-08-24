@@ -52,8 +52,13 @@ export class Stream2 {
   }
 
   public static cleanup() {
+    console.log(`[stream] running cleanup (${this.store.size}) ...`)
     this.store.forEach((activeStream) => {
+      console.log('[stream] cleanup checking:', activeStream.id)
       if (activeStream.isClosed) {
+        this.end(activeStream)
+      }
+      if (activeStream.lastUpdated('mins') > 5) {
         this.end(activeStream)
       }
     })
@@ -103,6 +108,8 @@ export class Stream2 {
 
   private controller?: TransformStreamDefaultController<any>
   private copyStream?: ReadableStream
+  private createdAt = Date.now()
+  private updatedAt = Date.now()
 
   get isStarted(): boolean {
     return Boolean(this.controller)
@@ -126,8 +133,13 @@ export class Stream2 {
           type: 'connected',
           data: { streamId: this.id },
         })
+        this.json({
+          type: 'system',
+          html: `example usage: <code class="text-pink-400 rounded bg-white/5 px-2 py-1">curl -d "hello world" http://localhost:4321/${id}</code>`,
+        })
       },
       transform: (chunk, controller) => {
+        this.updatedAt = Date.now()
         controller.enqueue(
           encodeStreamEvent({
             id: this.message.id++,
@@ -137,6 +149,7 @@ export class Stream2 {
         )
       },
       flush: () => {
+        console.warn('[stream] closed:', this.id)
         this.comment('closed')
         return this.close()
       },
@@ -144,6 +157,15 @@ export class Stream2 {
 
     // setup the copy stream
     this.copyStream = this.root.readable
+    Stream2.cleanup()
+  }
+
+  public lastUpdated(time: 'secs' | 'mins' | 'hours' = 'mins') {
+    const elapsedTime = Date.now() - this.updatedAt
+    const seconds = elapsedTime / 1_000
+    if (time === 'secs') return seconds
+    if (time === 'mins') return seconds / 60
+    return seconds / 3600
   }
 
   public comment(comment: string) {
@@ -200,6 +222,7 @@ export class Stream2 {
   public async close() {
     if (this.isClosed) return
     try {
+      await this.json({ type: 'system', data: { status: 'closed' } })
       this.controller?.terminate()
       await this.root.writable.close()
       await this.root.readable.cancel('closed')

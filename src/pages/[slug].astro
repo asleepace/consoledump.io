@@ -1,31 +1,93 @@
 ---
 import Layout from '@/layouts/Layout.astro'
+import { Stream2 } from '@/lib/server/stream'
 
 export const prerender = false
 
 const { slug: streamId } = Astro.params
 
+let stream = Stream2.get(streamId) ?? Stream2.use(streamId)
+// console.log(`[route:${streamId}] request:`, Astro.request)
+// console.log(`[route:${streamId}] request:`, ...Astro.request.headers.entries())
+
+if (Astro.request.method === 'POST') {
+  if (!stream) {
+    return new Response(null, { status: 404, statusText: 'Stream not found' })
+  }
+
+  if (stream.isClosed) {
+    return new Response(null, { status: 500, statusText: 'Stream is closed' })
+  }
+
+  if (!Astro.request.body) {
+    return new Response(null, { status: 500, statusText: 'Invalid body sent' })
+  }
+
+  stream?.push(Astro.request.body)
+
+  return new Response(null, {
+    status: 200,
+  })
+}
+
 console.log(`[route:${streamId}] connecting...`)
 ---
 
 <Layout
-  class:list="min-h-screen bg-black font-mono w-full flex flex-col p-2 text-green-400"
+  class:list="min-h-screen bg-black font-mono w-full flex flex-col p-2 overscroll-y-contain"
 >
-  <div class:list="flex flex-1 flex-col gap-1" id="container"></div>
+  <div class="overflow-y-scroll overscroll-y-auto mt-14 pb-14">
+    <div class:list="flex flex-1 flex-col gap-2 min-h-full" id="container">
+    </div>
+  </div>
 </Layout>
 
+<template id="message">
+  <div
+    class="item flex flex-row gap-x-2 py-0.5 px-4 font-mono font-thin text-sm"
+  >
+    <p class="item-time text-neutral-800 text-sm font-semibold"></p>
+    <p class="item-type px-2 font-bold"></p>
+    <p class="item-data text-neutral-400"></p>
+  </div>
+</template>
+
+<style>
+  .item:nth-child(odd) {
+    background-color: rgba(255, 255, 255, 0.03);
+  }
+
+  code {
+    text:;
+  }
+</style>
+
 <script>
-  import { StreamClient } from '@/lib/client/stream-client'
+  import { StreamClient, StreamMessage } from '@/lib/client/stream-client'
 
   const streamId = window.location.pathname.replace('/', '')
   const container = document.getElementById('container')!
+  const template = document.getElementById('message') as HTMLTemplateElement
 
   const client = new StreamClient(streamId)
 
+  function addItem(message: StreamMessage) {
+    const item = template.content.cloneNode(true) as DocumentFragment
+    const time = item.querySelector('.item-time')!
+    const type = item.querySelector('.item-type')!
+    const data = item.querySelector('.item-data')!
+    type.classList.add(message.getTypeColor())
+    time.textContent = [
+      message.time.getHours(),
+      message.time.getMinutes(),
+      message.time.getMilliseconds().toString().slice(0, 2),
+    ].join(':')
+    type.textContent = `[${message.type}]`
+    data.innerHTML = message.format()
+    container?.appendChild(item)
+  }
+
   client.on((message) => {
-    const item = document.createElement('div')
-    item.setAttribute('class', 'flex flex-row')
-    item.textContent = message.format()
-    container.appendChild(item)
+    addItem(message)
   })
 </script>

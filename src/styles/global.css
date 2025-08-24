@@ -133,5 +133,5 @@ body {
 
 * {
   scrollbar-width: thin; /* thin, auto, none */
-  scrollbar-color: oklch(0.208 0.042 265.755) oklch(0.129 0.042 264.695); /* thumb and track color */
+  scrollbar-color: oklch(20.5% 0 0) oklch(14.1% 0.005 285.823); /* thumb and track color */
 }

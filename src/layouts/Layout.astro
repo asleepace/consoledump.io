@@ -24,7 +24,7 @@ const className = Astro.props.class
       className,
     ]}
   >
-    <Navigation />
+    <Navigation class:list={['absolute top-0 left-0 right-0']} />
     <slot />
   </body>
 </html>
