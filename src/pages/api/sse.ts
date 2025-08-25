@@ -36,9 +36,7 @@ export const GET: APIRoute = ({ url }) => {
 
   if (!Stream2.has(id)) {
     const stream = Stream2.use(id)
-    return new Response(stream.pull(), {
-      headers: HEADERS(stream),
-    })
+    return stream.toReqponse()
   }
 
   const stream = Stream2.get(id)
@@ -52,9 +50,7 @@ export const GET: APIRoute = ({ url }) => {
 
   stream.json({ status: 'client-connected', streamId: id })
 
-  return new Response(stream.pull(), {
-    headers: HEADERS(stream),
-  })
+  return stream.toReqponse()
 }
 
 /**

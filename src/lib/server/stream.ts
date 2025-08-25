@@ -46,13 +46,21 @@ export class Stream2 {
   public static readonly MAX_CAPACITY = 64
   public static readonly store = new Map<string, Stream2>()
 
+  static {
+    setInterval(() => this.cleanup(), 15_000)
+  }
+
   public static get isAtMaxCapacity(): boolean {
     this.cleanup()
     return this.store.size >= Stream2.MAX_CAPACITY
   }
 
   public static cleanup() {
-    console.log(`[stream] running cleanup (${this.store.size}) ...`)
+    console.log(`[stream2] running cleanup (${this.store.size}) ...`)
+    console.log(
+      '[stream2] active:',
+      [...this.store.values()].map((str) => str.info())
+    )
     this.store.forEach((activeStream) => {
       console.log('[stream] cleanup checking:', activeStream.id)
       if (activeStream.isClosed) {
@@ -101,15 +109,32 @@ export class Stream2 {
     return stream
   }
 
+  // Cleanup registry to handle garbage collected streams
+  private static readonly cleanupRegistry = new FinalizationRegistry(
+    (streamId: string) => {
+      console.log(`[stream2] child stream garbage collected for ${streamId}`)
+    }
+  )
+
   // instance methods
 
   private readonly root: TransformStream
   private readonly mutex = Mutex.shared()
 
+  private signals = new Set<AbortSignal>()
+
+  private childStreams = new Set<WeakRef<ReadableStream>>()
   private controller?: TransformStreamDefaultController<any>
   private copyStream?: ReadableStream
   private createdAt = Date.now()
   private updatedAt = Date.now()
+
+  private totalChildren = 0
+
+  get isExpired(): boolean {
+    const elapsed = (Date.now() - this.updatedAt) / 60_000 // minutes
+    return elapsed > 30 // expires after 30 mins
+  }
 
   get isStarted(): boolean {
     return Boolean(this.controller)
@@ -127,6 +152,7 @@ export class Stream2 {
   constructor(public readonly id = createID()) {
     this.root = new TransformStream({
       start: (controller) => {
+        console.warn(`[stream:${this.id}] started!`)
         this.controller = controller
         this.comment('started')
         this.json({
@@ -135,7 +161,7 @@ export class Stream2 {
         })
         this.json({
           type: 'system',
-          html: `example usage: <code class="text-pink-400 rounded bg-white/5 px-2 py-1">curl -d "hello world" http://localhost:4321/${id}</code>`,
+          html: `example usage: <code class="text-pink-400 rounded bg-white/5 px-2 py-1">curl -d "hello world" http://localhost:4321/${this.id}</code>`,
         })
       },
       transform: (chunk, controller) => {
@@ -149,7 +175,7 @@ export class Stream2 {
         )
       },
       flush: () => {
-        console.warn('[stream] closed:', this.id)
+        console.warn(`[stream:${this.id}] closed!`)
         this.comment('closed')
         return this.close()
       },
@@ -187,7 +213,7 @@ export class Stream2 {
       await writer.ready
       await writer.write(chunk)
     } catch (e) {
-      console.warn('[stream2] byte errpr:', e)
+      console.warn('[stream2] byte error:', e)
     } finally {
       writer.releaseLock()
       lock.releaseLock()
@@ -215,14 +241,66 @@ export class Stream2 {
   public pull() {
     if (!this.copyStream) throw new ErrorStreamClosed()
     const [nextStream, nextCopy] = this.copyStream?.tee()
+    // Stream2.cleanupRegistry.register(nextStream, this.id)
+    // this.childStreams.add(new WeakRef(nextStream))
+    this.totalChildren += 1
     this.copyStream = nextCopy
     return nextStream
   }
 
+  public async closeChildStreams() {
+    try {
+      console.log('[stream2] closing child streams:', this.childStreams)
+      const closedPromises = [...this.childStreams.values()].map((child) =>
+        child.deref()?.cancel('parent:closed')
+      )
+      await Promise.allSettled(closedPromises)
+    } catch (e) {
+      console.warn('[stream2] child cleanup error:', e)
+    } finally {
+      this.childStreams.clear()
+    }
+  }
+
+  toReqponse(headersInit: HeadersInit = {}): Response {
+    const duplicatedStream = this.pull()
+
+    duplicatedStream
+      .getReader()
+      .closed.then(() => {
+        console.log(`[stream:${this.id}] copy closed!`)
+      })
+      .catch(console.warn)
+
+    const repsonse = new Response(this.pull(), {
+      headers: {
+        ...headersInit,
+        'content-type': 'text/event-stream',
+        'transfer-encoding': 'chunked',
+        'x-accel-buffering': 'no',
+        'x-stream-id': this.id,
+      },
+    })
+
+    return repsonse
+  }
+
+  info() {
+    return {
+      id: this.id,
+      createdAt: this.createdAt,
+      updatedAt: this.updatedAt,
+      totalChildren: this.totalChildren,
+    }
+  }
+
   public async close() {
     if (this.isClosed) return
+    const lock = await this.mutex.acquireLock()
     try {
+      if (this.isClosed) return
       await this.json({ type: 'system', data: { status: 'closed' } })
+      await this.closeChildStreams()
       this.controller?.terminate()
       await this.root.writable.close()
       await this.root.readable.cancel('closed')
@@ -230,8 +308,10 @@ export class Stream2 {
       console.warn('[stream2] error closing:', e)
     } finally {
       Stream2.store.delete(this.id)
+      this.childStreams.clear()
       this.controller = undefined
       this.copyStream = undefined
+      lock.releaseLock()
     }
   }
 }
