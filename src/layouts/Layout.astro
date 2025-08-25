@@ -1,0 +1,30 @@
+---
+import '@/styles/global.css'
+import Navigation from '@/components/Navigation.astro'
+
+interface Props {
+  class?: string
+}
+
+const className = Astro.props.class
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="generator" content={Astro.generator} />
+    <title>Consoledump.io</title>
+  </head>
+  <body
+    class:list={[
+      'flex flex-col flex-1 max-h-screen bg-black font-mono overflow-hidden',
+      className,
+    ]}
+  >
+    <Navigation class:list={['absolute top-0 left-0 right-0']} />
+    <slot />
+  </body>
+</html>

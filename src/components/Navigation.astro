@@ -1,0 +1,34 @@
+---
+import { NavigationButton } from '@/components/client/NavigationButton'
+import { IconWaveSine } from '@tabler/icons-react'
+
+const className = Astro.props.clas
+---
+
+<nav
+  class:list={[
+    'py-2 px-4 min-h-12 bg-neutral-900/10 border-b-1 border-b-neutral-800',
+    'absolute left-0 right-0 top-0 backdrop-blur-2xl',
+    className,
+  ]}
+>
+  <!-- navigation bar title & logo -->
+  <div class="flex flex-row mx-auto items-center justify-between">
+    <div class="flex px-4">
+      <a href="/" class="flex gap-x-4 flex-row items-center justify-between">
+        <div class="w-6 aspect-square">
+          <IconWaveSine size={24} color="white" />
+        </div>
+
+        <p
+          class="text-neutral-200 text-sm font-semibold uppercase tracking-wider"
+        >
+          console <span class="text-orange-400">dump</span>
+        </p>
+      </a>
+    </div>
+
+    <!-- nav bar buttons -->
+    <NavigationButton title="New Session" />
+  </div>
+</nav>
