@@ -1,0 +1,176 @@
+---
+// Astro component for demonstrating the client
+
+export const prerender = false
+
+console.log('[sse] rendering:', Astro.url)
+---
+
+<html>
+  <head>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  </head>
+  <body>
+    <div
+      class="bg-black min-h-screen w-full overflow-x-hidden p-16 font-mono text-green-400"
+    >
+      <div id="events-log" class="w-full flex flex-col flex-1"></div>
+    </div>
+  </body>
+</html>
+
+<script>
+  type SSEventOpen = {
+    type: 'open'
+    data: { streamId: string }
+  }
+
+  type SSEventClose = {
+    type: 'close'
+    data: undefined
+  }
+
+  type SSEventError = {
+    type: 'error'
+    data: Error | undefined
+  }
+
+  type SSEventData = {
+    type: 'data'
+    data: string
+  }
+
+  type SSEvent = SSEventOpen | SSEventClose | SSEventError | SSEventData
+  type SSEventType = SSEvent['type']
+  type SSEDataType<K extends SSEventType> = Extract<
+    SSEvent,
+    { type: K }
+  >['data']
+
+  class SSEClientStream {
+    static async initializeConnection() {
+      const response = await fetch('/api/sse', {
+        method: 'HEAD',
+      })
+      console.log('[SSEClientSream] HEAD response:', response)
+      const streamId = response.headers.get('X-Stream-ID')
+      console.log('[SSEClientSream] HEAD streamId:', streamId)
+      if (!response.ok || !streamId) {
+        throw new Error('Failed to connect to stream!')
+      }
+      return new SSEClientStream(streamId)
+    }
+
+    public readonly eventSource: EventSource | undefined
+    public isConnected: boolean = false
+    public handlers = new Map<SSEvent['type'], any[]>()
+
+    constructor(public streamId: string) {
+      console.log('[Client] streamId:', streamId)
+
+      if (!streamId) throw new Error('Missing or invalid stream id!')
+
+      const url = new URL('/api/sse', window.location.origin)
+      url.searchParams.set('streamId', streamId)
+      this.eventSource = new EventSource(url)
+      this.eventSource.onopen = () => {
+        this.isConnected = true
+        this.handleEvent({ type: 'open', data: { streamId } })
+
+        // @ts-ignore
+        window.fetchStream = async (...args: any[]) => {
+          const resp = await fetch(`/api/sse?streamId=${streamId}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(
+              args.map((item) =>
+                typeof item === 'string' ? item : JSON.stringify(item)
+              )
+            ),
+          })
+          const { taskId } = (await resp.json()) as { taskId: string }
+          return taskId
+        }
+      }
+      this.eventSource.onerror = (ev) => {
+        this.isConnected = false
+        this.handleEvent({
+          type: 'error',
+          data: new Error('Event source error!'),
+        })
+      }
+      this.eventSource.onmessage = (ev) => {
+        this.handleEvent({
+          type: 'data',
+          data: ev.data,
+        })
+      }
+    }
+
+    private handleEvent<T extends SSEvent>(event: T) {
+      const handlers = this.handlers.get(event.type) ?? []
+      handlers.forEach((handler) => {
+        handler(event)
+      })
+    }
+
+    on<T extends SSEventType>(
+      type: T,
+      handler: (data: Extract<SSEvent, { type: T }>) => Promise<void> | void
+    ): this {
+      const prev = this.handlers.get(type) ?? []
+      const next = [...prev, handler] as any
+      this.handlers.set(type, next)
+      return this
+    }
+  }
+
+  async function initialize() {
+    const stream = await SSEClientStream.initializeConnection()
+    const output = document.getElementById('events-log')
+
+    stream.on('open', (event) => {
+      console.log('[client] opened:', event)
+    })
+
+    stream.on('error', (data) => {
+      console.warn('[client] error:', data)
+    })
+
+    stream.on('data', (event) => {
+      console.log('[client] data:', event.data)
+      const item = document.createElement('div')
+      item.setAttribute(
+        'style',
+        'flex flex-row items-center justify-start font-mono'
+      )
+
+      item.textContent = event.data
+      output?.appendChild(item)
+    })
+  }
+
+  initialize().catch(console.warn)
+</script>
+
+<style>
+  #events-log::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  #events-log::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+  }
+
+  #events-log::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+  }
+
+  #events-log::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+  }
+</style>

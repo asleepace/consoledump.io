@@ -1,0 +1,19 @@
+---
+import '@/styles/global.css'
+import Navigation from '@/components/Navigation.astro'
+---
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<meta name="generator" content={Astro.generator} />
+		<title>Consoledump.io</title>
+  </head>
+	<body class="flex flex-col flex-1 max-h-screen bg-slate-900 overflow-hidden">
+    <Navigation />
+		<slot />
+	</body>
+</html>
+
