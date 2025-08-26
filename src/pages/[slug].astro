@@ -71,7 +71,6 @@ if (Astro.request.method === 'POST') {
 
   document.addEventListener('click', async (event) => {
     const target = event.target as HTMLElement
-    console.log('[onclick]', target.tagName)
     if (target.tagName === 'CODE') {
       try {
         await navigator.clipboard.writeText(target.textContent || '')
