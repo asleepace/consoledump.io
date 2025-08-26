@@ -80,6 +80,7 @@ export class StreamClient extends EventTarget {
       const message = new StreamMessage(ev.data)
       if (
         !this.state.childId &&
+        message?.json &&
         'childId' in message.json &&
         typeof message.json.childId === 'string'
       ) {
