@@ -13,6 +13,7 @@ export class ResponseStream {
   public readonly timestamp: Timestamp
   public controller?: ReadableStreamDefaultController<any>
   public encoder = new TextEncoder()
+  public interval?: NodeJS.Timeout
 
   get tagName() {
     return `${this.config.parentId}-${this.config.id}`
@@ -25,6 +26,7 @@ export class ResponseStream {
   constructor(
     public config: {
       maxAge: number
+      keepAliveInterval: number
       readable: ReadableStream
       parentId: string
       id: number
@@ -41,6 +43,7 @@ export class ResponseStream {
         // of both the streamId and child number. This is then used to cleanup
         // from the client or finalization registry.
         controller.enqueue(dataEncode({ childId: this.tagName }))
+        this.startKeepAlive()
       },
       pull: async (controller) => {
         const chunk = await reader.read()
@@ -52,6 +55,15 @@ export class ResponseStream {
         this.close()
       },
     })
+  }
+
+  public startKeepAlive() {
+    if (this.interval) return
+    this.interval = setInterval(() => {
+      if (!this.keepAlive()) {
+        this.close()
+      }
+    }, this.config.keepAliveInterval)
   }
 
   public toResponse(headersInit: HeadersInit = {}) {
@@ -73,15 +85,16 @@ export class ResponseStream {
     } catch (e) {
       console.warn(this.tagName, 'error closing:', e)
     } finally {
+      clearInterval(this.interval)
       this.controller = undefined
     }
   }
 
-  public get isAlive(): boolean {
+  public keepAlive(): boolean {
     try {
       if (!this.controller) return false
       if (this.timestamp.isExpired) return false
-      this.controller?.enqueue(this.encoder.encode(': is-alive?'))
+      this.controller?.enqueue(this.encoder.encode(': keep-alive'))
       return true
     } catch (e) {
       return false
