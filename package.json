@@ -6,6 +6,7 @@
     "dev": "bunx --bun astro dev",
     "build": "bunx --bun astro build",
     "preview": "bunx --bun astro preview",
+    "start": "bunx --bun astro start --port 8082",
     "astro": "bunx --bun astro",
     "monitor": "htop -p $(pgrep bun)"
   },
