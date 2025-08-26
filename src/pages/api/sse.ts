@@ -3,6 +3,19 @@ import { Stream2 } from '@/lib/server/stream'
 
 export const prerender = false
 
+/**
+ * Detect when a request closes and call garbage collection on the stream,
+ * and/or stream store.
+ */
+const registry = new FinalizationRegistry((childId: string) => {
+  console.warn('[!] cleanup called on:', childId)
+  const [streamId] = childId.split('-')
+  const stream = Stream2.store.get(streamId)
+  if (!stream) return Stream2.cleanup()
+  stream.onChildClosed(childId)
+  Stream2.cleanup()
+})
+
 const HEADERS = (stream: Stream2, headersInit: HeadersInit = {}) => ({
   ...headersInit,
   'content-type': 'text/event-stream',
@@ -24,21 +37,6 @@ export const HEAD: APIRoute = () => {
     headers: HEADERS(stream),
   })
 }
-
-const registry = new FinalizationRegistry((childId: string) => {
-  console.warn('[!] cleanup called on:', childId)
-  const [streamId] = childId.split('-')
-
-  const stream = Stream2.store.get(streamId)
-  if (!stream) return
-
-  const childStream = stream.childStreams.get(childId)
-  console.warn('[!] found child ref:', childId)
-  stream.childStreams.delete(childId)
-  childStream?.deref()?.close()
-
-  Stream2.cleanup()
-})
 
 /**
  * GET /api/see?id="<stream_id>"
@@ -65,9 +63,9 @@ export const GET: APIRoute = ({ url, ...ctx }) => {
     })
   }
 
-  registry.register(ctx.request, String(`${stream.id}-${stream.childId}`))
-
-  return stream.toResponse()
+  const childStream = stream.pull()
+  registry.register(ctx.request, childStream.tagName)
+  return childStream.toResponse()
 }
 
 /**
@@ -107,7 +105,7 @@ export const POST: APIRoute = async ({ url, request }) => {
   })
 }
 
-export const DELETE: APIRoute = async ({ url, request }) => {
+export const DELETE: APIRoute = async ({ url }) => {
   const childId = url.searchParams.get('id')
   console.log('[sse] DELETE:', childId)
   if (!childId) {

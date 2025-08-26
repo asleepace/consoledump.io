@@ -71,7 +71,7 @@ export class StreamClient extends EventTarget {
       this.onMessage(
         new StreamMessage({
           type: 'client',
-          html: `<a href="/" class="text-underline text-white">click here to start a new session!</a>`,
+          html: `<a href="/" class="underline text-white">click here to start a new session!</a>`,
         })
       )
     })

@@ -196,7 +196,7 @@ export class Stream2 {
   }
 
   get isOutOfMemory(): boolean {
-    return this.totalBytes >= 1024
+    return this.totalBytes >= Stream2.MAX_BYTES_IN_MB
   }
 
   get canBeClosed() {
@@ -216,7 +216,6 @@ export class Stream2 {
   constructor(public readonly id = createID()) {
     this.root = new TransformStream<Uint8Array>({
       start: (controller) => {
-        console.warn(`[stream:${this.id}] started!`)
         this.controller = controller
         this.json(MessageConnected({ id: this.id }))
         this.json(MessageExample({ id: this.id }))
@@ -234,7 +233,6 @@ export class Stream2 {
       },
       flush: () => {
         console.warn(`[stream:${this.id}:root] closed!`)
-        this.comment('closed')
         this.close()
       },
     })
@@ -287,7 +285,7 @@ export class Stream2 {
   /**
    * Returns a copy of the readable stream.
    */
-  public pull() {
+  public pull(): ResponseStream {
     if (this.isClosed || !this.originalStream) throw new ErrorStreamClosed()
     const [nextBroadcast, nextOriginal] = this.originalStream.tee()
     const childStream = new ResponseStream({
@@ -301,13 +299,6 @@ export class Stream2 {
     Stream2.cleanupRegistry.register(childStream, childStream.tagName)
     Stream2.cleanup()
     return childStream
-  }
-
-  /**
-   * Duplicates the original stream and wraps in a ResponseStream, the result is the sent to the client.
-   */
-  public toResponse(headersInit: HeadersInit = {}): Response {
-    return this.pull().toResponse(headersInit)
   }
 
   /**
