@@ -17,7 +17,7 @@ export default defineConfig({
   },
   server: {
     cors: false,
-    post: 8082,
+    port: 8082,
   },
   build: {
     inlineStylesheets: "never",
