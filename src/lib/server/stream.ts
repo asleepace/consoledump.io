@@ -104,11 +104,9 @@ export class Stream2 {
       ...this.store.keys(),
     ])
     this.store.forEach((stream) => {
-      if (stream.canBeClosed) {
-        stream
-          .close()
-          .catch(console.warn)
-          .finally(() => this.store.delete(stream.id))
+      if (stream.canBeClosed || stream.cleanup()) {
+        this.store.delete(stream.id)
+        stream.close().catch(console.warn)
       }
     })
   }
@@ -151,22 +149,8 @@ export class Stream2 {
       console.log(`[stream:store] garbage collection:`, { childId })
       const [streamId] = childId.split('-')
       const parentStream = this.store.get(streamId)
-      const childReference = parentStream?.childStreams.get(childId)
-      if (childReference) {
-        console.log('[stream:store] closing child ref...')
-        childReference.deref()?.close()
-        parentStream?.childStreams.delete(childId)
-      }
-      if (parentStream?.canBeClosed) {
-        parentStream
-          .close()
-          .catch((err) => {
-            console.warn('[stream:store] error closing stream:', err)
-          })
-          .finally(() => {
-            this.store.delete(streamId)
-          })
-      }
+      parentStream?.onChildClosed(childId)
+      parentStream?.cleanup()
       this.cleanup()
     }
   )
@@ -323,6 +307,17 @@ export class Stream2 {
       children: this.childStreams.size,
       lastChildId: this.childId,
     }
+  }
+
+  public cleanup(): boolean {
+    if (this.canBeClosed) return true
+    this.childStreams.forEach((child, key) => {
+      const streamRef = child.deref()
+      if (streamRef?.isAlive) return
+      streamRef?.close()
+      this.childStreams.delete(key)
+    })
+    return this.childStreams.size === 0
   }
 
   public async close() {

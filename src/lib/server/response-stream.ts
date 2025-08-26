@@ -36,6 +36,9 @@ export class ResponseStream {
       start: (controller) => {
         this.controller = controller
         this.timestamp.update()
+        // NOTE: the first message (id=0) will be the childId which consists
+        // of both the streamId and child number. This is then used to cleanup
+        // from the client or finalization registry.
         controller.enqueue(dataEncode({ childId: this.tagName }))
       },
       pull: async (controller) => {
