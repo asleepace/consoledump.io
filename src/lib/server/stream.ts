@@ -1,4 +1,6 @@
 import { Mutex } from '@asleepace/mutex'
+import { Timestamp } from './timestamp'
+import { ResponseStream } from './response-stream'
 
 const textEncoder = new TextEncoder()
 
@@ -26,6 +28,43 @@ const encodeStreamEvent = (message: {
   return buffer
 }
 
+//  ---  helper methods ---
+
+function MessageExample(params: { id: string }) {
+  return {
+    type: 'system',
+    html: `example usage (bash): <code class="text-pink-400 rounded bg-white/5 px-2 py-1">curl -d "hello world" https://consoledump.io/${params.id}</code>`,
+  }
+}
+
+function MessageExampleJS(params: { id: string }) {
+  return {
+    type: 'system',
+    html: `example usage (js): <code class="text-pink-400 rounded bg-white/5 px-2 py-1">const dump = (...args) => fetch('https://consoledump.io/${params.id}',{method:'POST', body:JSON.stringify(args)})</code>`,
+  }
+}
+
+function MessageConnected(params: { id: string }) {
+  return {
+    type: 'connected',
+    data: { streamId: params.id },
+  }
+}
+
+function MessageClientConnected(params: { id: string }) {
+  return {
+    type: 'system',
+    html: `<p class="text-green-400">client (${params.id}) connected!</p>`,
+  }
+}
+
+function MessageDisconnected(params: { totalChildren: number }) {
+  return {
+    type: 'system',
+    html: `<p class="text-red-400">client (${params.totalChildren}) disconnected...</p>`,
+  }
+}
+
 //  ---  custom error definitions  ---
 
 export class ErrorStream extends Error {}
@@ -35,15 +74,31 @@ export class ErrorStreamAlreadyExists extends ErrorStream {}
 export class ErrorStreamInvalidID extends ErrorStream {}
 
 const STREAM_OPTIONS: StreamPipeOptions = {
-  preventAbort: true,
-  preventCancel: true,
+  /** If this is set to true, errors in the source ReadableStream will no longer abort the destination WritableStream. */
+  preventAbort: false,
+  /** If this is set to true, errors in the destination WritableStream will no longer cancel the source ReadableStream. */
+  preventCancel: false,
+  /** If this is set to true, closing the source ReadableStream will no longer cause the destination WritableStream to be closed. */
   preventClose: true,
 }
 
 //  ---  custom stream class  ---
 
+function getMemoryUsage() {
+  const mem = process.memoryUsage()
+  return {
+    rss: +(mem.rss / 1024 / 1024).toFixed(2),
+    heapUsed: +(mem.heapUsed / 1024 / 1024).toFixed(2),
+    heapTotal: +(mem.heapTotal / 1024 / 1024).toFixed(2),
+    external: +(mem.external / 1024 / 1024).toFixed(2),
+  }
+}
+
 export class Stream2 {
   public static readonly MAX_CAPACITY = 64
+  public static readonly MAX_BYTES_IN_MB = 20 * 1024 * 1024
+  public static readonly MAX_AGE = 20 * 60 * 1000
+
   public static readonly store = new Map<string, Stream2>()
 
   public static get isAtMaxCapacity(): boolean {
@@ -52,21 +107,15 @@ export class Stream2 {
   }
 
   public static cleanup() {
-    console.log(`[stream] running cleanup (${this.store.size}) ...`)
-    this.store.forEach((activeStream) => {
-      console.log('[stream] cleanup checking:', activeStream.id)
-      if (activeStream.isClosed) {
-        this.end(activeStream)
-      }
-      if (activeStream.lastUpdated('mins') > 5) {
-        this.end(activeStream)
+    console.log('[stream:store] active streams:', this.store.size, [
+      ...this.store.keys(),
+    ])
+    this.store.forEach((stream) => {
+      if (stream.canBeClosed || stream.cleanup()) {
+        this.store.delete(stream.id)
+        stream.close().catch(console.warn)
       }
     })
-  }
-
-  public static end(stream: Stream2) {
-    console.log('[stream2] closing stream:', stream.id)
-    this.store.delete(stream.id)
   }
 
   public static has(streamId?: string | undefined | null): boolean {
@@ -101,45 +150,69 @@ export class Stream2 {
     return stream
   }
 
+  // Cleanup registry to handle garbage collected streams
+  private static readonly cleanupRegistry = new FinalizationRegistry(
+    (childId: string) => {
+      console.log(`[stream:store] garbage collection:`, { childId })
+      const [streamId] = childId.split('-')
+      const parentStream = this.store.get(streamId)
+      parentStream?.onChildClosed(childId)
+      parentStream?.cleanup()
+      this.cleanup()
+    }
+  )
+
   // instance methods
 
   private readonly root: TransformStream
   private readonly mutex = Mutex.shared()
-
   private controller?: TransformStreamDefaultController<any>
-  private copyStream?: ReadableStream
-  private createdAt = Date.now()
-  private updatedAt = Date.now()
+  private originalStream?: ReadableStream
+  public readonly timestamp = new Timestamp({ maxAge: Stream2.MAX_AGE })
+  public childStreams = new Map<string, WeakRef<ResponseStream>>()
+  public totalBytes = 0
+  public childId = 0
 
   get isStarted(): boolean {
     return Boolean(this.controller)
+  }
+
+  get isExpired(): boolean {
+    return this.timestamp.isExpired
   }
 
   get isClosed(): boolean {
     return !this.controller
   }
 
+  get isOutOfMemory(): boolean {
+    return this.totalBytes >= Stream2.MAX_BYTES_IN_MB
+  }
+
+  get canBeClosed() {
+    return (
+      this.isExpired ||
+      this.isClosed ||
+      this.isOutOfMemory ||
+      this.childStreams.size === 0
+    )
+  }
+
   private message = {
-    id: 0,
+    id: 1,
     event: undefined as undefined | string,
   }
 
   constructor(public readonly id = createID()) {
-    this.root = new TransformStream({
+    this.root = new TransformStream<Uint8Array>({
       start: (controller) => {
         this.controller = controller
-        this.comment('started')
-        this.json({
-          type: 'connected',
-          data: { streamId: this.id },
-        })
-        this.json({
-          type: 'system',
-          html: `example usage: <code class="text-pink-400 rounded bg-white/5 px-2 py-1">curl -d "hello world" http://localhost:4321/${id}</code>`,
-        })
+        this.json(MessageConnected({ id: this.id }))
+        this.json(MessageExample({ id: this.id }))
+        this.json(MessageExampleJS({ id: this.id }))
       },
       transform: (chunk, controller) => {
-        this.updatedAt = Date.now()
+        this.timestamp.update()
         controller.enqueue(
           encodeStreamEvent({
             id: this.message.id++,
@@ -147,29 +220,20 @@ export class Stream2 {
             data: chunk,
           })
         )
+        this.totalBytes += chunk.length
       },
       flush: () => {
-        console.warn('[stream] closed:', this.id)
-        this.comment('closed')
-        return this.close()
+        console.warn(`[stream:${this.id}:root] closed!`)
+        this.close()
       },
     })
 
-    // setup the copy stream
-    this.copyStream = this.root.readable
-    Stream2.cleanup()
-  }
-
-  public lastUpdated(time: 'secs' | 'mins' | 'hours' = 'mins') {
-    const elapsedTime = Date.now() - this.updatedAt
-    const seconds = elapsedTime / 1_000
-    if (time === 'secs') return seconds
-    if (time === 'mins') return seconds / 60
-    return seconds / 3600
+    // setup the original stream which will be copied
+    this.originalStream = this.root.readable
   }
 
   public comment(comment: string) {
-    this.controller?.enqueue(`: ${comment}`)
+    this.controller?.enqueue(`: ${comment}\n\n`)
   }
 
   public async json(chunk: any) {
@@ -187,7 +251,7 @@ export class Stream2 {
       await writer.ready
       await writer.write(chunk)
     } catch (e) {
-      console.warn('[stream2] byte errpr:', e)
+      console.warn('[stream2] byte error:', e)
     } finally {
       writer.releaseLock()
       lock.releaseLock()
@@ -203,7 +267,7 @@ export class Stream2 {
       if (this.isClosed) throw new ErrorStreamClosed()
       await readable.pipeTo(this.root.writable, STREAM_OPTIONS)
     } catch (e) {
-      console.warn('[stream-error] push failed:', e)
+      console.warn(`[stream:${this.id}:root] push failed:`, e)
     } finally {
       lock.releaseLock()
     }
@@ -212,26 +276,78 @@ export class Stream2 {
   /**
    * Returns a copy of the readable stream.
    */
-  public pull() {
-    if (!this.copyStream) throw new ErrorStreamClosed()
-    const [nextStream, nextCopy] = this.copyStream?.tee()
-    this.copyStream = nextCopy
-    return nextStream
+  public pull(): ResponseStream {
+    if (this.isClosed || !this.originalStream) throw new ErrorStreamClosed()
+    const [nextBroadcast, nextOriginal] = this.originalStream.tee()
+    const childStream = new ResponseStream({
+      maxAge: Stream2.MAX_AGE,
+      readable: nextBroadcast,
+      parentId: this.id,
+      id: ++this.childId,
+    })
+    this.originalStream = nextOriginal
+    this.childStreams.set(childStream.tagName, new WeakRef(childStream))
+    this.json(MessageClientConnected({ id: String(this.childId) }))
+    Stream2.cleanupRegistry.register(childStream, childStream.tagName)
+    Stream2.cleanup()
+    return childStream
+  }
+
+  /**
+   * Callback triggered when a child closes.
+   */
+  public onChildClosed(childId: string) {
+    console.log(`[stream:${this.id}] onChildClosed:`, childId)
+    const childStream = this.childStreams.get(childId)
+    if (!childStream) return console.log('no child found...')
+    this.childStreams.delete(childId)
+    this.json(MessageDisconnected({ totalChildren: this.childStreams.size }))
+    childStream.deref()?.close()
+    if (this.childStreams.size === 0) {
+      this.close().catch(console.warn)
+    }
+  }
+
+  public info() {
+    return {
+      id: this.id,
+      totalBytes: this.totalBytes,
+      children: this.childStreams.size,
+      lastChildId: this.childId,
+    }
+  }
+
+  public cleanup(): boolean {
+    if (this.canBeClosed) return true
+    this.childStreams.forEach((child, key) => {
+      const streamRef = child.deref()
+      if (streamRef?.isAlive) return
+      streamRef?.close()
+      this.childStreams.delete(key)
+    })
+    return this.childStreams.size === 0
   }
 
   public async close() {
     if (this.isClosed) return
+    const lock = await this.mutex.acquireLock()
     try {
-      await this.json({ type: 'system', data: { status: 'closed' } })
+      if (this.isClosed) return
+      console.warn(`[stream:${this.id}] closing!`)
       this.controller?.terminate()
+      this.childStreams.forEach((child) => {
+        child.deref()?.close()
+      })
       await this.root.writable.close()
-      await this.root.readable.cancel('closed')
     } catch (e) {
       console.warn('[stream2] error closing:', e)
     } finally {
       Stream2.store.delete(this.id)
+      this.childStreams.clear()
       this.controller = undefined
-      this.copyStream = undefined
+      this.originalStream = undefined
+      lock.releaseLock()
+      Stream2.cleanup()
     }
   }
 }

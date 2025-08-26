@@ -19,10 +19,15 @@ export class StreamClient extends EventTarget {
   public source: EventSource
   private state = {
     isConnected: false,
+    childId: '',
   }
 
   public onMessage: StreamMessageHandler = (message: StreamMessage) => {
-    console.log('[stream-client] message:', message)
+    if (message.type === 'message') console.log(message)
+  }
+
+  public async cleanup() {
+    return fetch(`/api/sse?id=${this.state.childId}`, { method: 'DELETE' })
   }
 
   public async fetch(...args: any[]) {
@@ -39,7 +44,9 @@ export class StreamClient extends EventTarget {
 
     // @ts-ignore
     console.dump = (...args: any[]) => {
-      this.fetch(...args).catch(console.warn)
+      this.fetch(...args)
+        .then((res) => res.value?.status)
+        .catch(console.warn)
     }
 
     const source = new EventSource(`/api/sse?id=${id}`, {
@@ -55,13 +62,38 @@ export class StreamClient extends EventTarget {
       console.log('[stream-client] disconnected from stream:', { id })
       this.state.isConnected = false
       source.close()
-      window.location.pathname = '/'
+      this.onMessage(
+        StreamMessage.create({
+          type: 'client',
+          html: `<p class="text-red-400">client error, disconnecting...</p>`,
+        })
+      )
+      this.onMessage(
+        StreamMessage.create({
+          type: 'client',
+          html: `<a href="/" class="underline text-white">click here to start a new session!</a>`,
+        })
+      )
     })
 
     source.addEventListener('message', (ev) => {
       const message = new StreamMessage(ev.data)
-      this.messages.push(message)
-      this.onMessage(message)
+      if (
+        !this.state.childId &&
+        'childId' in message.json &&
+        typeof message.json.childId === 'string'
+      ) {
+        this.state.childId = message.json.childId
+      } else {
+        this.messages.push(message)
+        this.onMessage(message)
+      }
+    })
+
+    window.addEventListener('beforeunload', () => {
+      this.cleanup().catch((e) => {
+        console.warn('[stream-client] error cleaning up:', e)
+      })
     })
 
     this.source = source

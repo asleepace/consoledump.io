@@ -6,7 +6,8 @@
     "dev": "bunx --bun astro dev",
     "build": "bunx --bun astro build",
     "preview": "bunx --bun astro preview",
-    "astro": "bunx --bun astro"
+    "astro": "bunx --bun astro",
+    "monitor": "htop -p $(pgrep bun)"
   },
   "dependencies": {
     "@asleepace/mutex": "^1.0.2",
