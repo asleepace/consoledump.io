@@ -2,8 +2,6 @@ import { Mutex } from '@asleepace/mutex'
 import { Timestamp } from './timestamp'
 import { ResponseStream } from './response-stream'
 
-const FIVE_MINUTES = 5 * 60 * 1000
-
 const textEncoder = new TextEncoder()
 
 function encode(chunk: string): Uint8Array {
@@ -92,6 +90,7 @@ function getMemoryUsage() {
 export class Stream2 {
   public static readonly MAX_CAPACITY = 64
   public static readonly MAX_BYTES_IN_MB = 20 * 1024
+  public static readonly MAX_AGE = 20 * 60 * 1000
 
   public static readonly store = new Map<string, Stream2>()
 
@@ -178,7 +177,7 @@ export class Stream2 {
   private readonly mutex = Mutex.shared()
   private controller?: TransformStreamDefaultController<any>
   private originalStream?: ReadableStream
-  public readonly timestamp = new Timestamp({ maxAge: FIVE_MINUTES })
+  public readonly timestamp = new Timestamp({ maxAge: Stream2.MAX_AGE })
   public childStreams = new Map<string, WeakRef<ResponseStream>>()
   public totalBytes = 0
   public childId = 0
@@ -209,7 +208,7 @@ export class Stream2 {
   }
 
   private message = {
-    id: 0,
+    id: 1,
     event: undefined as undefined | string,
   }
 
@@ -289,6 +288,7 @@ export class Stream2 {
     if (this.isClosed || !this.originalStream) throw new ErrorStreamClosed()
     const [nextBroadcast, nextOriginal] = this.originalStream.tee()
     const childStream = new ResponseStream({
+      maxAge: Stream2.MAX_AGE,
       readable: nextBroadcast,
       parentId: this.id,
       id: ++this.childId,

@@ -1,7 +1,7 @@
 import { Timestamp } from './timestamp'
 
 function dataEncode(data: any) {
-  return new TextEncoder().encode(`data: ${JSON.stringify(data)}\n\n`)
+  return new TextEncoder().encode(`id: 0\ndata: ${JSON.stringify(data)}\n\n`)
 }
 
 /**
@@ -10,7 +10,7 @@ function dataEncode(data: any) {
  */
 export class ResponseStream {
   public readonly stream: ReadableStream
-  public readonly timestamp = new Timestamp({ maxAge: 5 * 60 * 1000 })
+  public readonly timestamp: Timestamp
   public controller?: ReadableStreamDefaultController<any>
 
   get tagName() {
@@ -23,12 +23,14 @@ export class ResponseStream {
 
   constructor(
     public config: {
+      maxAge: number
       readable: ReadableStream
       parentId: string
       id: number
     }
   ) {
-    const TAG = `[stream-${config.parentId}:child-${config.id}]`
+    this.timestamp = new Timestamp({ maxAge: config.maxAge })
+    const TAG = `[stream:${config.parentId}-${config.id}]`
     const reader = config.readable.getReader()
     this.stream = new ReadableStream({
       start: (controller) => {
@@ -71,10 +73,10 @@ export class ResponseStream {
     }
   }
 
-  public isAlive() {
+  public get isAlive(): boolean {
     try {
-      if (!this.controller)
-        throw new Error(`${this.tagName} controller is missing!`)
+      if (!this.controller) return false
+      if (this.timestamp.isExpired) return false
       this.controller?.enqueue(new TextEncoder().encode(': is-alive?'))
       return true
     } catch (e) {
