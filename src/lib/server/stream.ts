@@ -313,7 +313,7 @@ export class Stream2 {
     if (this.canBeClosed) return true
     this.childStreams.forEach((child, key) => {
       const streamRef = child.deref()
-      if (streamRef?.isAlive) return
+      if (streamRef?.keepAlive()) return
       streamRef?.close()
       this.childStreams.delete(key)
     })
