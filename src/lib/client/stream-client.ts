@@ -64,13 +64,13 @@ export class StreamClient extends EventTarget {
       source.close()
       this.onMessage(
         StreamMessage.create({
-          type: 'client',
+          type: 'system',
           html: `<p class="text-red-400">client error, disconnecting...</p>`,
         })
       )
       this.onMessage(
         StreamMessage.create({
-          type: 'client',
+          type: 'system',
           html: `<a href="/" class="underline text-white">click here to start a new session!</a>`,
         })
       )

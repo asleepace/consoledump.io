@@ -48,18 +48,40 @@ if (Astro.request.method === 'POST') {
   </div>
 </template>
 
-<style>
+<style is:global>
   .item:nth-child(odd) {
     background-color: rgba(255, 255, 255, 0.03);
   }
 
   code {
-    text:;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  code:hover {
+    background-color: rgba(59, 130, 246, 0.1);
+  }
+  code.copied {
+    background-color: #10b981;
+    color: white;
   }
 </style>
 
 <script>
   import { StreamClient, StreamMessage } from '@/lib/client/stream-client'
+
+  document.addEventListener('click', async (event) => {
+    const target = event.target as HTMLElement
+    console.log('[onclick]', target.tagName)
+    if (target.tagName === 'CODE') {
+      try {
+        await navigator.clipboard.writeText(target.textContent || '')
+        target.classList.add('copied')
+        setTimeout(() => target.classList.remove('copied'), 1000)
+      } catch (err) {
+        console.warn('Copy failed:', err)
+      }
+    }
+  })
 
   function dateToTime(date: Date): string {
     return [date.getHours(), date.getMinutes(), date.getSeconds()]

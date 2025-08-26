@@ -29,7 +29,7 @@ export default defineConfig({
     plugins: [tailwindcss()],
     optimizeDeps: {
       // Prebundle common and heavy deps to speed up dev server startup & HMR
-      include: ["react", "react-dom", "lucide-react", "@tabler/icons-react"],
+      include: ["react", "react-dom", "lucide-react", "@tabler/icons-react", "@asleepace/try"],
       exclude: ["bun:sqlite"],
       force: true,
       esbuildOptions: {
