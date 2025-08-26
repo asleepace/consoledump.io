@@ -89,7 +89,7 @@ function getMemoryUsage() {
 
 export class Stream2 {
   public static readonly MAX_CAPACITY = 64
-  public static readonly MAX_BYTES_IN_MB = 20 * 1024
+  public static readonly MAX_BYTES_IN_MB = 20 * 1024 * 1024
   public static readonly MAX_AGE = 20 * 60 * 1000
 
   public static readonly store = new Map<string, Stream2>()

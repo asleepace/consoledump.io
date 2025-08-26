@@ -63,13 +63,13 @@ export class StreamClient extends EventTarget {
       this.state.isConnected = false
       source.close()
       this.onMessage(
-        new StreamMessage({
+        StreamMessage.create({
           type: 'client',
           html: `<p class="text-red-400">client error, disconnecting...</p>`,
         })
       )
       this.onMessage(
-        new StreamMessage({
+        StreamMessage.create({
           type: 'client',
           html: `<a href="/" class="underline text-white">click here to start a new session!</a>`,
         })

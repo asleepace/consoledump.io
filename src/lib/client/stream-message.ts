@@ -24,6 +24,10 @@ export class StreamMessage {
   public readonly time = new Date()
   public readonly type: MessageType = 'message'
 
+  static create(obj: any) {
+    return new StreamMessage(JSON.stringify(obj))
+  }
+
   constructor(data: any) {
     try {
       this.text = String(data)
