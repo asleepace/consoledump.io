@@ -18,6 +18,8 @@ const registry = new FinalizationRegistry((childId: string) => {
 
 const HEADERS = (stream: Stream2, headersInit: HeadersInit = {}) => ({
   ...headersInit,
+  'access-control-allow-origin': '*',
+  'access-control-allow-methods': 'HEAD, GET, POST, PUT, DELETE, OPTIONS',
   'content-type': 'text/event-stream',
   'transfer-encoding': 'chunked',
   'x-accel-buffering': 'no',
