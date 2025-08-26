@@ -32,7 +32,7 @@ if (Astro.request.method === 'POST') {
 <Layout
   class:list="min-h-screen bg-black font-mono w-full flex flex-col p-2 overscroll-y-contain"
 >
-  <div class="overflow-y-scroll overscroll-y-auto mt-14 pb-14">
+  <div class="overflow-y-scroll min-h-screen overscroll-y-auto mt-14 pb-14">
     <div class:list="flex flex-1 flex-col gap-2 min-h-full" id="container">
     </div>
   </div>
@@ -40,11 +40,11 @@ if (Astro.request.method === 'POST') {
 
 <template id="message">
   <div
-    class="item flex flex-row gap-x-2 py-0.5 px-4 font-mono font-thin text-sm"
+    class="item flex flex-row gap-x-2 py-0.5 px-4 flex-nowrap font-mono font-thin text-sm"
   >
     <p class="item-time text-neutral-800 text-sm font-semibold"></p>
     <p class="item-type px-2 font-bold"></p>
-    <p class="item-data text-neutral-400"></p>
+    <p class="item-data text-neutral-400 text-nowrap"></p>
   </div>
 </template>
 
