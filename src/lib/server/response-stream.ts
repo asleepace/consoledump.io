@@ -1,7 +1,7 @@
 import { Timestamp } from './timestamp'
 
 function dataEncode(data: any) {
-  return new TextEncoder().encode(`id: 0\ndata: ${JSON.stringify(data)}\n\n`)
+  return new TextEncoder().encode(data)
 }
 
 /**
@@ -12,6 +12,7 @@ export class ResponseStream {
   public readonly stream: ReadableStream
   public readonly timestamp: Timestamp
   public controller?: ReadableStreamDefaultController<any>
+  public encoder = new TextEncoder()
 
   get tagName() {
     return `${this.config.parentId}-${this.config.id}`
@@ -80,7 +81,7 @@ export class ResponseStream {
     try {
       if (!this.controller) return false
       if (this.timestamp.isExpired) return false
-      this.controller?.enqueue(new TextEncoder().encode(': is-alive?'))
+      this.controller?.enqueue(this.encoder.encode(': is-alive?'))
       return true
     } catch (e) {
       return false
