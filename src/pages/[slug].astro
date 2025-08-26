@@ -65,6 +65,12 @@ console.log(`[route:${streamId}] connecting...`)
 <script>
   import { StreamClient, StreamMessage } from '@/lib/client/stream-client'
 
+  function dateToTime(date: Date): string {
+    return [date.getHours(), date.getMinutes(), date.getSeconds()]
+      .map((n) => n.toString().padStart(2, '0'))
+      .join(':')
+  }
+
   const streamId = window.location.pathname.replace('/', '')
   const container = document.getElementById('container')!
   const template = document.getElementById('message') as HTMLTemplateElement
@@ -77,11 +83,7 @@ console.log(`[route:${streamId}] connecting...`)
     const type = item.querySelector('.item-type')!
     const data = item.querySelector('.item-data')!
     type.classList.add(message.getTypeColor())
-    time.textContent = [
-      message.time.getHours(),
-      message.time.getMinutes(),
-      message.time.getMilliseconds().toString().slice(0, 2),
-    ].join(':')
+    time.textContent = dateToTime(message.time)
     type.textContent = `[${message.type}]`
     data.innerHTML = message.format()
     container?.appendChild(item)
