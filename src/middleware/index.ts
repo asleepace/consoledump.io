@@ -11,7 +11,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
     return await next()
   } catch (e) {
     const err = e instanceof Error ? e : new Error(String(e))
-    console.log('[middlware] error:', err.message)
+    console.log('[middleware] error:', err.message)
     return Response.json({ error: true, message: err.message }, { status: 500 })
   }
 })
