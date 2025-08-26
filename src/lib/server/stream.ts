@@ -33,7 +33,14 @@ const encodeStreamEvent = (message: {
 function MessageExample(params: { id: string }) {
   return {
     type: 'system',
-    html: `example usage: <code class="text-pink-400 rounded bg-white/5 px-2 py-1">curl -d "hello world" http://localhost:4321/${params.id}</code>`,
+    html: `example usage (bash): <code class="text-pink-400 rounded bg-white/5 px-2 py-1">curl -d "hello world" https://consoledump.io/${params.id}</code>`,
+  }
+}
+
+function MessageExampleJS(params: { id: string }) {
+  return {
+    type: 'system',
+    html: `example usage (js): <code class="text-pink-400 rounded bg-white/5 px-2 py-1">const dump = (...args) => fetch('https://consoledump.io/${params.id}',{method:'POST', body:JSON.stringify(args)})</code>`,
   }
 }
 
@@ -202,6 +209,7 @@ export class Stream2 {
         this.controller = controller
         this.json(MessageConnected({ id: this.id }))
         this.json(MessageExample({ id: this.id }))
+        this.json(MessageExampleJS({ id: this.id }))
       },
       transform: (chunk, controller) => {
         this.timestamp.update()
