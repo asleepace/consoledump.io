@@ -9,15 +9,21 @@ import mdx from '@astrojs/mdx'
 export default defineConfig({
   site: 'https://consoledump.io',
   integrations: [
-    react(),
-    sitemap(),
     mdx({
+      optimize: {
+        // NOTE: Ignore custom components:
+        // https://docs.astro.build/en/guides/integrations-guide/mdx/#optimize
+        ignoreElementNames: ['pre', 'code'],
+      },
+      extendMarkdownConfig: false,
       syntaxHighlight: 'shiki',
       shikiConfig: {
         theme: 'dracula',
         wrap: true,
       },
     }),
+    react(),
+    sitemap(),
   ],
   output: 'server',
   adapter: node({

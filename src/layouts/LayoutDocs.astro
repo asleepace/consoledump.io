@@ -1,8 +1,9 @@
 ---
 import '@/styles/global.css'
 import Navigation from '@/components/Navigation.astro'
+import type { CollectionEntry } from 'astro:content'
 
-interface Props {
+type Props = CollectionEntry<'docs'>['data'] & {
   class?: string
 }
 
@@ -15,17 +16,6 @@ import SiteHead from '@/components/SiteHead.astro'
 <html lang="en">
   <head>
     <SiteHead />
-    <style>
-      article {
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-      }
-
-      article code {
-        padding: 4px;
-      }
-    </style>
   </head>
   <body
     class:list={[
@@ -34,7 +24,7 @@ import SiteHead from '@/components/SiteHead.astro'
     ]}
   >
     <Navigation class:list={['absolute top-0 left-0 right-0']} />
-    <article class="w-3xl text-white mt-24 mx-auto">
+    <article>
       <slot />
     </article>
   </body>

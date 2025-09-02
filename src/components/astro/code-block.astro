@@ -1,0 +1,153 @@
+---
+import { cn } from '@/lib/utils'
+
+// src/components/CodeBlock.astro
+export interface Props {
+  code?: string
+  title?: string
+  filename?: string
+  showLineNumbers?: boolean
+  highlightLines?: number[]
+  'data-language'?: string
+}
+
+const props = Astro.props
+
+const { title, filename, 'data-language': lang } = props
+
+const uniqueRef = crypto.randomUUID().slice(0, 8)
+---
+
+<div
+  id="code-container"
+  class={cn(
+    'code-container inset-shadow-2xs border-transparent ring-0 transition-all duration-400 ease-in-out md:rounded-3xl rounded-none',
+    '[&[data-copied]]:scale-[1.01] [&[data-copied]]:opacity-80 [&[data-copied]]:ring-4 [&[data-copied]]:ring-amber-300 [&[data-copied]]:shadow-lg'
+  )}
+>
+  {
+    (title || filename) && (
+      <div class="code-header">
+        {filename && <span class="code-filename">{filename}</span>}
+        {title && <span class="code-title">{title}</span>}
+        <span class="code-lang">{lang}</span>
+      </div>
+    )
+  }
+  <div id={uniqueRef} class="code-wrapper">
+    <pre {...props}><slot /></pre>
+  </div>
+</div>
+<script is:inline define:vars={{ uniqueRef }}>
+  const codeWrapper = document.getElementById(uniqueRef)
+
+  // copy to clipboard on double click...
+  codeWrapper?.addEventListener('dblclick', async () => {
+    try {
+      const code = document.querySelector(`#${uniqueRef} pre > code`)
+      navigator.clipboard.writeText(code.textContent)
+      codeWrapper.parentElement.setAttribute('data-copied', '1')
+    } catch (err) {
+      console.warn('[code] failed to save code:', err)
+    } finally {
+      //codeWrapper.parentElement.removeAttribute('data-copied')
+      setTimeout(() => {
+        codeWrapper.parentElement.removeAttribute('data-copied')
+      }, 300)
+    }
+  })
+</script>
+
+<style>
+  .code-container pre > code {
+    all: unset;
+  }
+
+  .code-container {
+    background-color: oklab(0.29 0 -0.02) !important;
+    overflow: hidden;
+    margin: 1.5rem 0;
+  }
+
+  .code-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 0.875rem;
+  }
+
+  .code-filename {
+    color: var(--color-primary, #3b82f6);
+    font-weight: 500;
+  }
+
+  .code-title {
+    color: var(--color-text-secondary, #94a3b8);
+  }
+
+  .code-lang {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .code-wrapper {
+    position: relative;
+  }
+
+  pre {
+    padding: var(--padding-sm, 1rem);
+    overflow-x: auto;
+    font-size: 14px;
+    line-height: 1.5;
+    margin: 0;
+    scrollbar-gutter: stable;
+  }
+
+  /* Your existing scrollbar styles */
+  pre::-webkit-scrollbar {
+    height: 6px;
+    background: transparent;
+  }
+
+  pre::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    margin: 0 4px;
+  }
+
+  pre::-webkit-scrollbar-thumb {
+    background-color: var(--color-gray-700, #374151);
+    border-radius: 3px;
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+  }
+
+  pre::-webkit-scrollbar-thumb:hover {
+    opacity: 1;
+  }
+
+  /* Line numbers */
+  pre[data-line-numbers='true'] {
+    counter-reset: line;
+  }
+
+  pre[data-line-numbers='true'] code {
+    counter-increment: line;
+  }
+
+  pre[data-line-numbers='true'] code::before {
+    content: counter(line);
+    display: inline-block;
+    width: 2em;
+    margin-right: 1em;
+    text-align: right;
+    color: var(--color-text-muted, #6b7280);
+    user-select: none;
+  }
+</style>

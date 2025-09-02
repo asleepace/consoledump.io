@@ -135,3 +135,23 @@ body {
   scrollbar-width: thin; /* thin, auto, none */
   scrollbar-color: oklch(20.5% 0 0) oklch(14.1% 0.005 285.823); /* thumb and track color */
 }
+
+article {
+  @apply w-3xl mx-auto mt-24 flex flex-col gap-y-2 text-neutral-50;
+}
+
+article h1 {
+  @apply text-5xl font-black;
+}
+
+article h2 {
+  @apply text-3xl font-bold;
+}
+
+article h3 {
+  @apply text-2xl font-bold;
+}
+
+article h4 {
+  @apply text-xl font-bold;
+}
