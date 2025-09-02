@@ -137,7 +137,7 @@ body {
 }
 
 article {
-  @apply w-3xl mx-auto mt-24 flex flex-col gap-y-2 text-neutral-50;
+  @apply w-3xl mx-auto mt-24 flex flex-col gap-y-4 text-neutral-50;
 }
 
 article h1 {
