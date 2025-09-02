@@ -12,10 +12,10 @@ const props = Astro.props
   href={props.href}
   class:list={[
     'flex backdrop-blur-lg flex-row border-1 border-white/10 hover:border-orange-400 items-center px-2 hover:bg-white/10 justify-between *:text-white/75 hover:*:text-orange-400',
-    'px-2 py-1 rounded-md',
+    'px-2 py-1 rounded-md text-sm font-semibold',
     props.class,
   ]}
 >
   <slot />
-  <p class="px-0.5 font-light">{props.name}</p>
+  <p class="px-0.5 font-light text-sm">{props.name}</p>
 </a>
