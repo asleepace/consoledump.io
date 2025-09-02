@@ -13,7 +13,7 @@ export default defineConfig({
       optimize: {
         // NOTE: Ignore custom components:
         // https://docs.astro.build/en/guides/integrations-guide/mdx/#optimize
-        ignoreElementNames: ['pre', 'code'],
+        ignoreElementNames: ['pre', 'code', 'SiteFooter'],
       },
       extendMarkdownConfig: false,
       syntaxHighlight: 'shiki',

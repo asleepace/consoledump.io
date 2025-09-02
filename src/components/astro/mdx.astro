@@ -1,14 +1,16 @@
 ---
 import CodeBlock from './code-block.astro'
 import CodeInline from './code-inline.astro'
+import SiteFooter from './site-footer.astro'
 
-//  NOTE: This file is loaded in `./blogs/[slug].astro` and passed
+//  NOTE: This file is loaded in `./docs/[slug].astro` and passed
 //  as props to `<Content {component} />`. This allows overriding
 //  custom elements.
 
 export const components = {
   pre: CodeBlock,
   code: CodeInline,
+  SiteFooter: SiteFooter,
   // You can also override other elements
   // blockquote: CustomBlockquote,
   // img: CustomImage,

@@ -137,7 +137,11 @@ body {
 }
 
 article ul {
-  @apply list-disc ms-4;
+  @apply list-disc ms-4 text-neutral-200;
+}
+
+article li {
+  @apply text-neutral-200;
 }
 
 article {
@@ -166,4 +170,8 @@ article h3 {
 
 article h4 {
   @apply text-xl font-bold;
+}
+
+article pre {
+  @apply bg-red-500;
 }
