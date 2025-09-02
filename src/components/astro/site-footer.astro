@@ -1,5 +1,5 @@
 ---
-
+const currentYearFull = new Date().getFullYear()
 ---
 
 <footer
@@ -8,13 +8,13 @@
   ]}
 >
   <div class="flex flex-row gap-x-2">
-    <a href="/docs/contact">Contact Us</a><span>|</span><a href="/docs/tos"
-      >Terms of service</a
-    ><span>|</span><a href="/docs/tos">Privacy Policy</a>
+    <a href="mailto:contact@consoledump.io">Contact Us</a><span>|</span><a
+      href="/docs/tos">Terms of service</a
+    ><span>|</span><a href="/docs/privacy">Privacy Policy</a>
   </div>
 
   <p>
     <a class="no-underline!" href="https://github.com/asleepace">Colin Teahan</a
-    > &copy; 2023-2025
+    > &copy; 2023-{currentYearFull}
   </p>
 </footer>
