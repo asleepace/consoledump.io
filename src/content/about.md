@@ -108,3 +108,33 @@ This can also be used with long running processes like the following:
 ```bash
 npm run dev | consoledump 42a66873
 ```
+
+## About
+
+<strong>Consoledump</strong> is free and open source software available for public use under the MIT license. You can view the source code for this project here: https://github.com/asleepace/consoledump.io
+
+<p class="text-xs text-neutral-700!">
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+  The above copyright notice and this permission notice shall be included in all
+  copies or substantial portions of the Software. <br /><br />
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  SOFTWARE.
+</p>
+
+<footer class="mx-auto mt-8 flex flex-col items-center gap-y-4 text-neutral-500 text-xs!">
+  <div class="flex flex-row gap-x-2">
+    <a href="/https://github.com/asleepace/consoledump.io">Source code</a><span>|</span><a href="/docs/tos">Terms of service</a><span>|</span><a href="/docs/tos">Privacy Policy</a>
+  </div>
+
+  <p><a class="no-underline!" href="https://github.com/asleepace">Colin Teahan</a> &copy; 2024-2025</p>
+</footer>

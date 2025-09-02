@@ -136,6 +136,10 @@ body {
   scrollbar-color: oklch(20.5% 0 0) oklch(14.1% 0.005 285.823); /* thumb and track color */
 }
 
+article ul {
+  @apply list-disc ms-4;
+}
+
 article {
   @apply w-3xl pt-8 pb-16 mx-auto flex flex-col gap-y-4 text-neutral-200;
 }
@@ -153,7 +157,7 @@ article h1 {
 }
 
 article h2 {
-  @apply text-3xl font-bold text-neutral-300 mt-4;
+  @apply text-3xl font-bold text-neutral-300 mt-8;
 }
 
 article h3 {
