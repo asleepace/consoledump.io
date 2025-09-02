@@ -10,3 +10,13 @@ slug: 'about'
 # Docs
 
 Documentation on how to use the consoledump service and it's various features.
+
+## Basic Usage
+
+```ts
+console.dump = (...args) =>
+  fetch('https//consoledump.io/<session_id>', {
+    method: 'POST',
+    body: JSON.stringify(args),
+  })
+```
