@@ -1,0 +1,28 @@
+---
+import { type CollectionEntry, getCollection, render } from 'astro:content'
+import LayoutDocs from '@/layouts/LayoutDocs.astro'
+
+export const prerender = true
+
+export async function getStaticPaths() {
+  const posts = await getCollection('docs')
+  console.log(posts)
+  return posts.map((post) => ({
+    params: { slug: post.id },
+    props: post,
+  }))
+}
+
+type Props = CollectionEntry<'docs'>
+
+const post = Astro.props
+
+console.log('[docs] post:', post)
+
+const { Content } = await render(post)
+---
+
+<LayoutDocs {...post.data}>
+  <!-- override built-in elements -->
+  <Content {...post} />
+</LayoutDocs>

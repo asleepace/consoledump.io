@@ -1,13 +1,14 @@
 ---
 import '@/styles/global.css'
 import Navigation from '@/components/Navigation.astro'
-import SiteHead from '@/components/SiteHead.astro'
 
 interface Props {
   class?: string
 }
 
 const className = Astro.props.class
+
+import SiteHead from '@/components/SiteHead.astro'
 ---
 
 <!doctype html>
