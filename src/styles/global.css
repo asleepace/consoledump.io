@@ -137,7 +137,15 @@ body {
 }
 
 article {
-  @apply w-3xl mx-auto mt-24 flex flex-col gap-y-4 text-neutral-50;
+  @apply w-3xl pt-8 pb-16 mx-auto flex flex-col gap-y-4 text-neutral-200;
+}
+
+article a {
+  @apply text-orange-400 underline;
+}
+
+article p {
+  @apply text-neutral-400;
 }
 
 article h1 {
@@ -145,7 +153,7 @@ article h1 {
 }
 
 article h2 {
-  @apply text-3xl font-bold;
+  @apply text-3xl font-bold text-neutral-200 mt-4;
 }
 
 article h3 {
