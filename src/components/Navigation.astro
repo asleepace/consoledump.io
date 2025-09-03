@@ -1,36 +1,41 @@
 ---
-import { NavigationButton } from '@/components/client/NavigationButton'
-import { IconWaveSine } from '@tabler/icons-react'
+import { IconPlus, IconWaveSine } from '@tabler/icons-react'
+import Button from '@/components/astro/button.astro'
 
-const className = Astro.props.clas
+const className = Astro.props.class
 ---
 
 <nav
   class:list={[
-    'py-2 px-4 min-h-12 bg-neutral-900/10 border-b-1 border-b-neutral-800',
+    'ps-4 pe-2 min-h-12 bg-neutral-900/10 border-b-1 border-b-neutral-800',
+    'flex flex-row items-center justify-between',
     'absolute left-0 right-0 top-0 backdrop-blur-2xl',
     className,
   ]}
 >
   <!-- navigation bar title & logo -->
-  <div class="flex flex-row mx-auto items-center justify-between">
-    <div class="flex px-4">
-      <a href="/" class="flex gap-x-4 flex-row items-center justify-between">
-        <div class="w-6 aspect-square">
-          <IconWaveSine size={24} color="white" />
-        </div>
+  <div class="flex px-4">
+    <a href="/" class="flex gap-x-4 flex-row items-center justify-between">
+      <div class="w-6 aspect-square">
+        <IconWaveSine size={24} color="white" />
+      </div>
 
-        <p
-          class="text-neutral-200 text-sm font-semibold uppercase tracking-wider"
-        >
-          console <span class="text-orange-400">dump</span>
-        </p>
-      </a>
-    </div>
-
-    <!-- nav bar buttons -->
-    <a href="/">
-      <NavigationButton title="New Session" />
+      <p
+        class="text-neutral-200 text-sm font-semibold uppercase tracking-wider"
+      >
+        console <span class="text-orange-400">dump</span>
+      </p>
     </a>
+  </div>
+
+  <!-- nav bar buttons -->
+  <div class="flex flex-row items-center gap-x-2">
+    <Button href="/" name="New Session">
+      <div class="border-r-1 border-r-white/10 pl-1 pr-1.5 mr-1.5">
+        <IconPlus size={16} />
+      </div>
+    </Button>
+
+    <Button href="/docs/about" name="DOCS" />
   </div>
 </nav>

@@ -72,6 +72,7 @@ export class ErrorStreamClosed extends ErrorStream {}
 export class ErrorStreamStoreMaxCapacity extends ErrorStream {}
 export class ErrorStreamAlreadyExists extends ErrorStream {}
 export class ErrorStreamInvalidID extends ErrorStream {}
+export class ErrorStreamNotFound extends ErrorStream {}
 
 const STREAM_OPTIONS: StreamPipeOptions = {
   /** If this is set to true, errors in the source ReadableStream will no longer abort the destination WritableStream. */
@@ -85,9 +86,9 @@ const STREAM_OPTIONS: StreamPipeOptions = {
 //  ---  custom stream class  ---
 
 export class Stream2 {
-  public static readonly MAX_CAPACITY = 64
-  public static readonly MAX_BYTES_IN_MB = 20 * 1024 * 1024
-  public static readonly MAX_AGE = 20 * 60 * 1000
+  public static readonly MAX_CAPACITY = 512 // Max number of streams (~10.2 GB at 20 MB per stream)
+  public static readonly MAX_BYTES_IN_MB = 20 * 1024 * 1024 // 20 MB
+  public static readonly MAX_AGE = 24 * 60 * 60 * 1000 // 24 hours
   public static readonly MIN_KEEP_ALIVE = 1000 * 25 // 25secs
 
   public static readonly store = new Map<string, Stream2>()
@@ -124,11 +125,11 @@ export class Stream2 {
     this.cleanup()
     const stream = new Stream2()
     this.store.set(stream.id, stream)
-    stream.json({
-      status: 'created',
-      streamId: stream.id,
-      timestamp: Date.now(),
-    })
+    // stream.json({
+    //   status: 'created',
+    //   streamId: stream.id,
+    //   timestamp: Date.now(),
+    // })
     return stream
   }
 
@@ -247,6 +248,13 @@ export class Stream2 {
       writer.releaseLock()
       lock.releaseLock()
     }
+  }
+
+  public copy(): ReadableStream<Uint8Array> {
+    if (this.isClosed || !this.originalStream) throw new ErrorStreamClosed()
+    const [copy, original] = this.originalStream.tee()
+    this.originalStream = original
+    return copy
   }
 
   /**

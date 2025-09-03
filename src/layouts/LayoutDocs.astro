@@ -1,0 +1,31 @@
+---
+import '@/styles/global.css'
+import Navigation from '@/components/Navigation.astro'
+import type { CollectionEntry } from 'astro:content'
+
+type Props = CollectionEntry<'docs'>['data'] & {
+  class?: string
+}
+
+const className = Astro.props.class
+
+import SiteHead from '@/components/SiteHead.astro'
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <SiteHead />
+  </head>
+  <body
+    class:list={[
+      'flex flex-col flex-1 max-h-screen bg-black font-mono overflow-x-hidden',
+      className,
+    ]}
+  >
+    <Navigation class:list={['sticky z-100 top-0 left-0 right-0']} />
+    <article>
+      <slot />
+    </article>
+  </body>
+</html>

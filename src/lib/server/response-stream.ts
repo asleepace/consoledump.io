@@ -42,7 +42,7 @@ export class ResponseStream {
         // NOTE: the first message (id=0) will be the childId which consists
         // of both the streamId and child number. This is then used to cleanup
         // from the client or finalization registry.
-        controller.enqueue(dataEncode({ childId: this.tagName }))
+        controller.enqueue(dataEncode(`: stream-id=${this.tagName}\n\n`))
         this.startKeepAlive()
       },
       pull: async (controller) => {
@@ -94,7 +94,12 @@ export class ResponseStream {
     try {
       if (!this.controller) return false
       if (this.timestamp.isExpired) return false
-      this.controller?.enqueue(this.encoder.encode(': keep-alive'))
+
+      const elapsedTime = (Date.now() - this.timestamp.updatedAt) / 1_000
+      if (elapsedTime < 30) return true
+
+      this.controller?.enqueue(this.encoder.encode(': keep-alive\n\n'))
+      this.timestamp.update()
       return true
     } catch (e) {
       return false

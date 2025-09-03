@@ -1,0 +1,135 @@
+---
+title: 'Docs'
+description: "Documentation on how to use the consoledump service and its various features."
+pubDate: '9/2/2025'
+heroImage: '/images/cover.png'
+hashTags: 'Consoledump, Docs, About, How'
+slug: 'about'
+---
+
+# Documentation
+
+Last updated on <span class="text-blue-500">September 2nd, 2025</span>
+
+Stream your application logs and terminal output to a shareable web interface.
+
+## Quick Start
+
+1. [Create a new session](/) to get your unique session ID (e.g., `42a66873`)
+2. Test it with curl:
+
+```bash
+curl -d "hello world" https://consoledump.io/42a66873
+```
+
+Your message will appear in the web interface at `https://consoledump.io/42a66873`
+
+## JavaScript/TypeScript Integration
+
+Override the default console to automatically pipe logs to your session:
+
+```typescript
+// Extend Console interface (TypeScript only)
+declare global {
+  interface Console {
+    sessionId: string
+  }
+}
+
+// Configure your session ID
+Object.defineProperty(console, 'sessionId', {
+  value: '42a66873',
+  writable: true,
+})
+
+// Proxy all console methods
+console = new Proxy(console, {
+  get(target, prop) {
+    const method = target[prop as keyof Console]
+
+    if (typeof method !== 'function') {
+      return method
+    }
+
+    const override = async (...args: any[]) => {
+      fetch(`https://consoledump.io/${target.sessionId}`, {
+        method: 'POST',
+        body: JSON.stringify(args),
+        headers: {
+          'x-dump-encoding': 'json/args',
+          'x-dump-version': '1.0',
+        },
+      })
+    }
+
+    return (...args: any[]) => {
+      override(...args).catch(() => {})
+      method.apply(target, args)
+    }
+  },
+})
+```
+
+**Usage:**
+```typescript
+console.sessionId = '42a66873'
+console.log('Hello, world!') // Appears locally AND online
+console.error('Something went wrong')
+console.info({ user: 'colin', status: 'active' })
+```
+
+## Command Line Tool
+
+Install the bash script for piping terminal output:
+
+```bash
+curl -sSL https://consoledump.io/install | bash
+```
+
+Then pipe any command output:
+
+```bash
+# Basic usage
+echo "test message" | consoledump 42a66873
+
+# Long-running processes
+npm run dev | consoledump 42a66873
+tail -f app.log | consoledump 42a66873
+docker logs container | consoledump 42a66873
+```
+
+## API Reference
+
+The following section describes the generic HTTP/REST endpoints for this application.
+
+#### Create a session
+
+```
+HEAD https://consoledump.io/api
+```
+
+The server will respond with a header containing `x-stream-id` which you should use for `{sessionId}`.
+
+#### Send data
+```
+POST https://consoledump.io/api/{sessionId}
+Content-Type: text/plain
+
+Your log message here
+```
+
+#### View data
+```
+GET https://consoledump.io/api/{sessionId}
+Accept: text/event-stream
+```
+
+Returns the web interface for viewing streamed logs in real-time.
+
+## About
+
+**Consoledump** is free and open source software available under the MIT license.
+
+**Source code:** [github.com/asleepace/consoledump.io](https://github.com/asleepace/consoledump.io)
+
+<SiteFooter />

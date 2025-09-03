@@ -1,0 +1,20 @@
+---
+const currentYearFull = new Date().getFullYear()
+---
+
+<footer
+  class:list={[
+    'mx-auto mt-8 pt-8 flex flex-col items-center gap-y-4 text-neutral-500 text-xs! border-t-neutral-700 border-t-[0.5px] w-full',
+  ]}
+>
+  <div class="flex flex-row gap-x-2">
+    <a href="mailto:contact@consoledump.io">Contact Us</a><span>|</span><a
+      href="/docs/tos">Terms of service</a
+    ><span>|</span><a href="/docs/privacy">Privacy Policy</a>
+  </div>
+
+  <p>
+    <a class="no-underline!" href="https://github.com/asleepace">Colin Teahan</a
+    > &copy; 2023-{currentYearFull}
+  </p>
+</footer>
