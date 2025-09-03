@@ -140,6 +140,15 @@ article ul {
   @apply list-disc ms-4 text-neutral-200;
 }
 
+article ol {
+  @apply list-decimal ms-4;
+}
+
+article ol > li {
+  margin-inline-start: 4px;
+  margin-inline-end: 4px;
+}
+
 article li {
   @apply text-neutral-200;
 }
@@ -169,9 +178,5 @@ article h3 {
 }
 
 article h4 {
-  @apply text-xl font-bold;
-}
-
-article pre {
-  @apply bg-red-500;
+  @apply text-xl text-blue-500 font-bold;
 }

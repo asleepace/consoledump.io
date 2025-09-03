@@ -1,6 +1,6 @@
 ---
 title: 'Docs'
-description: "Documentation on how to use the consoledump service and it's various features."
+description: "Documentation on how to use the consoledump service and its various features."
 pubDate: '9/2/2025'
 heroImage: '/images/cover.png'
 hashTags: 'Consoledump, Docs, About, How'
@@ -9,49 +9,43 @@ slug: 'about'
 
 # Documentation
 
-Documentation on how to use the consoledump service and it's various features.
+Last updated on <span class="text-blue-500">September 2nd, 2025</span>
 
-## Basic Usage
+Stream your application logs and terminal output to a shareable web interface.
 
-To get started with consoledump <a href="/">click here</a> to create a new session and make note of the `/sessionId` which appears as the last part of the URL (i.e. `42a66873`).
+## Quick Start
 
-Once you have created a new session an obtained the unique session ID, you can test piping data with the following bash command:
+1. [Create a new session](/) to get your unique session ID (e.g., `42a66873`)
+2. Test it with curl:
 
 ```bash
 curl -d "hello world" https://consoledump.io/42a66873
 ```
 
-or by making a simple `POST` request in JS/TS:
+Your message will appear in the web interface at `https://consoledump.io/42a66873`
 
-```ts
-fetch(`https//consoledump.io/${sessionId}`, {
-  method: 'POST',
-  body: 'Hello, world!',
-})
-```
+## JavaScript/TypeScript Integration
 
-## Advanced Usage
+Override the default console to automatically pipe logs to your session:
 
-You can use the following snippet to override the default JS `console` methods and pipe to a specific endpoint:
-
-```ts
-// declare a new property on console (typescript only)
+```typescript
+// Extend Console interface (TypeScript only)
 declare global {
   interface Console {
     sessionId: string
   }
 }
 
-// define a sessionId property on the console so it can be configured
+// Configure your session ID
 Object.defineProperty(console, 'sessionId', {
   value: '42a66873',
   writable: true,
 })
 
-// wrap console in a proxy which will intercept all logs
+// Proxy all console methods
 console = new Proxy(console, {
   get(target, prop) {
-    const method = target[prop]
+    const method = target[prop as keyof Console]
 
     if (typeof method !== 'function') {
       return method
@@ -68,67 +62,74 @@ console = new Proxy(console, {
       })
     }
 
-    return (...args) => {
-      override(...args).catch(() => {}) // ignore warnings
-      method.apply(target, args) // also log locally
+    return (...args: any[]) => {
+      override(...args).catch(() => {})
+      method.apply(target, args)
     }
   },
 })
 ```
 
-Make sure that you do this in your apps entry point or at the top of your JS/TS file, then you can use it like so:
-
-```ts
-// make sure to set the session id somewhere
+**Usage:**
+```typescript
 console.sessionId = '42a66873'
-
-// now logs should appear both locally an online!
-console.log('Hello, world!')
+console.log('Hello, world!') // Appears locally AND online
+console.error('Something went wrong')
+console.info({ user: 'colin', status: 'active' })
 ```
 
-## Bash Script
+## Command Line Tool
 
-You can also download a simple bash script which you can use to pipe your stdout to a consoledump session.
+Install the bash script for piping terminal output:
 
 ```bash
-# install the bash script and source your profile
-curl -sSL https://consoledump.io/sh
-
-source ~/.zshrc
+curl -sSL https://consoledump.io/install | bash
 ```
 
-Then you can redirect the output of your terminal to your consoledump session:
+Then pipe any command output:
 
 ```bash
-echo "this is a test" | consoledump 42a66873
-```
+# Basic usage
+echo "test message" | consoledump 42a66873
 
-This can also be used with long running processes like the following:
-
-```bash
+# Long-running processes
 npm run dev | consoledump 42a66873
+tail -f app.log | consoledump 42a66873
+docker logs container | consoledump 42a66873
 ```
+
+## API Reference
+
+The following section describes the generic HTTP/REST endpoints for this application.
+
+#### Create a session
+
+```
+HEAD https://consoledump.io/api
+```
+
+The server will respond with a header containing `x-stream-id` which you should use for `{sessionId}`.
+
+#### Send data
+```
+POST https://consoledump.io/api/{sessionId}
+Content-Type: text/plain
+
+Your log message here
+```
+
+#### View data
+```
+GET https://consoledump.io/api/{sessionId}
+Accept: text/event-stream
+```
+
+Returns the web interface for viewing streamed logs in real-time.
 
 ## About
 
-<strong>Consoledump</strong> is free and open source software available for public use under the MIT license. You can view the source code for this project here: https://github.com/asleepace/consoledump.io
+**Consoledump** is free and open source software available under the MIT license.
 
-<p class="text-xs text-neutral-700!">
-  Permission is hereby granted, free of charge, to any person obtaining a copy
-  of this software and associated documentation files (the "Software"), to deal
-  in the Software without restriction, including without limitation the rights
-  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-  copies of the Software, and to permit persons to whom the Software is
-  furnished to do so, subject to the following conditions:
-  The above copyright notice and this permission notice shall be included in all
-  copies or substantial portions of the Software. <br /><br />
-  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-  SOFTWARE.
-</p>
+**Source code:** [github.com/asleepace/consoledump.io](https://github.com/asleepace/consoledump.io)
 
 <SiteFooter />
