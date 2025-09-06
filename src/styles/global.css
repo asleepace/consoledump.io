@@ -135,3 +135,48 @@ body {
   scrollbar-width: thin; /* thin, auto, none */
   scrollbar-color: oklch(20.5% 0 0) oklch(14.1% 0.005 285.823); /* thumb and track color */
 }
+
+article ul {
+  @apply list-disc ms-4 text-neutral-200;
+}
+
+article ol {
+  @apply list-decimal ms-4;
+}
+
+article ol > li {
+  margin-inline-start: 4px;
+  margin-inline-end: 4px;
+}
+
+article li {
+  @apply text-neutral-200;
+}
+
+article {
+  @apply w-3xl pt-8 pb-16 mx-auto flex flex-col gap-y-4 text-neutral-200;
+}
+
+article a {
+  @apply text-orange-400 underline;
+}
+
+article p {
+  @apply text-neutral-400;
+}
+
+article h1 {
+  @apply text-5xl font-black;
+}
+
+article h2 {
+  @apply text-3xl font-bold text-neutral-300 mt-8;
+}
+
+article h3 {
+  @apply text-2xl font-bold;
+}
+
+article h4 {
+  @apply text-xl text-blue-500 font-bold;
+}

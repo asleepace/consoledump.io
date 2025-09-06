@@ -1,0 +1,64 @@
+---
+import '@/styles/global.css'
+
+import { siteConfig, type SiteConfig } from '@/consts'
+
+interface Props extends Partial<SiteConfig> {}
+
+const canonicalURL = new URL(Astro.url.pathname, Astro.site)
+
+const site = { ...siteConfig, ...Astro.props }
+
+const json = JSON.stringify({
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: site.title,
+  description: site.description,
+  url: site.url,
+  applicationCategory: 'DeveloperApplication',
+})
+---
+
+<meta charset="UTF-8" />
+<meta name="viewport" content={site.viewport} />
+<meta name="generator" content={Astro.generator} />
+<title>{site.title}</title>
+
+<!-- SEO Meta Tags -->
+<meta name="description" content={site.description} />
+<meta name="keywords" content={site.keywords} />
+<meta name="author" content={site.author} />
+<meta name="robots" content={site.robots} />
+
+<!-- Open Graph / Facebook -->
+<meta property="og:type" content={site.type} />
+<meta property="og:url" content={site.url} />
+<meta property="og:title" content={site.title} />
+<meta property="og:description" content={site.description} />
+<meta property="og:image" content={site.coverImage} />
+<meta property="og:site_name" content={site.title} />
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:url" content={site.url} />
+<meta name="twitter:title" content={site.title} />
+<meta name="twitter:description" content={site.description} />
+<meta name="twitter:image" content={site.coverImage} />
+<meta name="twitter:creator" content={site.author} />
+
+<!-- Favicons -->
+<link rel="icon" type="image/svg+xml" href={site.favicon.svg} />
+<link rel="icon" type="image/x-icon" href={site.favicon.ico} />
+<link rel="icon" type="image/png" sizes="32x32" href={site.favicon.png32} />
+<link rel="icon" type="image/png" sizes="16x16" href={site.favicon.png16} />
+<link rel="apple-touch-icon" sizes="180x180" href={site.favicon.png180} />
+<link rel="manifest" href={site.manifest} />
+
+<!-- Performance & Security -->
+<meta name="theme-color" content={site.themeColor} />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="canonical" href={canonicalURL} />
+
+<!-- Structured Data (JSON-LD) -->
+<script type="application/ld+json" set:html={json} />
