@@ -6,8 +6,8 @@ set -e
 mkdir -p ~/.consoledump/bin
 
 # Target environment
-# ENDPOINT=https://consoledump.io/
-ENDPOINT=http://127.0.0.1:8082
+ENDPOINT=https://consoledump.io/
+# ENDPOINT=http://127.0.0.1:8082
 
 # Install the consoledump binary
 cat > ~/.consoledump/bin/consoledump << EOF
