@@ -55,19 +55,14 @@ if (Astro.request.method === 'POST') {
 }
 ---
 
-<Layout
-  class:list="min-h-screen bg-black font-mono w-full flex flex-col p-2 overscroll-y-contain"
->
+<Layout class:list="min-h-screen bg-black font-mono w-full flex flex-col p-2 overscroll-y-contain">
   <div class="overflow-y-scroll min-h-screen overscroll-y-auto mt-14 pb-14">
-    <div class:list="flex flex-1 flex-col gap-2 min-h-full" id="container">
-    </div>
+    <div class:list="flex flex-1 flex-col gap-2 min-h-full" id="container"></div>
   </div>
 </Layout>
 
 <template id="message">
-  <div
-    class="item flex flex-row gap-x-2 py-0.5 px-4 flex-nowrap font-mono font-thin text-sm"
-  >
+  <div class="item flex flex-row gap-x-2 py-0.5 px-4 flex-nowrap font-mono font-thin text-sm">
     <p class="item-time text-neutral-800 text-sm font-semibold"></p>
     <p class="item-type px-2 font-bold"></p>
     <p class="item-data text-neutral-400 text-nowrap"></p>
@@ -109,9 +104,7 @@ if (Astro.request.method === 'POST') {
   })
 
   function dateToTime(date: Date): string {
-    return [date.getHours(), date.getMinutes(), date.getSeconds()]
-      .map((n) => n.toString().padStart(2, '0'))
-      .join(':')
+    return [date.getHours(), date.getMinutes(), date.getSeconds()].map((n) => n.toString().padStart(2, '0')).join(':')
   }
 
   const streamId = window.location.pathname.replace('/', '')
@@ -119,6 +112,15 @@ if (Astro.request.method === 'POST') {
   const template = document.getElementById('message') as HTMLTemplateElement
 
   const client = new StreamClient(streamId)
+
+  function autoScroll() {
+    if (!container) return
+    const AUTO_SCROLL_THRESHOLD = 50
+    const containerOffset = container.scrollHeight - container.scrollTop
+    const isNearBottom = containerOffset <= container.clientHeight + AUTO_SCROLL_THRESHOLD // 50px threshold
+    if (!isNearBottom) return
+    container?.scrollTo({ top: container.scrollHeight, behavior: 'smooth' })
+  }
 
   function addItem(message: StreamMessage) {
     const item = template.content.cloneNode(true) as DocumentFragment
@@ -130,6 +132,7 @@ if (Astro.request.method === 'POST') {
     type.textContent = `[${message.type}]`
     data.innerHTML = message.format()
     container?.appendChild(item)
+    requestAnimationFrame(() => autoScroll())
   }
 
   client.on((message) => {
