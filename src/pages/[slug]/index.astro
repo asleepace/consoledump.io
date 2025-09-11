@@ -57,7 +57,14 @@ if (Astro.request.method === 'POST') {
 
 <Layout class:list="min-h-screen bg-black font-mono w-full flex flex-col p-2 overscroll-y-contain">
   <div class="overflow-y-scroll min-h-screen overscroll-y-auto mt-14 pb-14">
-    <div class:list="flex flex-1 flex-col gap-2 min-h-full" id="container"></div>
+    <div class:list="flex flex-1 flex-col gap-2 min-h-full pb-16" id="container"></div>
+  </div>
+  <div
+    class="absolute *:text-sm top-14 border-[0.5px] border-neutral-700 rounded right-2 flex gap-x-1 items-center justify-center *:opacity-50 *:hover:opacity-100 *:text-orange-400 op *:bg-transparent *:px-2 *:py-1"
+  >
+    <button id="btn-download" class="border-r-[0.5px] border-neutral-700">Download</button>
+    <button id="btn-clear" class="border-r-[0.5px] border-neutral-700">Clear</button>
+    <button id="btn-scroll-bottom">Scroll to bottom</button>
   </div>
 </Layout>
 
@@ -112,6 +119,21 @@ if (Astro.request.method === 'POST') {
   const template = document.getElementById('message') as HTMLTemplateElement
 
   const client = new StreamClient(streamId)
+  const messages: StreamMessage[] = []
+
+  function downloadData() {
+    const data = messages.map((msg) => msg.export()).filter(Boolean)
+    const json = JSON.stringify(data, null, 2)
+    const blob = new Blob([json], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `stream-${streamId}-${+new Date()}.json`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
 
   function autoScroll() {
     if (!container) return
@@ -119,10 +141,15 @@ if (Astro.request.method === 'POST') {
     const containerOffset = container.scrollHeight - container.scrollTop
     const isNearBottom = containerOffset <= container.clientHeight + AUTO_SCROLL_THRESHOLD // 50px threshold
     if (!isNearBottom) return
-    container?.scrollTo({ top: container.scrollHeight, behavior: 'smooth' })
+    const scrollableParent = container?.parentElement
+    if (scrollableParent) {
+      scrollableParent.scrollTo({ top: scrollableParent.scrollHeight, behavior: 'instant' })
+      console.log('Parent scrollHeight:', scrollableParent.scrollHeight)
+    }
   }
 
   function addItem(message: StreamMessage) {
+    messages.push(message)
     const item = template.content.cloneNode(true) as DocumentFragment
     const time = item.querySelector('.item-time')!
     const type = item.querySelector('.item-type')!
@@ -134,6 +161,19 @@ if (Astro.request.method === 'POST') {
     container?.appendChild(item)
     requestAnimationFrame(() => autoScroll())
   }
+
+  document.getElementById('btn-download')?.addEventListener('click', downloadData)
+  document.getElementById('btn-scroll-bottom')?.addEventListener('click', () => {
+    const scrollableParent = container?.parentElement
+    if (scrollableParent) {
+      scrollableParent.scrollTo({ top: scrollableParent.scrollHeight, behavior: 'instant' })
+      console.log('Parent scrollHeight:', scrollableParent.scrollHeight)
+    }
+  })
+  document.getElementById('btn-clear')?.addEventListener('click', () => {
+    messages.length = 0
+    container.innerHTML = ''
+  })
 
   client.on((message) => {
     addItem(message)

@@ -46,6 +46,14 @@ export class StreamMessage {
     }
   }
 
+  public export() {
+    if (this.type === 'system') return null
+    const data = this.json || this.text || null
+    if (!data) return null
+    const compact = Array.isArray(data) ? data.flat(1) : data
+    return Array.isArray(compact) ? compact : [compact]
+  }
+
   public format(): string {
     if (this.type === 'connected') {
       const href = window.location.href
@@ -60,7 +68,7 @@ export class StreamMessage {
       return dumpObject(this.json)
     }
 
-    return this.text ?? '<empty>'
+    return this.text ?? '<empty></empty>'
   }
 
   public getTypeColor(): string {
