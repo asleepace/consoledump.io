@@ -144,7 +144,6 @@ if (Astro.request.method === 'POST') {
     const scrollableParent = container?.parentElement
     if (scrollableParent) {
       scrollableParent.scrollTo({ top: scrollableParent.scrollHeight, behavior: 'instant' })
-      console.log('Parent scrollHeight:', scrollableParent.scrollHeight)
     }
   }
 
@@ -167,7 +166,6 @@ if (Astro.request.method === 'POST') {
     const scrollableParent = container?.parentElement
     if (scrollableParent) {
       scrollableParent.scrollTo({ top: scrollableParent.scrollHeight, behavior: 'instant' })
-      console.log('Parent scrollHeight:', scrollableParent.scrollHeight)
     }
   })
   document.getElementById('btn-clear')?.addEventListener('click', () => {
