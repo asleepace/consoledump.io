@@ -41,11 +41,12 @@ ssh root@192.241.216.26
 cd ~/consoledump.io
 
 # fetch latest version
-git stash .
+git stash
 git pull --force
 
 # build application
 bun install
+bun run build
 
 # restart application
 pm2 restart consoledump.io
