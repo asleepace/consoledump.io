@@ -60,7 +60,7 @@ if (Astro.request.method === 'POST') {
     <div class:list="flex flex-1 flex-col gap-2 min-h-full pb-16" id="container"></div>
   </div>
   <div
-    class="absolute *:text-sm top-14 border-[0.5px] border-neutral-700 rounded right-2 flex gap-x-1 items-center justify-center *:opacity-50 *:hover:opacity-100 *:text-orange-400 op *:bg-transparent *:px-2 *:py-1"
+    class="hidden sm:flex absolute *:text-sm top-14 border-[0.5px] border-neutral-700 bg-black rounded right-2 gap-x-1 items-center justify-center *:opacity-50 *:hover:opacity-100 *:text-orange-400 op *:bg-transparent *:px-2 *:py-1"
   >
     <button id="btn-download" class="border-r-[0.5px] border-neutral-700">Download</button>
     <button id="btn-clear" class="border-r-[0.5px] border-neutral-700">Clear</button>
@@ -144,7 +144,6 @@ if (Astro.request.method === 'POST') {
     const scrollableParent = container?.parentElement
     if (scrollableParent) {
       scrollableParent.scrollTo({ top: scrollableParent.scrollHeight, behavior: 'instant' })
-      console.log('Parent scrollHeight:', scrollableParent.scrollHeight)
     }
   }
 
@@ -167,7 +166,6 @@ if (Astro.request.method === 'POST') {
     const scrollableParent = container?.parentElement
     if (scrollableParent) {
       scrollableParent.scrollTo({ top: scrollableParent.scrollHeight, behavior: 'instant' })
-      console.log('Parent scrollHeight:', scrollableParent.scrollHeight)
     }
   })
   document.getElementById('btn-clear')?.addEventListener('click', () => {

@@ -20,9 +20,7 @@ const className = Astro.props.class
         <IconWaveSine size={24} color="white" />
       </div>
 
-      <p
-        class="text-neutral-200 text-sm font-semibold uppercase tracking-wider"
-      >
+      <p class="text-neutral-200 text-sm font-semibold uppercase tracking-wider">
         console <span class="text-orange-400">dump</span>
       </p>
     </a>
@@ -30,11 +28,13 @@ const className = Astro.props.class
 
   <!-- nav bar buttons -->
   <div class="flex flex-row items-center gap-x-2">
-    <Button href="/" name="New Session">
+    <Button href="/" name="New Session" class="hidden sm:flex line-clamp-1">
       <div class="border-r-1 border-r-white/10 pl-1 pr-1.5 mr-1.5">
         <IconPlus size={16} />
       </div>
     </Button>
+
+    <Button href="/" name="[ + ]" class="flex sm:hidden" />
 
     <Button href="/docs/about" name="DOCS" />
   </div>
