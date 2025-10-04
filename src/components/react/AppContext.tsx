@@ -1,4 +1,4 @@
-import React, { createContext, useState, type PropsWithChildren } from 'react'
+import React, { createContext, useRef, useState, type PropsWithChildren } from 'react'
 import type { LogEntry } from './LogEntryItem'
 
 export type AppTheme = {
@@ -19,7 +19,7 @@ const AppThemes: Record<AppTheme['mode'], AppTheme> = {
     mode: 'dark',
     bg: 'bg-gray-950',
     card: 'bg-gray-900',
-    border: 'border-gray-800',
+    border: 'border-gray-900',
     hover: 'hover:bg-gray-800/50',
     text: 'text-gray-100',
     textMuted: 'text-gray-400',
@@ -88,6 +88,10 @@ export type AppCtx = {
   setSearchTerm: SetState<string | undefined>
   setIsConnected: SetState<boolean>
   setExpandedLogs: SetState<Set<string>>
+
+  /** helpers */
+  toggleExpand(id: string): void
+  copyToClipboard(logEntry: { content: string; id: string }): void
 }
 
 // --- default app context ---
@@ -106,6 +110,8 @@ export const AppContext = createContext<AppCtx>({
   setSearchTerm() {},
   setIsConnected() {},
   setExpandedLogs() {},
+  toggleExpand() {},
+  copyToClipboard() {},
 })
 
 // --- app context provider ---
@@ -136,6 +142,21 @@ export function AppContextProvider({ children }: PropsWithChildren<{}>) {
         setSearchTerm,
         setIsConnected,
         setExpandedLogs,
+        toggleExpand: (id: string) => {
+          console.log('[AppContext] toggle expand:', id)
+          const next = new Set(expandedLogs)
+          if (next.has(id)) {
+            next.delete(id)
+          } else {
+            next.add(id)
+          }
+          setExpandedLogs(next)
+        },
+        copyToClipboard(logEntry) {
+          navigator.clipboard.writeText(logEntry.content)
+          setCopiedId(logEntry.id)
+          setTimeout(() => setCopiedId(undefined), 2000)
+        },
       }}
     >
       {children}
