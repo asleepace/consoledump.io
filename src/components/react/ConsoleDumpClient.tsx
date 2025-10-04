@@ -26,11 +26,13 @@ export const ConsoleDumpClient = withAppProvider((props: ConsoleDumpClientProps)
       <AppNavigationBar />
 
       {/* --- main context --- */}
-      <main className="w-full flex-1 flex flex-col">
-        {/* --- messages --- */}
-        {ctx.logs.map((logEntry) => {
-          return <LogEntryItem {...logEntry} key={logEntry.id} />
-        })}
+      <main className="w-full max-w-full flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 overflow-y-auto pb-32">
+          {/* --- messages --- */}
+          {ctx.logs.map((logEntry) => {
+            return <LogEntryItem {...logEntry} key={logEntry.id} />
+          })}
+        </div>
       </main>
     </div>
   )

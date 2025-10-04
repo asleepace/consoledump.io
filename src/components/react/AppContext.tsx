@@ -118,7 +118,12 @@ export const AppContext = createContext<AppCtx>({
 
 export function AppContextProvider({ children }: PropsWithChildren<{}>) {
   const [theme, setTheme] = useState(AppThemes.dark)
-  const [logs, setLogs] = useState(mockLogs)
+  const [logs, setLogs] = useState(
+    new Array(100)
+      .fill(mockLogs)
+      .flat(1)
+      .map((entry, id) => ({ ...entry, id }))
+  )
   const [copiedId, setCopiedId] = useState<string | undefined>()
   const [searchTerm, setSearchTerm] = useState<string | undefined>()
   const [isConnected, setIsConnected] = useState<boolean>(false)
