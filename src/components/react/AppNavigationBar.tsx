@@ -86,59 +86,65 @@ export function SearchBar(props: { className?: string }) {
   )
 }
 
+export type AppNavigationBarProps = {
+  scrollToBottom: () => void
+  downloadLogs: () => void
+  clearLogs: () => void
+  isConnected: boolean
+  className?: string
+}
+
 /**
  * Navigation bar used in ConsoleDumpClient.tsx
  */
-export function AppNavigationBar(props: { className?: string }) {
-  const { isConnected, setLogs } = useAppContext()
-
-  const clearLogs = () => {
-    console.warn('cleared logs!')
-    setLogs([])
-  }
-
+export function AppNavigationBar(props: AppNavigationBarProps) {
   return (
     <nav className={cn('sticky flex top-0 w-full bg-black p-4 items-center gap-x-4', props.className)}>
       <div className="flex flex-1 w-full">
         <div className="flex items-center gap-2">
           <Terminal className="text-blue-400" size={16} />
           <SiteTitle />
-          <OnlineIndicator isConnected={isConnected} />
+          <OnlineIndicator isConnected={props.isConnected} />
         </div>
         <div className="px-4 flex flex-1">
           <SearchBar />
         </div>
         <div className="shrink justify-end items-center flex gap-x-1.5">
+          {/* Information button */}
           <IconButton
             label="Scroll to bottom"
             className="text-blue-500 bg-blue-500/20 hover:bg-blue-500/50"
-            onClick={() => {}}
+            onClick={props.scrollToBottom}
           >
             <Info size={16} />
           </IconButton>
+          {/* Scroll to bottom */}
           <IconButton
             label="Scroll to bottom"
             className="text-blue-500 bg-blue-500/20 hover:bg-blue-500/50"
-            onClick={() => {}}
+            onClick={props.scrollToBottom}
           >
             <ChevronsDown size={16} />
           </IconButton>
           <div className="h-6 w-[0.2px] bg-white/20 mx-1" />
+          {/* Download button */}
           <IconButton
             label="Download"
             className="text-green-500/90 bg-green-500/20 hover:bg-green-500/50"
-            onClick={() => {}}
+            onClick={props.downloadLogs}
           >
             <Download size={16} />
           </IconButton>
+          {/* Trash button */}
           <IconButton
             label="Clear logs"
             className="text-red-500/90 bg-red-500/20 hover:bg-red-500/50"
-            onClick={clearLogs}
+            onClick={props.clearLogs}
           >
             <Trash size={16} />
           </IconButton>
           <div className="h-6 w-[0.2px] bg-white/20 mx-1" />
+          {/* Settings button */}
           <IconButton
             label="Settings"
             className="text-gray-500/90 bg-gray-500/20 hover:bg-gray-500/50"

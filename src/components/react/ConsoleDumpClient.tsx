@@ -1,11 +1,24 @@
-import { withAppProvider } from './AppContext'
-import { AppNavigationBar } from './NavigationBar'
+import { withAppProvider, type AppCtx } from './AppContext'
+import { AppNavigationBar } from './AppNavigationBar'
 import { useAppContext } from '@/hooks/useAppContext'
 import { cn } from '@/lib/utils'
 import { LogEntryItem } from './LogEntryItem'
+import { useRef } from 'react'
 
 export type ConsoleDumpClientProps = {
   className?: string
+}
+
+function createJsonDataFile(ctx: AppCtx) {
+  return JSON.stringify(
+    {
+      href: window.location.href,
+      date: new Date(),
+      logs: ctx.logs,
+    },
+    null,
+    2
+  )
 }
 
 /**
@@ -20,15 +33,47 @@ export const ConsoleDumpClient = withAppProvider((props: ConsoleDumpClientProps)
   const ctx = useAppContext()
   console.log('[ConsoleDumpClient] ctx:', ctx)
 
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+
+  const dowloadLogs = () => {
+    const json = createJsonDataFile(ctx)
+    const blob = new Blob([json], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `dump-${new Date().toLocaleDateString()}.json`.toLowerCase().replaceAll(' ', '-')
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
+  const clearLogs = () => {
+    console.warn('clearing logs...')
+    ctx.setLogs([])
+  }
+
+  const scrollToBottom = () => {
+    console.log('scrolling to bottom...')
+    scrollContainerRef.current?.scrollTo({
+      top: scrollContainerRef.current.scrollHeight,
+      behavior: 'smooth',
+    })
+  }
+
   return (
     <div className={cn('w-full h-full max-h-screen flex flex-1 flex-col', props.className)}>
       {/* --- site navigation --- */}
-      <AppNavigationBar />
+      <AppNavigationBar
+        isConnected={ctx.isConnected}
+        downloadLogs={dowloadLogs}
+        scrollToBottom={scrollToBottom}
+        clearLogs={clearLogs}
+      />
 
       {/* --- main context --- */}
       <main className="w-full max-w-full flex-1 flex flex-col overflow-hidden">
-        <div className="flex-1 overflow-y-auto pb-32">
-          {/* --- messages --- */}
+        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto pb-4">
           {ctx.logs.map((logEntry) => {
             return <LogEntryItem {...logEntry} key={logEntry.id} />
           })}
