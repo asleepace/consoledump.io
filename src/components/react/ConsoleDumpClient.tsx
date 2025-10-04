@@ -3,7 +3,7 @@ import { AppNavigationBar } from './AppNavigationBar'
 import { useAppContext } from '@/hooks/useAppContext'
 import { cn } from '@/lib/utils'
 import { LogEntryItem } from './LogEntryItem'
-import { useRef } from 'react'
+import { useMemo, useRef } from 'react'
 
 export type ConsoleDumpClientProps = {
   className?: string
@@ -12,8 +12,9 @@ export type ConsoleDumpClientProps = {
 function createJsonDataFile(ctx: AppCtx) {
   return JSON.stringify(
     {
-      href: window.location.href,
-      date: new Date(),
+      url: window.location.href,
+      sessionId: window.location.pathname.slice(1),
+      timestamp: new Date(),
       logs: ctx.logs,
     },
     null,
@@ -36,12 +37,13 @@ export const ConsoleDumpClient = withAppProvider((props: ConsoleDumpClientProps)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
   const dowloadLogs = () => {
+    const sessionId = window.location.pathname.slice(1)
     const json = createJsonDataFile(ctx)
     const blob = new Blob([json], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `dump-${new Date().toLocaleDateString()}.json`.toLowerCase().replaceAll(' ', '-')
+    a.download = `dump-${sessionId}-${new Date().toDateString()}.json`.replaceAll(' ', '-')
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
