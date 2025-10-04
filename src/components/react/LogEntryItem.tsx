@@ -18,7 +18,7 @@ export type LogEntryProps = LogEntry & {
 
 /** Timestamp */
 const LogTimestamp = ({ className, timestamp }: { className?: string; timestamp: LogEntry['timestamp'] }) => {
-  return <span className={cn('text-xs font-mono shrink-0 w-16', className)}>{timestamp}</span>
+  return <span className={cn('text-xs text-gray-400/40 font-mono shrink-0 w-16')}>{timestamp}</span>
 }
 
 /** Type Badge */
@@ -104,7 +104,13 @@ export const LogEntryItem = memo(({ className, ...log }: LogEntryProps) => {
 
   return (
     <div className={cn('w-full font-mono', className)}>
-      <div key={log.id} className={cn('group border-b transition-all', theme.hover, theme.border)}>
+      <div
+        key={log.id}
+        className={cn(
+          'group border-b border-t-transparent hover:border-t-gray-400/10 box-content border-t transition-all border-b-gray-400/10',
+          theme.hover
+        )}
+      >
         {/* --- log entry --- */}
         <div className={cn('flex items-start gap-3 px-2 py-0.5', isExpanded ? 'pb-2' : '')}>
           {/* --- metadata --- */}
