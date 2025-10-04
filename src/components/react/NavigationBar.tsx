@@ -71,16 +71,18 @@ export function OnlineIndicator({ isConnected }: { isConnected: boolean }) {
   )
 }
 
-export function SearchBar() {
+export function SearchBar(props: { className?: string }) {
   const ctx = useAppContext()
   return (
-    <input
-      type="text"
-      className="rounded-xl outline-hidden h-8 focus:ring-0 w-full px-4 bg-zinc-900 text-neutral-400 font-mono text-xs"
-      onChange={(ev) => {
-        ctx.setSearchTerm(ev.target.value)
-      }}
-    />
+    <div className={cn('rounded-xl overflow-hidden flex flex-1', props.className)}>
+      <input
+        type="text"
+        className=" outline-hidden h-8 focus:ring-0 w-full px-4 bg-zinc-900 text-neutral-400 font-mono text-xs"
+        onChange={(ev) => {
+          ctx.setSearchTerm(ev.target.value)
+        }}
+      />
+    </div>
   )
 }
 
@@ -103,10 +105,10 @@ export function AppNavigationBar(props: { className?: string }) {
           <SiteTitle />
           <OnlineIndicator isConnected={isConnected} />
         </div>
-        <div className="flex-1 px-4">
+        <div className="px-4 flex flex-1">
           <SearchBar />
         </div>
-        <div className="flex-1 justify-end items-center flex gap-x-1.5">
+        <div className="shrink justify-end items-center flex gap-x-1.5">
           <IconButton
             label="Scroll to bottom"
             className="text-blue-500 bg-blue-500/20 hover:bg-blue-500/50"
@@ -120,13 +122,6 @@ export function AppNavigationBar(props: { className?: string }) {
             onClick={() => {}}
           >
             <ChevronsDown size={16} />
-          </IconButton>
-          <IconButton
-            label="Scroll to bottom"
-            className="text-blue-500 bg-blue-500/20 hover:bg-blue-500/50"
-            onClick={() => {}}
-          >
-            <ArrowUpDown size={16} />
           </IconButton>
           <div className="h-6 w-[0.2px] bg-white/20 mx-1" />
           <IconButton
