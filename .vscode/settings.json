@@ -4,5 +4,6 @@
   "prettier.semi": false,
   "prettier.tabWidth": 2,
   "prettier.enable": true,
-  "prettier.singleQuote": true
+  "prettier.singleQuote": true,
+  "typescript.tsdk": "node_modules/typescript/lib"
 }
