@@ -14,6 +14,7 @@ import {
 import { cn } from '@/lib/utils'
 import { useAppContext } from '@/hooks/useAppContext'
 import type { JSX, PropsWithChildren } from 'react'
+import { ActionBar } from './ActionBar'
 
 export function SiteTitle(props: { className?: string }) {
   return (
@@ -107,7 +108,7 @@ export function AppNavigationBar(props: AppNavigationBarProps) {
           <OnlineIndicator isConnected={props.isConnected} />
         </div>
         <div className="px-4 flex flex-1">
-          <SearchBar />
+          <ActionBar />
         </div>
         <div className="shrink justify-end items-center flex gap-x-1.5">
           {/* Information button */}
