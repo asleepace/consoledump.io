@@ -70,7 +70,7 @@ export const ConsoleDumpClient = withAppProvider((props: ConsoleDumpClientProps)
     console.log('scrolling to bottom...')
     scrollContainerRef.current?.scrollTo({
       top: scrollContainerRef.current.scrollHeight,
-      behavior: 'smooth',
+      behavior: ctx.logs.length > 300 ? 'instant' : 'smooth',
     })
   }
 

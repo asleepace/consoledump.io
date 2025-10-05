@@ -1,12 +1,12 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
-import { Search, ChevronDown, SendIcon, Code, Play, ChevronRight } from 'lucide-react'
+import { Search, ChevronDown, SendHorizonal, Code, Play, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { AppBackdropLayer } from './AppBackdropLayer'
 import { useKeydown } from '@/hooks/useKeydown'
 
 export type ModeType = 'search' | 'message' | 'execute'
 
-type ActionIcon = typeof SendIcon | typeof Code | typeof Search
+type ActionIcon = typeof SendHorizonal | typeof Code | typeof Search
 
 export type ActionBarEvent = {
   type: ModeType
@@ -24,13 +24,16 @@ export type ActionBarMode = {
   icon: ActionIcon
   type: ModeType
   label: string
-  placeholder: string
 }
 
 const actionBarModes: ActionBarMode[] = [
-  { icon: Search, type: 'search', label: 'Search and filter messages', placeholder: '' },
-  { icon: SendIcon, type: 'message', label: 'Send a text message', placeholder: 'Sends text like a chat message ...' },
-  { icon: Code, type: 'execute', label: 'Run code snippet', placeholder: 'e.g. console.log("hello, world!")' },
+  { icon: Search, type: 'search', label: 'Search and filter messages.' },
+  {
+    icon: SendHorizonal,
+    type: 'message',
+    label: 'Send a text message to the stream.',
+  },
+  { icon: Code, type: 'execute', label: 'Execute a code in the browser.' },
 ]
 
 const makeAction = (props: ActionBarEvent) => ({
@@ -136,9 +139,10 @@ export function ActionBar(props: ActionBarProps) {
             key={selectedAction?.value}
             ref={inputRef}
             className={cn(
-              'px-3.5 py-2 text-xs font-mono focus:outline-none focus:ring-0 transition-all min-w-64 w-full'
+              'px-3.5 py-2 text-xs font-mono focus:outline-none focus:ring-0 transition-all min-w-64 w-full',
+              isFocused ? 'opacity-100' : 'opacity-60'
             )}
-            placeholder={mode.label}
+            placeholder={`${mode.label}..`}
             defaultValue={selectedAction?.value ?? props.defaultValue}
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
