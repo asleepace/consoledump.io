@@ -64,7 +64,7 @@ export type AppNavigationBarProps = {
   scrollToBottom: () => void
   downloadLogs: () => void
   clearLogs: () => void
-  isConnected: boolean
+  isConnected?: boolean
   className?: string
 }
 
@@ -78,7 +78,7 @@ export function AppNavigationBar(props: AppNavigationBarProps) {
         <div className="flex items-center gap-2">
           <Terminal className="text-blue-400" size={16} />
           <SiteTitle />
-          <OnlineIndicator isConnected={props.isConnected} />
+          <OnlineIndicator isConnected={!!props.isConnected} />
         </div>
         <div className="px-4 flex flex-1">
           <ActionBar onSubmit={props.onSubmitAction} />

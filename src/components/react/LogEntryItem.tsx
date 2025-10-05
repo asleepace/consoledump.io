@@ -1,9 +1,10 @@
 import { useAppContext } from './AppContext'
 import { cn } from '@/lib/utils'
 import { Check, ChevronDown, ChevronRight, Copy } from 'lucide-react'
-import { getTypeBadge, getTypeColor } from '@/hooks/useTheme'
+import { getTypeBadge, getTypeColor } from '@/components/react/useTheme'
 import { memo } from 'react'
 import type { StreamMessage } from '@/lib/client/stream-message'
+import { formatTimestamp } from './useUtils'
 
 export type LogFrom = 'client' | 'system' | 'message' | 'error'
 
@@ -19,16 +20,9 @@ export type LogEntryProps = LogEntry & {
   className?: string
 }
 
-export function formatTime(date: Date): string {
-  const hours = date.getHours().toString().padStart(2, '0')
-  const minutes = date.getMinutes().toString().padStart(2, '0')
-  const seconds = date.getSeconds().toString().padStart(2, '0')
-  return `${hours}:${minutes}:${seconds}`
-}
-
 /** Timestamp */
 const LogTimestamp = ({ className, createdAt = new Date() }: { className?: string; createdAt?: Date }) => {
-  return <span className={cn('text-xs text-gray-400/40 font-mono shrink-0 w-16')}>{formatTime(createdAt)}</span>
+  return <span className={cn('text-xs text-gray-400/40 font-mono shrink-0 w-16')}>{formatTimestamp(createdAt)}</span>
 }
 
 /** Type Badge */
@@ -94,14 +88,12 @@ const ContentCode = ({
 /**
  * Displayed content for text logs.
  */
-const ContentText = ({ log, className }: { log: LogEntry; isExpanded?: boolean; className?: string }) => {
-  return (
-    <span
-      className={cn('text-xs font-mono break-all py-0.5', getTypeColor(log.type), className)}
-      dangerouslySetInnerHTML={{ __html: log.data }}
-    />
-  )
-}
+const ContentText = ({ log, className }: { log: LogEntry; isExpanded?: boolean; className?: string }) => (
+  <span
+    className={cn('text-xs font-mono break-all py-0.5', getTypeColor(log.type), className)}
+    dangerouslySetInnerHTML={{ __html: log.data }}
+  />
+)
 
 /**
  * ## LogEntryItem

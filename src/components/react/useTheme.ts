@@ -46,6 +46,7 @@ const badgeColors = {
   connected: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
   system: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
   message: 'bg-gray-500/20 text-gray-400 border-gray-500/30',
+  closed: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
   error: 'bg-red-500/20 text-red-400 border-red-500/30',
   default: 'bg-gray-500/20 text-gray-400 border-gray-500/30',
 }
@@ -55,6 +56,7 @@ const typeColors = {
   system: 'text-blue-400',
   message: 'text-gray-300',
   error: 'text-red-400',
+  closed: 'text-orange-400',
   default: 'text-gray-300',
 }
 

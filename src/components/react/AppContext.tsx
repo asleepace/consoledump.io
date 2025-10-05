@@ -1,7 +1,7 @@
-import React, { createContext, useRef, useState, type PropsWithChildren } from 'react'
+import React, { createContext, useEffect, useRef, useState, type PropsWithChildren } from 'react'
 import type { LogEntry } from './LogEntryItem'
 import { use } from 'react'
-import { useEventStream } from '@/hooks/useEventStream'
+import { useEventStream, type ClientStream } from '@/components/react/useEventStream'
 import { Try } from '@asleepace/try'
 
 /**
@@ -60,9 +60,11 @@ export type AppCtx = {
   logs: LogEntry[]
   copiedId: string | undefined
   searchTerm: string | undefined
+  sessionId: string | undefined
   isConnected: boolean
   isDark: boolean
   expandedLogs: Set<string>
+  stream: ClientStream | undefined
   setTheme: (mode: AppTheme['mode']) => void
   setLogs: SetState<LogEntry[]>
   setCopiedId: SetState<string | undefined>
@@ -85,6 +87,8 @@ export const AppContext = createContext<AppCtx>({
   isConnected: false,
   isDark: false,
   expandedLogs: new Set(),
+  sessionId: undefined,
+  stream: undefined,
   setTheme() {},
   setLogs() {},
   setCopiedId() {},
@@ -111,13 +115,21 @@ export const makeLog = ({
   id,
 })
 
-export function AppContextProvider({ children }: PropsWithChildren<{}>) {
+export function AppContextProvider(props: PropsWithChildren<{ sessionId?: string }>) {
   const [theme, setTheme] = useState(AppThemes.dark)
   const [logs, setLogs] = useState<LogEntry[]>([])
   const [copiedId, setCopiedId] = useState<string | undefined>()
   const [searchTerm, setSearchTerm] = useState<string | undefined>()
   const [isConnected, setIsConnected] = useState<boolean>(false)
   const [expandedLogs, setExpandedLogs] = useState<Set<string>>(new Set())
+  const [sessionId, setSessionId] = useState<string | undefined>(props.sessionId)
+
+  useEffect(() => {
+    if (props.sessionId) return
+    const maybeSessionId = window.location.pathname
+    if (!maybeSessionId || maybeSessionId.length < 2) return
+    setSessionId(props.sessionId)
+  }, [])
 
   const isDark = theme.mode === 'dark'
 
@@ -139,11 +151,13 @@ export function AppContextProvider({ children }: PropsWithChildren<{}>) {
   return (
     <AppContext.Provider
       value={{
+        stream,
         theme,
         logs,
         copiedId,
         searchTerm,
         isConnected,
+        sessionId,
         isDark,
         expandedLogs,
         setTheme: (mode) => setTheme(AppThemes[mode]),
@@ -169,7 +183,7 @@ export function AppContextProvider({ children }: PropsWithChildren<{}>) {
         },
       }}
     >
-      {children}
+      {props.children}
     </AppContext.Provider>
   )
 }

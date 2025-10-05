@@ -1,34 +1,15 @@
-import { withAppProvider, type AppCtx } from './AppContext'
+import { makeLog, withAppProvider, type AppCtx } from './AppContext'
 import { AppNavigationBar } from './AppNavigationBar'
 import { useAppContext } from './AppContext'
 import { cn } from '@/lib/utils'
 import { LogEntryItem, type LogEntry } from './LogEntryItem'
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import type { ActionBarEvent } from './ActionBar'
 import { Try } from '@asleepace/try'
+import { formatTimestamp, useUtils } from './useUtils'
 
 export type ConsoleDumpClientProps = {
   className?: string
-}
-
-function createJsonDataFile(ctx: AppCtx) {
-  return JSON.stringify(
-    {
-      url: window.location.href,
-      sessionId: window.location.pathname.slice(1),
-      timestamp: new Date(),
-      logs: ctx.logs,
-    },
-    null,
-    2
-  )
-}
-
-function formatTimestamp(date: Date = new Date()): string {
-  const hours = date.getHours().toString().padStart(2, '0')
-  const mins = date.getMinutes().toString().padStart(2, '0')
-  const secs = date.getSeconds().toString().padStart(2, '0')
-  return [hours, mins, secs].join(':')
 }
 
 /**
@@ -44,19 +25,17 @@ export const ConsoleDumpClient = withAppProvider((props: ConsoleDumpClientProps)
   console.log('[ConsoleDumpClient] ctx:', ctx)
 
   const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const utils = useUtils()
 
-  const dowloadLogs = () => {
-    const sessionId = window.location.pathname.slice(1)
-    const json = createJsonDataFile(ctx)
-    const blob = new Blob([json], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `dump-${sessionId}-${new Date().toDateString()}.json`.replaceAll(' ', '-')
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
+  const downloadLogs = () => {
+    if (!ctx.sessionId) return
+    const data = utils.createJsonDataFile({ sessionId: ctx.sessionId, logs: ctx.logs })
+    utils.downloadJsonFile(data)
+    insertLog(makeLog({ data: `downloaded ${data.fileName}`, type: 'system' }))
+  }
+
+  const insertLog = (nextLog: LogEntry) => {
+    ctx.setLogs((prev) => [...prev, nextLog])
   }
 
   const clearLogs = () => {
@@ -72,29 +51,24 @@ export const ConsoleDumpClient = withAppProvider((props: ConsoleDumpClientProps)
     })
   }
 
-  const insertLog = (nextLog: LogEntry) => {
-    ctx.setLogs((prev) => [...prev, nextLog])
-  }
-
   const onSubmitAction = useCallback((action: ActionBarEvent) => {
-    console.log(`[action:${action.type}] ${action.value}`)
-    // handle searching and filtering actions...
-    if (action.type === 'search') {
-      ctx.searchTerm = action.value
-    }
-
-    // handle code executions
-    if (action.type === 'execute') {
-      const result = Try.catch(() => eval(action.value))
-      if (result.ok) return insertLog(makeLog(result.unwrap()))
-      insertLog(makeLog(result.error?.message, { type: 'error' }))
-    }
-
-    // handle message type actions
-    if (action.type === 'message') {
-      insertLog(makeLog(action.value))
-      scrollToBottom()
-      action.reset()
+    switch (action.type) {
+      case 'search':
+        ctx.setSearchTerm(action.value)
+        return
+      case 'message':
+        insertLog(makeLog({ data: action.value }))
+        scrollToBottom()
+        action.reset()
+        return
+      case 'execute':
+        const res = Try.catch(() => eval(action.value) ?? '')
+        if (res.ok) return insertLog(makeLog(res.value))
+        insertLog(makeLog({ data: res.error?.name ?? 'an unknown error occurred.', type: 'error' }))
+        return
+      default:
+        console.warn(`[main] unsupported action: "${action.type}"`)
+        return
     }
   }, [])
 
@@ -119,8 +93,8 @@ export const ConsoleDumpClient = withAppProvider((props: ConsoleDumpClientProps)
     <div className={cn('w-full h-full max-h-screen flex flex-1 flex-col', props.className)}>
       {/* --- site navigation --- */}
       <AppNavigationBar
-        isConnected={ctx.isConnected}
-        downloadLogs={dowloadLogs}
+        isConnected={ctx.stream?.isConnected}
+        downloadLogs={downloadLogs}
         scrollToBottom={scrollToBottom}
         clearLogs={clearLogs}
         onSubmitAction={onSubmitAction}
