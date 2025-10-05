@@ -3,6 +3,76 @@
 
 @custom-variant dark (&:is(.dark *));
 
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  --badge-emerald: theme(colors.emerald.400);
+  --badge-emerald-bg: color-mix(in srgb, theme(colors.emerald.500) 20%, transparent);
+  --badge-emerald-border: color-mix(in srgb, theme(colors.emerald.500) 40%, transparent);
+
+  --badge-indigo: theme(colors.indigo.400);
+  --badge-indigo-bg: color-mix(in srgb, theme(colors.indigo.500) 20%, transparent);
+  --badge-indigo-border: color-mix(in srgb, theme(colors.indigo.500) 40%, transparent);
+
+  --badge-orange: theme(colors.orange.400);
+  --badge-orange-bg: color-mix(in srgb, theme(colors.orange.500) 20%, transparent);
+  --badge-orange-border: color-mix(in srgb, theme(colors.orange.500) 40%, transparent);
+
+  --badge-red: theme(colors.red.400);
+  --badge-red-bg: color-mix(in srgb, theme(colors.red.500) 20%, transparent);
+  --badge-red-border: color-mix(in srgb, theme(colors.red.500) 40%, transparent);
+
+  --badge-gray: theme(colors.gray.400);
+  --badge-gray-bg: color-mix(in srgb, theme(colors.gray.500) 20%, transparent);
+  --badge-gray-border: color-mix(in srgb, theme(colors.gray.500) 40%, transparent);
+
+  --badge-zinc: theme(colors.zinc.400);
+  --badge-zinc-bg: color-mix(in srgb, theme(colors.zinc.500) 20%, transparent);
+  --badge-zinc-border: color-mix(in srgb, theme(colors.zinc.500) 40%, transparent);
+}
+
+@layer utilities {
+  .badge-emerald {
+    color: var(--badge-emerald);
+    background-color: var(--badge-emerald-bg);
+    border-color: var(--badge-emerald-border);
+  }
+
+  .badge-indigo {
+    color: var(--badge-indigo);
+    background-color: var(--badge-indigo-bg);
+    border-color: var(--badge-indigo-border);
+  }
+
+  .badge-orange {
+    color: var(--badge-orange);
+    background-color: var(--badge-orange-bg);
+    border-color: var(--badge-orange-border);
+  }
+
+  .badge-red {
+    color: var(--badge-red);
+    background-color: var(--badge-red-bg);
+    border-color: var(--badge-red-border);
+  }
+
+  .badge-gray {
+    color: var(--badge-gray);
+    background-color: var(--badge-gray-bg);
+    border-color: var(--badge-gray-border);
+  }
+
+  .badge-zinc {
+    color: var(--badge-zinc);
+    background-color: var(--badge-zinc-bg);
+    border-color: var(--badge-zinc-border);
+  }
+}
+
+/* rest of your CSS... */
 :root {
   --radius: 0.625rem;
   --background: oklch(1 0 0);
@@ -121,8 +191,8 @@
 
 html,
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-    Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue',
+    sans-serif;
   overscroll-behavior: none;
   line-height: 1.5;
   min-height: 100vh;

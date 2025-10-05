@@ -4,14 +4,13 @@
  * This represents the default configuration of the consoledump website.
  */
 export const siteConfig = {
-  url: 'https://consoledump.io/',
+  // url: 'https://consoledump.io/',
+  use: 'http://127.0.0.1:8082/',
   title: 'Consoledump',
-  description:
-    'Easily debug in low visibility environments remotely for free with consoledump.io!',
+  description: 'Easily debug in low visibility environments remotely for free with consoledump.io!',
   coverImage: 'https://consoledump.io/images/cover.png',
 
-  keywords:
-    'remote, debug, debugging, logging, free, software, programming, engineering, asleepace',
+  keywords: 'remote, debug, debugging, logging, free, software, programming, engineering, asleepace',
 
   themeColor: '#171717',
   author: '@asleepace',

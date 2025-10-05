@@ -12,7 +12,10 @@ const HEADERS_WITH_CORS: HeadersInit = {
 
 const { slug: streamId } = Astro.params
 
+console.log(`[page:${streamId}] ${Astro.request.method}`)
+
 const stream = Stream2.get(streamId) ?? Stream2.use(streamId)
+console.log(`[page:${streamId}] stream not found!`)
 
 if (Astro.request.method === 'POST') {
   if (!stream) {
@@ -40,6 +43,7 @@ if (Astro.request.method === 'POST') {
   }
 
   try {
+    console.log('pushing stream...')
     await stream?.push(Astro.request.body)
 
     return new Response(null, {

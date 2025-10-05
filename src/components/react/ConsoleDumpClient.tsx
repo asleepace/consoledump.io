@@ -1,16 +1,26 @@
-import { makeLog, withAppProvider, type AppCtx } from './AppContext'
+import { withAppProvider, type AppCtx } from './AppContext'
 import { AppNavigationBar } from './AppNavigationBar'
 import { useAppContext } from './AppContext'
 import { cn } from '@/lib/utils'
-import { LogEntryItem, type LogEntry } from './LogEntryItem'
+import { LogEntryItem } from './LogEntryItem'
 import { useCallback, useEffect, useRef } from 'react'
 import type { ActionBarEvent } from './ActionBar'
 import { Try } from '@asleepace/try'
-import { formatTimestamp, useUtils } from './useUtils'
-import { useConsoleDump } from './useConsoleDump'
+import { useUtils } from './useUtils'
+import { type LogEntry, makeLogEntry } from './useLogEntry'
 
 export type ConsoleDumpClientProps = {
   className?: string
+}
+
+function dump(...args: any[]) {
+  return fetch(window.location.pathname, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(args),
+  })
 }
 
 /**
@@ -23,9 +33,6 @@ export type ConsoleDumpClientProps = {
  */
 export const ConsoleDumpClient = withAppProvider((props: ConsoleDumpClientProps) => {
   const ctx = useAppContext()
-
-  const dump = useConsoleDump({ sessionId: ctx.sessionId })
-
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const utils = useUtils()
 
@@ -33,7 +40,7 @@ export const ConsoleDumpClient = withAppProvider((props: ConsoleDumpClientProps)
     if (!ctx.sessionId) return
     const data = utils.createJsonDataFile({ sessionId: ctx.sessionId, logs: ctx.logs })
     utils.downloadJsonFile(data)
-    insertLog(makeLog({ data: `downloaded ${data.fileName}`, type: 'system' }))
+    insertLog(makeLogEntry(`downloaded ${data.fileName}`))
   }
 
   const insertLog = (nextLog: LogEntry) => {
@@ -55,17 +62,21 @@ export const ConsoleDumpClient = withAppProvider((props: ConsoleDumpClientProps)
 
   const onSubmitAction = useCallback((action: ActionBarEvent) => {
     switch (action.type) {
+      // filter out current chat logs.
       case 'search':
         ctx.setSearchTerm(action.value)
         return
+      // send a chat like message to the current stream.
       case 'message':
         dump({ type: 'message', text: action.value }).then(scrollToBottom)
         action.reset()
         return
+      // execute code in the browser.
       case 'execute':
         const res = Try.catch(() => eval(action.value) ?? '')
-        if (res.ok) return insertLog(makeLog(res.value))
-        insertLog(makeLog({ data: res.error?.name ?? 'an unknown error occurred.', type: 'error' }))
+        if (res.ok) return insertLog(makeLogEntry(res.value))
+        const json = JSON.stringify({ data: res.error?.name ?? 'an unknown error occurred.', type: 'error' })
+        insertLog(makeLogEntry(json))
         return
       default:
         console.warn(`[main] unsupported action: "${action.type}"`)

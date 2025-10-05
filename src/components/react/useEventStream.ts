@@ -1,9 +1,9 @@
 import { StreamMessage } from '@/lib/client/stream-message'
 import { Try } from '@asleepace/try'
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
+import { useClient } from './useClient'
 
 export type EventStreamConfig = {
-  sessionId?: string | undefined
   logEvents?: boolean
   onMessage?: (event: StreamMessage) => any | Promise<any>
 }
@@ -27,6 +27,12 @@ export interface ClientStream {
   close: () => void
 }
 
+function getSessionIdFromPath(path: string | undefined): string | undefined {
+  if (!path || path === '/') return undefined
+  const maybeSessionId = path.slice(1)?.trim()
+  return maybeSessionId
+}
+
 function hasChildId(obj: unknown): obj is { childId: string } {
   if (!obj || typeof obj !== 'object') return false
   const childId = (obj as any)?.childId
@@ -34,36 +40,35 @@ function hasChildId(obj: unknown): obj is { childId: string } {
 }
 
 export function useEventStream(config: EventStreamConfig): ClientStream {
-  const [sessionId, setSessionId] = useState<string | undefined>(config.sessionId)
   const [isInitializing, setIsInitializing] = useState(false)
   const [isConnected, setIsConnected] = useState(false)
   const [isError, setIsError] = useState(false)
   const [messages, setMessages] = useState<StreamMessage[]>([])
   const [childId, setChildId] = useState<string | undefined>()
 
+  /** extracts the sessionId from current url. */
+  const client = useClient()
+
   /** a method for creating a new sessionId and reseting state. */
   const initializeStream = async () => {
     if (isInitializing) return
+    console.log('[useEventStream] initializing...')
     setIsInitializing(true)
     setIsConnected(false)
     setIsError(false)
     const result = await Try.catch(createStreamSession)
     setIsInitializing(false)
     if (result.isOk()) {
-      setSessionId(result.value.streamId)
+      client.redirectTo(`/${result.value.streamId}`)
     }
     return result
   }
 
-  useEffect(() => {
-    initializeStream()
-  }, [])
-
   /** whenever the sessionId changes we need to reset state and reconnect. */
   const stream = useMemo(() => {
-    if (!sessionId) return undefined
+    if (!client.sessionId) return undefined
 
-    const eventSource = new EventSource(`/api/sse?id=${sessionId}`, {
+    const eventSource = new EventSource(`/api/sse?id=${client.sessionId}`, {
       withCredentials: true,
     })
 
@@ -73,7 +78,8 @@ export function useEventStream(config: EventStreamConfig): ClientStream {
     }
 
     eventSource.onmessage = (ev) => {
-      if (config.logEvents) console.log(ev.data)
+      // @note log events
+      console.log(ev.data)
 
       const message = new StreamMessage(ev.data)
 
@@ -92,10 +98,10 @@ export function useEventStream(config: EventStreamConfig): ClientStream {
     }
 
     return eventSource
-  }, [sessionId])
+  }, [client.sessionId])
 
   return {
-    sessionId,
+    sessionId: client.sessionId,
     childId,
     isConnected,
     isError,
@@ -111,7 +117,6 @@ export function useEventStream(config: EventStreamConfig): ClientStream {
       stream?.close()
       setIsError(false)
       setIsConnected(false)
-      setSessionId(undefined)
       setMessages([])
     },
   }

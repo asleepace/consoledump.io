@@ -32,7 +32,9 @@ const HEADERS = (stream: Stream2, headersInit: HeadersInit = {}) => ({
  * Creats a new stream and returns the stream id in the request headers,
  * this stream can later be accessed with this id.
  */
-export const HEAD: APIRoute = () => {
+export const HEAD: APIRoute = (ctx) => {
+  console.log(ctx.request.headers)
+
   const stream = Stream2.new()
 
   return new Response(null, {
@@ -81,6 +83,8 @@ export const POST: APIRoute = async ({ url, request }) => {
 
   const id = url.searchParams.get('id')
   const stream = Stream2.get(id)
+
+  console.log('/api/see incoming:', id, stream)
 
   if (!request.body || request.bodyUsed) {
     return new Response(null, {

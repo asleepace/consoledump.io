@@ -1,20 +1,11 @@
 import { useAppContext } from './AppContext'
 import { cn } from '@/lib/utils'
 import { Check, ChevronDown, ChevronRight, Copy } from 'lucide-react'
-import { getTypeBadge, getTypeColor } from '@/components/react/useTheme'
+import { getTypeBadge } from '@/components/react/useTheme'
 import { memo } from 'react'
-import type { StreamMessage } from '@/lib/client/stream-message'
 import { formatTimestamp } from './useUtils'
 
-export type LogFrom = 'client' | 'system' | 'message' | 'error'
-
-export interface LogEntry {
-  createdAt: Date
-  type: StreamMessage['type']
-  contentType: 'html' | 'text' | 'json' | 'code'
-  data: string
-  id: string
-}
+import { type LogEntry, getStylesFor } from './useLogEntry'
 
 export type LogEntryProps = LogEntry & {
   className?: string
@@ -26,11 +17,13 @@ const LogTimestamp = ({ className, createdAt = new Date() }: { className?: strin
 }
 
 /** Type Badge */
-const LogBadge = (props: { type: LogEntry['type'] }) => (
-  <span className={cn('px-1.5 py-0.5 rounded text-xs font-mono font-medium shrink-0', getTypeBadge(props.type))}>
-    {props.type}
-  </span>
-)
+const LogBadge = (props: { className?: string; badgeName: string }) => {
+  return (
+    <span className={cn('px-1.5 py-0.5 rounded text-xs font-mono font-medium shrink-0', props.className)}>
+      {props.badgeName}
+    </span>
+  )
+}
 
 /** Copy to Clipboard Button */
 const BtnCopyToClipboard = (props: { onClick: () => void; isCopied: boolean; className?: string }) => (
@@ -55,29 +48,30 @@ const getContentPreview = ({ content, maxSize = 80 }: { maxSize?: number; conten
 
 /** Displayed Code Content */
 const ContentCode = ({
-  log,
+  content,
+  textColor,
   isExpanded,
   onClick,
   className,
 }: {
-  log: LogEntry
+  textColor?: string
+  content: string
   isExpanded: boolean
   className?: string
   onClick: () => void
 }) => {
-  const color = getTypeColor(log.type)
-  const contentPreview = getContentPreview({ content: log.data, maxSize: 80 })
+  const contentPreview = getContentPreview({ content, maxSize: 80 })
 
   return (
     <div className="space-y-1">
       <button onClick={onClick} className="flex text-pink-500 items-center gap-1.5 w-full text-left">
         {isExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-        <span className={cn('text-xs', color, !isExpanded && 'truncate')}>{contentPreview}</span>
+        <span className={cn('text-xs', textColor, !isExpanded && 'truncate')}>{contentPreview}</span>
       </button>
       {isExpanded && (
         <div className="flex shrink">
           <pre className={cn('p-2 rounded text-xs overflow-x-auto flex text-green-500', className)}>
-            <code>{log.data}</code>
+            <code>{content}</code>
           </pre>
         </div>
       )}
@@ -90,8 +84,8 @@ const ContentCode = ({
  */
 const ContentText = ({ log, className }: { log: LogEntry; isExpanded?: boolean; className?: string }) => (
   <span
-    className={cn('text-xs font-mono break-all py-0.5', getTypeColor(log.type), className)}
-    dangerouslySetInnerHTML={{ __html: log.data }}
+    className={cn('text-xs font-mono break-all py-0.5', className)}
+    dangerouslySetInnerHTML={{ __html: log.text }}
   />
 )
 
@@ -107,6 +101,11 @@ export const LogEntryItem = memo(({ className, ...log }: LogEntryProps) => {
   const isCopied = copiedId === log.id
   const isExpanded = expandedLogs.has(log.id)
 
+  const style = getStylesFor(log)
+  const [badgeName] = log.type.split(':')
+
+  console.log({ log })
+
   return (
     <div className={cn('w-full font-mono', className)}>
       <div
@@ -121,13 +120,14 @@ export const LogEntryItem = memo(({ className, ...log }: LogEntryProps) => {
           {/* --- metadata --- */}
           <div className={cn('flex flex-row items-center gap-1 pt-0.5')}>
             <LogTimestamp createdAt={log.createdAt} className={theme.textMuted} />
-            <LogBadge type={log.type} />
+            <LogBadge badgeName={badgeName} className={style.badge} />
           </div>
           {/* --- content --- */}
           <div className="flex-1 min-w-0">
-            {log.contentType === 'code' ? (
+            {log.content.code ? (
               <ContentCode
-                log={log}
+                content={log.content.code}
+                textColor={style.textStyle}
                 className={theme.code}
                 isExpanded={isExpanded}
                 onClick={() => {
@@ -136,12 +136,12 @@ export const LogEntryItem = memo(({ className, ...log }: LogEntryProps) => {
                 }}
               />
             ) : (
-              <ContentText log={log} />
+              <ContentText log={log.content.json?.text ?? log} className={style.textStyle} />
             )}
           </div>
           {/* --- actions --- */}
           <BtnCopyToClipboard
-            onClick={() => copyToClipboard({ content: log.data, id: log.id })}
+            onClick={() => copyToClipboard({ content: log.text, id: log.id })}
             isCopied={isCopied}
             className={cn(isCopied && theme.textMuted)}
           />

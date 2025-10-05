@@ -5,7 +5,9 @@ import node from '@astrojs/node'
 import react from '@astrojs/react'
 import mdx from '@astrojs/mdx'
 
-const SITE_ORIGIN = process.env.NODE_ENV === 'development' ? 'http://127.0.0.1:8082' : 'https://consoledump.io'
+export const SITE_ORIGIN = process.env.NODE_ENV === 'development' ? 'http://127.0.0.1:8082' : 'https://consoledump.io'
+
+console.log({ SITE_ORIGIN })
 
 /**
  * Astro Configuration

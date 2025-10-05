@@ -1,5 +1,5 @@
 import { Try } from '@asleepace/try'
-import type { LogEntry } from './LogEntryItem'
+import type { LogEntry } from './useLogEntry'
 
 /**
  * Format a date to a HH:MM:SS timestamp.

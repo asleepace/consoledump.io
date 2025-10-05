@@ -1,8 +1,8 @@
-import React, { createContext, useEffect, useRef, useState, type PropsWithChildren } from 'react'
-import type { LogEntry } from './LogEntryItem'
+import React, { createContext, useEffect, useState, type PropsWithChildren } from 'react'
 import { use } from 'react'
 import { useEventStream, type ClientStream } from '@/components/react/useEventStream'
-import { Try } from '@asleepace/try'
+import { parseStreamMessage, type LogEntry } from './useLogEntry'
+import { useClient } from './useClient'
 
 /**
  * Hook which returns the current app context.
@@ -101,20 +101,6 @@ export const AppContext = createContext<AppCtx>({
 
 // --- app context provider ---
 
-export const makeLog = ({
-  data = '',
-  type = 'message',
-  contentType = 'text',
-  createdAt = new Date(),
-  id = crypto.randomUUID(),
-}: Partial<LogEntry>): LogEntry => ({
-  data,
-  type,
-  contentType,
-  createdAt,
-  id,
-})
-
 export function AppContextProvider(props: PropsWithChildren<{ sessionId?: string }>) {
   const [theme, setTheme] = useState(AppThemes.dark)
   const [logs, setLogs] = useState<LogEntry[]>([])
@@ -122,28 +108,23 @@ export function AppContextProvider(props: PropsWithChildren<{ sessionId?: string
   const [searchTerm, setSearchTerm] = useState<string | undefined>()
   const [isConnected, setIsConnected] = useState<boolean>(false)
   const [expandedLogs, setExpandedLogs] = useState<Set<string>>(new Set())
-  const [sessionId, setSessionId] = useState<string | undefined>(props.sessionId)
 
-  useEffect(() => {
-    if (props.sessionId) return
-    const maybeSessionId = window.location.pathname
-    if (!maybeSessionId || maybeSessionId.length < 2) return
-    setSessionId(props.sessionId)
-  }, [])
-
+  const client = useClient()
   const isDark = theme.mode === 'dark'
+
+  console.log('[AppContext] sessionId:', client.sessionId)
 
   const insertLog = (logEntry: LogEntry) => {
     setLogs((prev) => [...prev, logEntry])
     return logEntry
   }
 
+  // NOTE: Parse incoming messages here...
   const stream = useEventStream({
-    sessionId: undefined,
+    logEvents: true,
     onMessage(msg) {
       console.log(msg)
-
-      const logEntry = makeLog({ data: msg.format(), type: msg.type })
+      const logEntry = parseStreamMessage(msg)
       insertLog(logEntry)
     },
   })
@@ -157,7 +138,7 @@ export function AppContextProvider(props: PropsWithChildren<{ sessionId?: string
         copiedId,
         searchTerm,
         isConnected,
-        sessionId,
+        sessionId: client.sessionId,
         isDark,
         expandedLogs,
         setTheme: (mode) => setTheme(AppThemes[mode]),

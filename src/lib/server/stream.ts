@@ -10,11 +10,7 @@ function encode(chunk: string): Uint8Array {
 
 const createID = () => `${crypto.randomUUID().split('-')[0]}`
 
-const encodeStreamEvent = (message: {
-  id: number
-  event?: string
-  data: Uint8Array
-}) => {
+const encodeStreamEvent = (message: { id: number; event?: string; data: Uint8Array }) => {
   const evnt = message.event ? `\nevent: ${message.event}` : ''
   const head = encode(`id: ${message.id}${evnt}\ndata: `)
   const tail = encode(`\n\n`)
@@ -99,9 +95,7 @@ export class Stream2 {
   }
 
   public static cleanup() {
-    console.log('[stream:store] active streams:', this.store.size, [
-      ...this.store.keys(),
-    ])
+    console.log('[stream:store] active streams:', this.store.size, [...this.store.keys()])
     this.store.forEach((stream) => {
       if (stream.canBeClosed || stream.cleanup()) {
         this.store.delete(stream.id)
@@ -122,14 +116,10 @@ export class Stream2 {
 
   public static new(): Stream2 {
     if (this.isAtMaxCapacity) throw new ErrorStreamStoreMaxCapacity()
+    console.log('[stream] creating new stream!')
     this.cleanup()
     const stream = new Stream2()
     this.store.set(stream.id, stream)
-    // stream.json({
-    //   status: 'created',
-    //   streamId: stream.id,
-    //   timestamp: Date.now(),
-    // })
     return stream
   }
 
@@ -143,16 +133,14 @@ export class Stream2 {
   }
 
   // Cleanup registry to handle garbage collected streams
-  private static readonly cleanupRegistry = new FinalizationRegistry(
-    (childId: string) => {
-      console.log(`[stream:store] garbage collection:`, { childId })
-      const [streamId] = childId.split('-')
-      const parentStream = this.store.get(streamId)
-      parentStream?.onChildClosed(childId)
-      parentStream?.cleanup()
-      this.cleanup()
-    }
-  )
+  private static readonly cleanupRegistry = new FinalizationRegistry((childId: string) => {
+    console.log(`[stream:store] garbage collection:`, { childId })
+    const [streamId] = childId.split('-')
+    const parentStream = this.store.get(streamId)
+    parentStream?.onChildClosed(childId)
+    parentStream?.cleanup()
+    this.cleanup()
+  })
 
   // instance methods
 
@@ -182,12 +170,7 @@ export class Stream2 {
   }
 
   get canBeClosed() {
-    return (
-      this.isExpired ||
-      this.isClosed ||
-      this.isOutOfMemory ||
-      this.childStreams.size === 0
-    )
+    return this.isExpired || this.isClosed || this.isOutOfMemory || this.childStreams.size === 0
   }
 
   private message = {
@@ -330,6 +313,7 @@ export class Stream2 {
 
   public async close() {
     if (this.isClosed) return
+    console.log('[stream] closing stream:', this.id)
     const lock = await this.mutex.acquireLock()
     try {
       if (this.isClosed) return
