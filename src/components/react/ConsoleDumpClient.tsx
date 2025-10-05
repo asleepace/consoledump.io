@@ -7,6 +7,7 @@ import { useCallback, useEffect, useRef } from 'react'
 import type { ActionBarEvent } from './ActionBar'
 import { Try } from '@asleepace/try'
 import { formatTimestamp, useUtils } from './useUtils'
+import { useConsoleDump } from './useConsoleDump'
 
 export type ConsoleDumpClientProps = {
   className?: string
@@ -22,7 +23,8 @@ export type ConsoleDumpClientProps = {
  */
 export const ConsoleDumpClient = withAppProvider((props: ConsoleDumpClientProps) => {
   const ctx = useAppContext()
-  console.log('[ConsoleDumpClient] ctx:', ctx)
+
+  const dump = useConsoleDump({ sessionId: ctx.sessionId })
 
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const utils = useUtils()
@@ -57,8 +59,7 @@ export const ConsoleDumpClient = withAppProvider((props: ConsoleDumpClientProps)
         ctx.setSearchTerm(action.value)
         return
       case 'message':
-        insertLog(makeLog({ data: action.value }))
-        scrollToBottom()
+        dump({ type: 'message', text: action.value }).then(scrollToBottom)
         action.reset()
         return
       case 'execute':
