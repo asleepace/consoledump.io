@@ -1,5 +1,15 @@
 import React, { createContext, useRef, useState, type PropsWithChildren } from 'react'
 import type { LogEntry } from './LogEntryItem'
+import { use } from 'react'
+import { useEventStream } from '@/hooks/useEventStream'
+import { Try } from '@asleepace/try'
+
+/**
+ * Hook which returns the current app context.
+ */
+export function useAppContext() {
+  return use(AppContext)
+}
 
 export type AppTheme = {
   mode: 'light' | 'dark'
@@ -40,35 +50,6 @@ const AppThemes: Record<AppTheme['mode'], AppTheme> = {
     code: 'bg-gray-100',
   },
 }
-
-const mockLogs: LogEntry[] = [
-  {
-    timestamp: '17:32:07',
-    type: 'connected',
-    content: 'client joined stream https://consoledump.io/8bc91716',
-    id: '1',
-  },
-  {
-    timestamp: '17:32:07',
-    type: 'system',
-    content: 'curl -d "hello world" https://consoledump.io/8bc91716',
-    id: '2',
-    isCode: true,
-  },
-  {
-    timestamp: '17:32:07',
-    type: 'system',
-    content:
-      "const dump = (...args) => fetch('https://consoledump.io/8bc91716',{method:'POST', body:JSON.stringify(args)})",
-    id: '3',
-    isCode: true,
-  },
-  { timestamp: '17:32:07', type: 'system', content: 'client (1) connected!', id: '4' },
-  { timestamp: '17:32:30', type: 'message', content: 'message: 0 80db114e-ee17-4cc0-a120-164fb86a89a1', id: '5' },
-  { timestamp: '17:32:30', type: 'message', content: 'message: 1 66b06213-031e-45d4-88f1-38b0679f113e', id: '6' },
-  { timestamp: '17:32:30', type: 'message', content: 'message: 2 5c9cc8f8-4b48-4f97-84b9-52e609412a61', id: '7' },
-  { timestamp: '17:32:30', type: 'message', content: 'message: 3 238d5ccd-c882-45e4-a42d-44456c28392a', id: '8' },
-]
 
 type SetState<T> = React.Dispatch<React.SetStateAction<T>>
 
@@ -116,20 +97,44 @@ export const AppContext = createContext<AppCtx>({
 
 // --- app context provider ---
 
+export const makeLog = ({
+  data = '',
+  type = 'message',
+  contentType = 'text',
+  createdAt = new Date(),
+  id = crypto.randomUUID(),
+}: Partial<LogEntry>): LogEntry => ({
+  data,
+  type,
+  contentType,
+  createdAt,
+  id,
+})
+
 export function AppContextProvider({ children }: PropsWithChildren<{}>) {
   const [theme, setTheme] = useState(AppThemes.dark)
-  const [logs, setLogs] = useState(
-    new Array(100)
-      .fill(mockLogs)
-      .flat(1)
-      .map((entry, id) => ({ ...entry, id }))
-  )
+  const [logs, setLogs] = useState<LogEntry[]>([])
   const [copiedId, setCopiedId] = useState<string | undefined>()
   const [searchTerm, setSearchTerm] = useState<string | undefined>()
   const [isConnected, setIsConnected] = useState<boolean>(false)
   const [expandedLogs, setExpandedLogs] = useState<Set<string>>(new Set())
 
   const isDark = theme.mode === 'dark'
+
+  const insertLog = (logEntry: LogEntry) => {
+    setLogs((prev) => [...prev, logEntry])
+    return logEntry
+  }
+
+  const stream = useEventStream({
+    sessionId: undefined,
+    onMessage(msg) {
+      console.log(msg)
+
+      const logEntry = makeLog({ data: msg.format(), type: msg.type })
+      insertLog(logEntry)
+    },
+  })
 
   return (
     <AppContext.Provider

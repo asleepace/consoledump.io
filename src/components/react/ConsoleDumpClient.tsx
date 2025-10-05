@@ -1,6 +1,6 @@
 import { withAppProvider, type AppCtx } from './AppContext'
 import { AppNavigationBar } from './AppNavigationBar'
-import { useAppContext } from '@/hooks/useAppContext'
+import { useAppContext } from './AppContext'
 import { cn } from '@/lib/utils'
 import { LogEntryItem, type LogEntry } from './LogEntryItem'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
@@ -24,13 +24,11 @@ function createJsonDataFile(ctx: AppCtx) {
   )
 }
 
-function makeLog(content: string, options?: Partial<LogEntry>): LogEntry {
-  const date = new Date()
+function formatTimestamp(date: Date = new Date()): string {
   const hours = date.getHours().toString().padStart(2, '0')
   const mins = date.getMinutes().toString().padStart(2, '0')
   const secs = date.getSeconds().toString().padStart(2, '0')
-  const timestamp = [hours, mins, secs].join(':')
-  return { id: crypto.randomUUID(), type: 'message', timestamp, ...options, content }
+  return [hours, mins, secs].join(':')
 }
 
 /**
@@ -89,7 +87,7 @@ export const ConsoleDumpClient = withAppProvider((props: ConsoleDumpClientProps)
     if (action.type === 'execute') {
       const result = Try.catch(() => eval(action.value))
       if (result.ok) return insertLog(makeLog(result.unwrap()))
-      insertLog(makeLog(result.error.message, { type: 'error' }))
+      insertLog(makeLog(result.error?.message, { type: 'error' }))
     }
 
     // handle message type actions

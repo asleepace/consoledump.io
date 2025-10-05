@@ -1,24 +1,34 @@
-import { useAppContext } from '@/hooks/useAppContext'
+import { useAppContext } from './AppContext'
 import { cn } from '@/lib/utils'
 import { Check, ChevronDown, ChevronRight, Copy } from 'lucide-react'
 import { getTypeBadge, getTypeColor } from '@/hooks/useTheme'
 import { memo } from 'react'
+import type { StreamMessage } from '@/lib/client/stream-message'
+
+export type LogFrom = 'client' | 'system' | 'message' | 'error'
 
 export interface LogEntry {
-  timestamp: string
-  type: 'connected' | 'system' | 'message' | 'error'
-  content: string
+  createdAt: Date
+  type: StreamMessage['type']
+  contentType: 'html' | 'text' | 'json' | 'code'
+  data: string
   id: string
-  isCode?: boolean
 }
 
 export type LogEntryProps = LogEntry & {
   className?: string
 }
 
+export function formatTime(date: Date): string {
+  const hours = date.getHours().toString().padStart(2, '0')
+  const minutes = date.getMinutes().toString().padStart(2, '0')
+  const seconds = date.getSeconds().toString().padStart(2, '0')
+  return `${hours}:${minutes}:${seconds}`
+}
+
 /** Timestamp */
-const LogTimestamp = ({ className, timestamp }: { className?: string; timestamp: LogEntry['timestamp'] }) => {
-  return <span className={cn('text-xs text-gray-400/40 font-mono shrink-0 w-16')}>{timestamp}</span>
+const LogTimestamp = ({ className, createdAt = new Date() }: { className?: string; createdAt?: Date }) => {
+  return <span className={cn('text-xs text-gray-400/40 font-mono shrink-0 w-16')}>{formatTime(createdAt)}</span>
 }
 
 /** Type Badge */
@@ -62,7 +72,7 @@ const ContentCode = ({
   onClick: () => void
 }) => {
   const color = getTypeColor(log.type)
-  const contentPreview = getContentPreview({ content: log.content, maxSize: 80 })
+  const contentPreview = getContentPreview({ content: log.data, maxSize: 80 })
 
   return (
     <div className="space-y-1">
@@ -73,7 +83,7 @@ const ContentCode = ({
       {isExpanded && (
         <div className="flex shrink">
           <pre className={cn('p-2 rounded text-xs overflow-x-auto flex text-green-500', className)}>
-            <code>{log.content}</code>
+            <code>{log.data}</code>
           </pre>
         </div>
       )}
@@ -86,7 +96,10 @@ const ContentCode = ({
  */
 const ContentText = ({ log, className }: { log: LogEntry; isExpanded?: boolean; className?: string }) => {
   return (
-    <span className={cn('text-xs font-mono break-all py-0.5', getTypeColor(log.type), className)}>{log.content}</span>
+    <span
+      className={cn('text-xs font-mono break-all py-0.5', getTypeColor(log.type), className)}
+      dangerouslySetInnerHTML={{ __html: log.data }}
+    />
   )
 }
 
@@ -115,12 +128,12 @@ export const LogEntryItem = memo(({ className, ...log }: LogEntryProps) => {
         <div className={cn('flex items-start gap-3 px-2 py-0.5', isExpanded ? 'pb-2' : '')}>
           {/* --- metadata --- */}
           <div className={cn('flex flex-row items-center gap-1 pt-0.5')}>
-            <LogTimestamp timestamp={log.timestamp} className={theme.textMuted} />
+            <LogTimestamp createdAt={log.createdAt} className={theme.textMuted} />
             <LogBadge type={log.type} />
           </div>
           {/* --- content --- */}
           <div className="flex-1 min-w-0">
-            {log.isCode ? (
+            {log.contentType === 'code' ? (
               <ContentCode
                 log={log}
                 className={theme.code}
@@ -136,7 +149,7 @@ export const LogEntryItem = memo(({ className, ...log }: LogEntryProps) => {
           </div>
           {/* --- actions --- */}
           <BtnCopyToClipboard
-            onClick={() => copyToClipboard(log)}
+            onClick={() => copyToClipboard({ content: log.data, id: log.id })}
             isCopied={isCopied}
             className={cn(isCopied && theme.textMuted)}
           />
