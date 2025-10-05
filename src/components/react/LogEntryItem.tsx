@@ -107,7 +107,7 @@ export const LogEntryItem = memo(({ className, ...log }: LogEntryProps) => {
       <div
         key={log.id}
         className={cn(
-          'group border-b border-t-transparent hover:border-t-gray-400/10 box-content border-t transition-all border-b-gray-400/10',
+          'group border-b border-t-transparent hover:border-t-gray-400/10 box-content border-t border-b-gray-400/10',
           theme.hover
         )}
       >

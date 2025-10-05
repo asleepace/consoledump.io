@@ -2,8 +2,10 @@ import { withAppProvider, type AppCtx } from './AppContext'
 import { AppNavigationBar } from './AppNavigationBar'
 import { useAppContext } from '@/hooks/useAppContext'
 import { cn } from '@/lib/utils'
-import { LogEntryItem } from './LogEntryItem'
-import { useMemo, useRef } from 'react'
+import { LogEntryItem, type LogEntry } from './LogEntryItem'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
+import type { ActionBarEvent } from './ActionBar'
+import { Try } from '@asleepace/try'
 
 export type ConsoleDumpClientProps = {
   className?: string
@@ -20,6 +22,15 @@ function createJsonDataFile(ctx: AppCtx) {
     null,
     2
   )
+}
+
+function makeLog(content: string, options?: Partial<LogEntry>): LogEntry {
+  const date = new Date()
+  const hours = date.getHours().toString().padStart(2, '0')
+  const mins = date.getMinutes().toString().padStart(2, '0')
+  const secs = date.getSeconds().toString().padStart(2, '0')
+  const timestamp = [hours, mins, secs].join(':')
+  return { id: crypto.randomUUID(), type: 'message', timestamp, ...options, content }
 }
 
 /**
@@ -63,6 +74,49 @@ export const ConsoleDumpClient = withAppProvider((props: ConsoleDumpClientProps)
     })
   }
 
+  const insertLog = (nextLog: LogEntry) => {
+    ctx.setLogs((prev) => [...prev, nextLog])
+  }
+
+  const onSubmitAction = useCallback((action: ActionBarEvent) => {
+    console.log(`[action:${action.type}] ${action.value}`)
+    // handle searching and filtering actions...
+    if (action.type === 'search') {
+      ctx.searchTerm = action.value
+    }
+
+    // handle code executions
+    if (action.type === 'execute') {
+      const result = Try.catch(() => eval(action.value))
+      if (result.ok) return insertLog(makeLog(result.unwrap()))
+      insertLog(makeLog(result.error.message, { type: 'error' }))
+    }
+
+    // handle message type actions
+    if (action.type === 'message') {
+      insertLog(makeLog(action.value))
+      scrollToBottom()
+      action.reset()
+    }
+  }, [])
+
+  const autoScroll = useCallback(() => {
+    const AUTO_SCROLL_THRESHOLD = 50
+    const sv = scrollContainerRef.current
+    if (!sv) return
+    const containerOffset = sv.scrollHeight - sv.scrollTop
+    const isNearBottom = containerOffset <= sv.clientHeight + AUTO_SCROLL_THRESHOLD // 50px threshold
+    if (!isNearBottom) return
+    const scrollableParent = sv?.parentElement
+    if (scrollableParent) {
+      scrollableParent.scrollTo({ top: scrollableParent.scrollHeight, behavior: 'instant' })
+    }
+  }, [])
+
+  useEffect(() => {
+    autoScroll()
+  }, [ctx.logs])
+
   return (
     <div className={cn('w-full h-full max-h-screen flex flex-1 flex-col', props.className)}>
       {/* --- site navigation --- */}
@@ -71,6 +125,7 @@ export const ConsoleDumpClient = withAppProvider((props: ConsoleDumpClientProps)
         downloadLogs={dowloadLogs}
         scrollToBottom={scrollToBottom}
         clearLogs={clearLogs}
+        onSubmitAction={onSubmitAction}
       />
 
       {/* --- main context --- */}

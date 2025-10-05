@@ -1,20 +1,7 @@
-import {
-  ArrowDownToLine,
-  ArrowDownWideNarrow,
-  ArrowUpDown,
-  ChevronsDown,
-  Download,
-  Info,
-  Settings,
-  Terminal,
-  Trash,
-  Wifi,
-  WifiOff,
-} from 'lucide-react'
+import { ChevronsDown, Download, Info, Settings, Terminal, Trash, Wifi, WifiOff } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useAppContext } from '@/hooks/useAppContext'
-import type { JSX, PropsWithChildren } from 'react'
-import { ActionBar } from './ActionBar'
+import type { PropsWithChildren } from 'react'
+import { ActionBar, type ActionBarEvent } from './ActionBar'
 
 export function SiteTitle(props: { className?: string }) {
   return (
@@ -72,22 +59,8 @@ export function OnlineIndicator({ isConnected }: { isConnected: boolean }) {
   )
 }
 
-export function SearchBar(props: { className?: string }) {
-  const ctx = useAppContext()
-  return (
-    <div className={cn('rounded-xl overflow-hidden flex flex-1', props.className)}>
-      <input
-        type="text"
-        className=" outline-hidden h-8 focus:ring-0 w-full px-4 bg-zinc-900 text-neutral-400 font-mono text-xs"
-        onChange={(ev) => {
-          ctx.setSearchTerm(ev.target.value)
-        }}
-      />
-    </div>
-  )
-}
-
 export type AppNavigationBarProps = {
+  onSubmitAction: (ev: ActionBarEvent) => void
   scrollToBottom: () => void
   downloadLogs: () => void
   clearLogs: () => void
@@ -108,7 +81,7 @@ export function AppNavigationBar(props: AppNavigationBarProps) {
           <OnlineIndicator isConnected={props.isConnected} />
         </div>
         <div className="px-4 flex flex-1">
-          <ActionBar />
+          <ActionBar onSubmit={props.onSubmitAction} />
         </div>
         <div className="shrink justify-end items-center flex gap-x-1.5">
           {/* Information button */}
