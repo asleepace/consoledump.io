@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { Search, ChevronDown, SendIcon, Code, Play, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { AppBackdropLayer } from './AppBackdropLayer'
@@ -33,12 +33,40 @@ const actionBarModes: ActionBarMode[] = [
   { icon: Code, type: 'execute', label: 'Run code snippet', placeholder: 'e.g. console.log("hello, world!")' },
 ]
 
+const makeAction = (props: ActionBarEvent) => ({
+  ...props,
+})
+
 export function ActionBar(props: ActionBarProps) {
   const [mode, setMode] = useState<ActionBarMode>(actionBarModes[0])
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-  const dropdownRef = useRef<HTMLDivElement>(null)
+  const [isFocused, setIsFocused] = useState(false)
 
+  const [selectedAction, setSelectedAction] = useState<ActionBarEvent | undefined>()
+
+  const dropdownRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  const historyRef = useRef({
+    actions: [] as ActionBarEvent[],
+    idx: 0,
+    insert(action: ActionBarEvent) {
+      this.idx += 1
+      this.actions = [...this.actions, action]
+      setSelectedAction(undefined)
+    },
+    moveUp() {
+      this.idx -= 1
+      if (this.idx < 0) this.idx = 0
+      setSelectedAction(this.actions.at(this.idx))
+    },
+    moveDown() {
+      if (++this.idx > this.actions.length) {
+        this.idx = this.actions.length
+      }
+      setSelectedAction(this.actions.at(this.idx))
+    },
+  })
 
   const selectModeType = (modeType: ModeType) => {
     const selectedMode = actionBarModes.find((actionMode) => modeType === actionMode.type)
@@ -58,7 +86,10 @@ export function ActionBar(props: ActionBarProps) {
       inputRef.current.value = ''
     }
 
-    props.onSubmit({ value: currentValue, type: mode.type, reset })
+    const actionEvent = makeAction({ value: currentValue, type: mode.type, reset })
+    historyRef.current.insert(actionEvent)
+    props.onSubmit(actionEvent)
+    inputRef.current?.blur()
   }, [mode, mode.type])
 
   useKeydown(
@@ -67,6 +98,15 @@ export function ActionBar(props: ActionBarProps) {
       onSubmitInput()
     },
     [onSubmitInput]
+  )
+
+  useKeydown(
+    (key) => {
+      if (!isFocused) return
+      if (key.code === 'ArrowUp') historyRef.current.moveUp()
+      if (key.code === 'ArrowDown') historyRef.current.moveDown()
+    },
+    [isFocused]
   )
 
   useEffect(() => {
@@ -93,12 +133,15 @@ export function ActionBar(props: ActionBarProps) {
           </button>
           <input
             type="text"
+            key={selectedAction?.value}
             ref={inputRef}
             className={cn(
               'px-3.5 py-2 text-xs font-mono focus:outline-none focus:ring-0 transition-all min-w-64 w-full'
             )}
             placeholder={mode.label}
-            defaultValue={props.defaultValue}
+            defaultValue={selectedAction?.value ?? props.defaultValue}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
             onSubmit={onSubmitInput}
           />
           <button className="right-0 top-0 bottom-0 px-3 flex items-center justify-center text-zinc-500 hover:bg-zinc-800">
