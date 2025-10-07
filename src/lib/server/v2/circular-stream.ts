@@ -4,8 +4,8 @@ interface CircularBuffer {
   buffer: Uint8Array
   bufferSize: number
   writePosition: number
+  wrapCount: number
   totalWritten: number
-  getAvailableBytes(readPosition: number): number
   getDataView(readPosition: number): Uint8Array<ArrayBufferLike>
   setWritePosition(writePosition: number): void
   canReadPosition(readPosition: number): boolean
@@ -58,6 +58,7 @@ function makeCircularBuffer({ bufferSize }: BufferConfig): CircularBuffer {
     bufferSize,
     writePosition: 0,
     totalWritten: 0,
+    wrapCount: 0,
     setWritePosition(writePosition: number) {
       this.writePosition = writePosition % bufferSize
     },
@@ -73,13 +74,6 @@ function makeCircularBuffer({ bufferSize }: BufferConfig): CircularBuffer {
       // Buffer has wrapped - check if position hasn't been overwritten
       const bytesOverwritten = this.totalWritten - this.bufferSize
       return readPosition >= bytesOverwritten % this.bufferSize
-    },
-    getAvailableBytes(readPosition: number): number {
-      if (!this.canReadPosition(readPosition)) throw new InvalidReadPosition({ readPosition, bufferSize })
-      const writePos = this.writePosition
-      if (readPosition === writePos) return 0
-      if (readPosition < writePos) return writePos - readPosition
-      return this.bufferSize - readPosition + writePos
     },
     write(chunk: Uint8Array): void {
       // handle edge case where the chunk is bigger than the buffer
@@ -103,6 +97,7 @@ function makeCircularBuffer({ bufferSize }: BufferConfig): CircularBuffer {
       this.buffer.set(chunk.subarray(0, firstPartSize), writePos)
       this.buffer.set(chunk.subarray(firstPartSize), 0)
       this.totalWritten += chunk.length
+      this.wrapCount += 1
       this.setWritePosition(writePos + chunkLength)
     },
     getDataView(readPosition: number) {
@@ -195,6 +190,7 @@ interface StreamConfig {
 interface StreamSubscriber {
   controller: ReadableByteStreamController
   readPosition: number
+  wrapCount: number
 }
 
 export interface BufferedStream {
@@ -211,8 +207,15 @@ export interface BufferedStream {
 }
 
 /**
- * Creates a new writable stream which can have multiple readers.
- * @param baseConfig
+ *  ## Bufferd Stream
+ *
+ *  Creates a new writable stream which can have multiple readers.
+ *
+ *  @param {Object} baseConfig
+ *  @param {Number} baseConfig.bufferSize max size of buffer.
+ *  @param {String} baseConfig.streamId unique identifier.
+ *  @param {Number} baseConfig.keepAliveInterval number in ms where pings are sent to client.
+ *  @param {Function} baseConfig.onCleanup (optional) callback when closed.
  */
 export function createBufferedStream({
   bufferSize,
@@ -243,39 +246,21 @@ export function createBufferedStream({
   } as const
 
   /**
-   *  Handles BYOB requests (bring your own buffer) for performant stream reading.
-   *
-   *  @note this is not supported via `EventSource`.
-   *  @deprecated
-   */
-  function handleByobRequest(sub: StreamSubscriber, dataView: Uint8Array<ArrayBufferLike>): boolean {
-    if (!sub.controller.byobRequest?.view) return false
-    const view = sub.controller.byobRequest.view
-    if (dataView.length > view.byteLength) return false
-    console.log('[circular-stream] handling byob request!')
-    new Uint8Array(view.buffer).set(dataView)
-    sub.controller.byobRequest.respond(dataView.length)
-    sub.readPosition = buffer.writePosition
-    return true
-  }
-
-  /**
    *  Helper method for writing data to a subscriber.
    *
    *  @todo fix rare edge case where data wraps back to current position
    *  so the read positions appear the same.
    */
   function writeToSubscription(subscription: StreamSubscriber) {
-    if (buffer.writePosition === subscription.readPosition) return
+    if (buffer.writePosition === subscription.readPosition && buffer.wrapCount === subscription.wrapCount) return
     const readPos = subscription.readPosition
     const dataView = buffer.getDataView(readPos)
     // skip writing if empty
     if (dataView.length === 0) return
-    // handle byob request if available
-    if (handleByobRequest(subscription, dataView)) return
     // write data view to stream
     subscription.controller.enqueue(dataView.slice())
     subscription.readPosition = buffer.writePosition
+    subscription.wrapCount = buffer.wrapCount
   }
 
   /**
@@ -287,6 +272,7 @@ export function createBufferedStream({
     const sub: StreamSubscriber = {
       controller,
       readPosition: 0,
+      wrapCount: 0,
     }
     subscribers.add(sub)
     return sub
@@ -321,6 +307,29 @@ export function createBufferedStream({
     })
   }
 
+  function handleWriteToBuffer(chunk: Uint8Array) {
+    meta.updatedAt = new Date()
+    // handle case where chunk fits in available spaxe
+    if (chunk.length < buffer.bufferSize) {
+      buffer.write(chunk)
+      subscribers.forEach(writeToSubscription)
+      return
+    }
+
+    let i = 1
+    let head = 0
+    let tail = i * bufferSize
+    while (tail <= chunk.length) {
+      console.log('[circular-stream] parsing large chunk...')
+      const subChunk = chunk.slice(head, tail)
+      if (subChunk.length === 0) break
+      buffer.write(subChunk)
+      subscribers.forEach(writeToSubscription)
+      head = tail
+      tail = ++i * bufferSize
+    }
+  }
+
   // base writable stream which should be written to
   const writableStream = new WritableStream<Uint8Array>({
     start: () => {
@@ -329,9 +338,7 @@ export function createBufferedStream({
       isReady.resolve()
     },
     write: (chunk) => {
-      meta.updatedAt = new Date()
-      buffer.write(chunk)
-      subscribers.forEach(writeToSubscription)
+      handleWriteToBuffer(chunk)
     },
     close: () => {
       meta.status = 'closed'

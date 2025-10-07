@@ -8,13 +8,6 @@ export const prerender = false
   <div class="overflow-y-scroll min-h-screen overscroll-y-auto mt-14 pb-14">
     <div class:list="flex flex-1 flex-col gap-2 min-h-full pb-16" id="container"></div>
   </div>
-  <div
-    class="hidden sm:flex absolute *:text-sm top-14 border-[0.5px] border-neutral-700 bg-black rounded right-2 gap-x-1 items-center justify-center *:opacity-50 *:hover:opacity-100 *:text-orange-400 op *:bg-transparent *:px-2 *:py-1"
-  >
-    <button id="btn-download" class="border-r-[0.5px] border-neutral-700">Download</button>
-    <button id="btn-clear" class="border-r-[0.5px] border-neutral-700">Clear</button>
-    <button id="btn-scroll-bottom">Scroll to bottom</button>
-  </div>
 </Layout>
 
 <template id="message">
@@ -44,11 +37,54 @@ export const prerender = false
 </style>
 
 <script>
+  import { Try } from '@asleepace/try'
+  import type { RecordType } from 'astro:schema'
+
   let abortController = new AbortController()
 
   window.addEventListener('beforeunload', () => {
     console.log('[client] beforeunload:', abortController.abort())
   })
+
+  const container = document.getElementById('container')!
+  const template = document.getElementById('message') as HTMLTemplateElement
+
+  function autoScroll() {
+    if (!container) return
+    const AUTO_SCROLL_THRESHOLD = 50
+    const containerOffset = container.scrollHeight - container.scrollTop
+    const isNearBottom = containerOffset <= container.clientHeight + AUTO_SCROLL_THRESHOLD // 50px threshold
+    if (!isNearBottom) return
+    const scrollableParent = container?.parentElement
+    if (scrollableParent) {
+      scrollableParent.scrollTo({ top: scrollableParent.scrollHeight, behavior: 'instant' })
+    }
+  }
+
+  function dateToTime(date: Date): string {
+    return [date.getHours(), date.getMinutes(), date.getSeconds()].map((n) => n.toString().padStart(2, '0')).join(':')
+  }
+
+  function parseMessageEvent(ev: MessageEvent) {
+    return { text: ev.data, time: new Date(), id: ev.lastEventId }
+  }
+
+  const messages: ReturnType<typeof parseMessageEvent>[] = []
+
+  function addItem(ev: MessageEvent) {
+    const msg = parseMessageEvent(ev)
+    messages.push(msg)
+    const item = template.content.cloneNode(true) as DocumentFragment
+    const time = item.querySelector('.item-time')!
+    const type = item.querySelector('.item-type')!
+    const data = item.querySelector('.item-data')!
+    type.classList.add('text-emerald-700')
+    time.textContent = dateToTime(msg.time)
+    type.textContent = `[message]`
+    data.textContent = msg.text
+    container?.appendChild(item)
+    requestAnimationFrame(() => autoScroll())
+  }
 
   const dump = (...args: any[]) =>
     fetch('/api/v2?id=123456', {
@@ -73,6 +109,7 @@ export const prerender = false
 
   eventSource.onmessage = (ev) => {
     console.log(ev.data)
+    addItem(ev)
   }
 
   if (import.meta.hot) {
@@ -90,4 +127,5 @@ export const prerender = false
 
   // @ts-ignore
   console.dump = dump
+  window.dump = dump
 </script>
