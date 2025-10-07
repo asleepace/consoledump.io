@@ -1,4 +1,5 @@
 import { Mutex } from '@asleepace/mutex'
+import { check } from '@astrojs/check'
 
 interface CircularBuffer {
   buffer: Uint8Array
@@ -150,17 +151,63 @@ export interface BufferedStream {
   isReady: Promise<void>
 }
 
+interface StreamMessage {
+  id: number
+  event?: string
+  data: Uint8Array
+}
+
+export function createServerSideEventEncoder() {
+  const encoder = new TextEncoder()
+  let eventId = 0
+  function encodeMessage(message: StreamMessage): Uint8Array<ArrayBuffer> {
+    const evnt = message.event ? `\nevent: ${message.event}` : ''
+    const head = encoder.encode(`id: ${message.id}${evnt}\ndata: `)
+    const tail = encoder.encode(`\n\n`)
+    const headLength = head.length
+    const tailLength = tail.length
+    const dataLength = message.data.length
+    const buffer = new Uint8Array(headLength + tailLength + dataLength)
+    buffer.set(head, 0)
+    buffer.set(message.data, headLength)
+    buffer.set(tail, headLength + dataLength)
+    return buffer
+  }
+
+  function sse(chunk: Uint8Array) {
+    return encodeMessage({ id: eventId++, data: chunk })
+  }
+
+  return {
+    eventId,
+    transformToServerSideEvent() {
+      return new TransformStream<Uint8Array>({
+        transform: (chunk, controller) => controller.enqueue(sse(chunk)),
+      })
+    },
+    chunkToServerSideEvent(chunk: Uint8Array) {
+      return new ReadableStream({
+        start: (controller) => {
+          controller.enqueue(sse(chunk))
+          controller.close()
+        },
+      })
+    },
+  }
+}
+
 /**
  * Creates a new writable stream which can have multiple readers.
  * @param baseConfig
  */
-export function createBufferedStream({ bufferSize, streamId, transformer }: StreamConfig): BufferedStream {
+export function createBufferedStream({ bufferSize, streamId }: StreamConfig): BufferedStream {
   // internal state for buffer, subscriptions, etc.
   const buffer = makeCircularBuffer({ bufferSize })
   const subscribers = new Set<StreamSubscriber>()
   const mutex = new Mutex()
 
   const isReady = Promise.withResolvers<void>()
+  const serverSideEncoder = createServerSideEventEncoder()
 
   const meta: StreamMetadata = {
     status: 'init',
@@ -232,28 +279,6 @@ export function createBufferedStream({ bufferSize, streamId, transformer }: Stre
     })
   }
 
-  interface StreamMessage {
-    id: number
-    event?: string
-    data: Uint8Array
-  }
-
-  const encoder = new TextEncoder()
-  let eventId = 0
-  function encodeMessage(message: StreamMessage): Uint8Array<ArrayBuffer> {
-    const evnt = message.event ? `\nevent: ${message.event}` : ''
-    const head = encoder.encode(`id: ${message.id}${evnt}\ndata: `)
-    const tail = encoder.encode(`\n\n`)
-    const headLength = head.length
-    const tailLength = tail.length
-    const dataLength = message.data.length
-    const buffer = new Uint8Array(headLength + tailLength + dataLength)
-    buffer.set(head, 0)
-    buffer.set(message.data, headLength)
-    buffer.set(tail, headLength + dataLength)
-    return buffer
-  }
-
   // base writable stream which should be written to
   const writableStream = new WritableStream<Uint8Array>({
     start: (controller) => {
@@ -288,13 +313,7 @@ export function createBufferedStream({ bufferSize, streamId, transformer }: Stre
       const lock = await mutex.acquireLock({ timeout: 10_000 })
       try {
         await readable
-          .pipeThrough(
-            new TransformStream({
-              transform(chunk, controller) {
-                controller.enqueue(encodeMessage({ id: eventId++, data: chunk }))
-              },
-            })
-          )
+          .pipeThrough(serverSideEncoder.transformToServerSideEvent())
           .pipeTo(writableStream, { preventAbort: false, preventCancel: false, preventClose: true })
       } catch (e) {
         console.warn('[circular-stream] push error:', e)
@@ -308,12 +327,7 @@ export function createBufferedStream({ bufferSize, streamId, transformer }: Stre
       const lock = await mutex.acquireLock({ timeout: 10_000 })
       try {
         console.log('[circular-stream] writing...')
-        await new ReadableStream({
-          start(controller) {
-            controller.enqueue(encodeMessage({ id: eventId++, data: chunk }))
-            controller.close()
-          },
-        }).pipeTo(writableStream, { preventClose: true })
+        await serverSideEncoder.chunkToServerSideEvent(chunk).pipeTo(writableStream, { preventClose: true })
       } catch (e) {
         console.warn('[circular-stream] write error:', e)
       } finally {
