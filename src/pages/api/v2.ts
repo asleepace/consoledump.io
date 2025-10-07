@@ -1,65 +1,51 @@
+import { ApiError } from '@/lib/server/v2/api-error'
 import { getStreamContext } from '@/lib/server/v2/event-stream'
 import type { APIRoute } from 'astro'
 
-const HEADERS_WITH_CORS: HeadersInit = {
-  'access-control-allow-origin': '*',
-  'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
-}
-
-function errorResponse(options: { status: number; statusText: string }) {
-  return Response.json(
-    {
-      error: options.statusText,
-      status: options.status,
-    },
-    { status: options.status ?? 500, statusText: options.statusText }
-  )
-}
-
-export const GET: APIRoute = async (ctx) => {
-  const streamId = ctx.url.searchParams.get('id')
-  if (!streamId) return errorResponse({ status: 405, statusText: 'Missing streamId.' })
-
-  const session = getStreamContext()
-
-  if (!session.hasStream(streamId)) {
-    session.newStream(streamId)
-  }
-
-  const stream = session.getStream(streamId)
-  if (!stream) return errorResponse({ status: 404, statusText: 'Stream not found.' })
-
-  return new Response(stream.pull(), {
+/**
+ *  OPTIONS /api/v2
+ *
+ *  Handle CORS response.
+ */
+export const OPTIONS: APIRoute = async () => {
+  return new Response(null, {
     headers: {
       'access-control-allow-origin': '*',
-      'access-control-allow-methods': 'HEAD, GET, POST, PUT, DELETE, OPTIONS',
-      'content-type': 'text/event-stream',
-      'transfer-encoding': 'chunked',
-      'x-accel-buffering': 'no',
-      'x-stream-id': stream.streamId,
+      'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
     },
   })
 }
 
-export const POST: APIRoute = async (ctx) => {
-  const streamId = ctx.url.searchParams.get('id')
-  if (!streamId) return errorResponse({ status: 405, statusText: 'Missing streamId.' })
-  if (!ctx.request.body) return errorResponse({ status: 500, statusText: 'Missing POST body.' })
-
-  const session = getStreamContext()
-  const stream = session.getStream(streamId)
-  if (!stream) return errorResponse({ status: 404, statusText: 'Stream not found.' })
-
-  stream.push(ctx.request.body).catch((err) => {
-    console.warn('[v2] error pushing stream:', err)
-  })
-
-  return Response.json({ ok: true })
+/**
+ *  GET /api/v2?id=<stream_id>
+ *
+ *  Returns current stream for the specified id.
+ */
+export const GET: APIRoute = async ({ url }) => {
+  const streamId = url.searchParams.get('id')
+  if (!streamId) {
+    return new ApiError('Missing required parameter "id".').toResponse({ status: 400 })
+  }
+  return getStreamContext().getStreamResponse(streamId)
 }
 
-export const OPTIONS: APIRoute = async () => {
-  console.log('[v2] OPTIONS called!')
-  return new Response(null, {
-    headers: HEADERS_WITH_CORS,
+export const POST: APIRoute = async ({ url, request }) => {
+  const streamId = url.searchParams.get('id')
+  if (!streamId) {
+    return new ApiError('Missing required parameter "id".').toResponse({ status: 400 })
+  }
+  if (!request.body || request.bodyUsed) {
+    return new ApiError('Missing or invalid request body.').toResponse({ status: 400 })
+  }
+  const stream = getStreamContext().getStream(streamId)
+  if (!stream) {
+    return new ApiError('Stream not found.', { method: 'POST', streamId }).toResponse({ status: 404 })
+  }
+  if (stream.isClosed) {
+    return new ApiError('Stream is closed.', { method: 'POST' }).toResponse({ status: 410 })
+  }
+  stream.push(request.body).catch((err) => {
+    console.warn('[v2] error pushing stream:', err)
   })
+  return Response.json({ ok: true })
 }
