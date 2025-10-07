@@ -64,10 +64,6 @@ export const prerender = false
   eventSource.onopen = () => {
     console.log('event source opened!')
     dump({ client: 'connected' })
-
-    setInterval(() => {
-      dump({ ping: true })
-    }, 5_000)
   }
 
   eventSource.onerror = (ev) => {

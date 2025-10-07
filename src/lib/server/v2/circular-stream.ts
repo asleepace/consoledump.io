@@ -1,5 +1,4 @@
 import { Mutex } from '@asleepace/mutex'
-import { check } from '@astrojs/check'
 
 interface CircularBuffer {
   buffer: Uint8Array
@@ -41,6 +40,8 @@ class ChunkTooLarge extends BufferError {
 }
 
 /**
+ *  ## Circular Bufffer
+ *
  *  Returns a circular buffer which has a fixed sized, but can be written to
  *  an unlimited amount of times.
  *
@@ -122,41 +123,18 @@ function makeCircularBuffer({ bufferSize }: BufferConfig): CircularBuffer {
   }
 }
 
-interface StreamMetadata {
-  status: 'init' | 'open' | 'closed'
-  updatedAt: Date
-  readonly createdAt: Date
-  readonly totalSubscribers: number
-  readonly totalBytesWritten: number
-}
-
-interface StreamConfig {
-  streamId: string
-  bufferSize: number
-  transformer: TransformStream<Uint8Array>
-}
-
-interface StreamSubscriber {
-  controller: ReadableByteStreamController
-  readPosition: number
-}
-
-export interface BufferedStream {
-  pull: () => ReadableStream<Uint8Array>
-  push: (readable: ReadableStream<Uint8Array>) => Promise<void>
-  write: (chunk: Uint8Array) => Promise<void>
-  close: () => Promise<void>
-  metadata: () => StreamMetadata
-  getStreamId: () => string
-  isReady: Promise<void>
-}
-
 interface StreamMessage {
   id: number
   event?: string
   data: Uint8Array
 }
 
+/**
+ * Returns a server-side event encoder which wraps arbitrary data into
+ * the sse format with incramenting eventIds and optional types.
+ *
+ * @note prefer to use the transform as it's more efficient.
+ */
 export function createServerSideEventEncoder() {
   const encoder = new TextEncoder()
   let eventId = 0
@@ -179,7 +157,9 @@ export function createServerSideEventEncoder() {
   }
 
   return {
-    eventId,
+    get eventId() {
+      return eventId
+    },
     transformToServerSideEvent() {
       return new TransformStream<Uint8Array>({
         transform: (chunk, controller) => controller.enqueue(sse(chunk)),
@@ -196,14 +176,54 @@ export function createServerSideEventEncoder() {
   }
 }
 
+interface StreamMetadata {
+  streamId: string
+  status: 'init' | 'open' | 'closed'
+  updatedAt: Date
+  readonly createdAt: Date
+  readonly totalSubscribers: number
+  readonly totalBytesWritten: number
+}
+
+interface StreamConfig {
+  streamId: string
+  bufferSize: number
+  keepAliveInterval?: number
+  onCleanup?: (meta: StreamMetadata) => void | Promise<void>
+}
+
+interface StreamSubscriber {
+  controller: ReadableByteStreamController
+  readPosition: number
+}
+
+export interface BufferedStream {
+  pull: () => ReadableStream<Uint8Array>
+  push: (readable: ReadableStream<Uint8Array>) => Promise<void>
+  write: (chunk: Uint8Array) => Promise<void>
+  writeText: (text: string) => Promise<void>
+  writeJson: (json: object) => Promise<void>
+  close: () => Promise<void>
+  readonly streamId: string
+  readonly meta: StreamMetadata
+  readonly isReady: Promise<void>
+  readonly isClosed: boolean
+}
+
 /**
  * Creates a new writable stream which can have multiple readers.
  * @param baseConfig
  */
-export function createBufferedStream({ bufferSize, streamId }: StreamConfig): BufferedStream {
+export function createBufferedStream({
+  bufferSize,
+  streamId,
+  keepAliveInterval = 30_000,
+  onCleanup,
+}: StreamConfig): BufferedStream {
   // internal state for buffer, subscriptions, etc.
   const buffer = makeCircularBuffer({ bufferSize })
   const subscribers = new Set<StreamSubscriber>()
+  const textEncoder = new TextEncoder()
   const mutex = new Mutex()
 
   const isReady = Promise.withResolvers<void>()
@@ -211,6 +231,7 @@ export function createBufferedStream({ bufferSize, streamId }: StreamConfig): Bu
 
   const meta: StreamMetadata = {
     status: 'init',
+    streamId,
     createdAt: new Date(),
     updatedAt: new Date(),
     get totalBytesWritten() {
@@ -221,18 +242,29 @@ export function createBufferedStream({ bufferSize, streamId }: StreamConfig): Bu
     },
   } as const
 
-  // handle special case where byob is present.
+  /**
+   *  Handles BYOB requests (bring your own buffer) for performant stream reading.
+   *
+   *  @note this is not supported via `EventSource`.
+   *  @deprecated
+   */
   function handleByobRequest(sub: StreamSubscriber, dataView: Uint8Array<ArrayBufferLike>): boolean {
     if (!sub.controller.byobRequest?.view) return false
     const view = sub.controller.byobRequest.view
     if (dataView.length > view.byteLength) return false
+    console.log('[circular-stream] handling byob request!')
     new Uint8Array(view.buffer).set(dataView)
     sub.controller.byobRequest.respond(dataView.length)
     sub.readPosition = buffer.writePosition
     return true
   }
 
-  // helper method for writing new data to a subscription
+  /**
+   *  Helper method for writing data to a subscriber.
+   *
+   *  @todo fix rare edge case where data wraps back to current position
+   *  so the read positions appear the same.
+   */
   function writeToSubscription(subscription: StreamSubscriber) {
     if (buffer.writePosition === subscription.readPosition) return
     const readPos = subscription.readPosition
@@ -254,10 +286,15 @@ export function createBufferedStream({ bufferSize, streamId }: StreamConfig): Bu
   function addSubscriber(controller: ReadableByteStreamController) {
     const sub: StreamSubscriber = {
       controller,
-      readPosition: buffer.writePosition,
+      readPosition: 0,
     }
     subscribers.add(sub)
     return sub
+  }
+
+  function startKeepAlive(callback: () => void) {
+    const intervalId = setInterval(callback, keepAliveInterval)
+    return () => clearInterval(intervalId)
   }
 
   // helper method for creating a subscription
@@ -267,6 +304,11 @@ export function createBufferedStream({ bufferSize, streamId }: StreamConfig): Bu
       type: 'bytes',
       start: (controller) => {
         self = addSubscriber(controller)
+        startKeepAlive(() => {
+          // send a server-side event comment to keep stream alive
+          const heartbeat = textEncoder.encode(': keep-alive\n\n')
+          controller.enqueue(heartbeat)
+        })
       },
       pull: () => {
         if (!self) return console.warn('[subscription] missing self!')
@@ -281,13 +323,12 @@ export function createBufferedStream({ bufferSize, streamId }: StreamConfig): Bu
 
   // base writable stream which should be written to
   const writableStream = new WritableStream<Uint8Array>({
-    start: (controller) => {
+    start: () => {
       console.log('[writable] writable isReady!')
       meta.status = 'open'
       isReady.resolve()
     },
     write: (chunk) => {
-      console.log('[writable] writing:', chunk)
       meta.updatedAt = new Date()
       buffer.write(chunk)
       subscribers.forEach(writeToSubscription)
@@ -297,13 +338,30 @@ export function createBufferedStream({ bufferSize, streamId }: StreamConfig): Bu
       console.warn('[writable] stream closed!')
       subscribers.forEach((sub) => sub.controller.close())
       subscribers.clear()
+      onCleanup?.(meta)
     },
   })
 
   return {
-    isReady: isReady.promise,
-    metadata: () => meta,
-    getStreamId: () => streamId,
+    /** flag which is true when the writable stream has started. */
+    get isReady() {
+      return isReady.promise
+    },
+
+    /** returns `true` if the stream was closed. */
+    get isClosed() {
+      return meta.status === 'closed'
+    },
+
+    /** returns metadata about the stream. */
+    get meta() {
+      return meta
+    },
+
+    /** returns the current streamId */
+    get streamId() {
+      return streamId
+    },
 
     /** returns a new readable stream subscription. */
     pull: () => createSubscription(),
@@ -322,18 +380,26 @@ export function createBufferedStream({ bufferSize, streamId }: StreamConfig): Bu
       }
     },
 
+    /** encodes an arbitrary chunk and broadcasts to all streams. */
     write: async (chunk: Uint8Array) => {
-      await isReady.promise
       const lock = await mutex.acquireLock({ timeout: 10_000 })
       try {
-        console.log('[circular-stream] writing...')
         await serverSideEncoder.chunkToServerSideEvent(chunk).pipeTo(writableStream, { preventClose: true })
       } catch (e) {
         console.warn('[circular-stream] write error:', e)
       } finally {
-        console.log('[circular-stream] write finished!')
         lock.releaseLock()
       }
+    },
+
+    /** helper which encodes text and then calls `write(chunk)` with bytes. */
+    async writeText(text) {
+      await this.write(textEncoder.encode(text))
+    },
+
+    /** helper which encodes json and then calls `write(chunk)` with bytes. */
+    async writeJson(json) {
+      await this.writeText(JSON.stringify(json))
     },
 
     close: async () => {
