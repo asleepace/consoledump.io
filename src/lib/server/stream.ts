@@ -1,6 +1,7 @@
 import { Mutex } from '@asleepace/mutex'
 import { Timestamp } from './timestamp'
 import { ResponseStream } from './response-stream'
+import { StreamEventEmitter } from '../shared/stream-event'
 
 const textEncoder = new TextEncoder()
 
@@ -146,6 +147,8 @@ export class Stream2 {
 
   private readonly root: TransformStream
   private readonly mutex = Mutex.shared()
+  private readonly eventEmitter: StreamEventEmitter
+
   private controller?: TransformStreamDefaultController<any>
   private originalStream?: ReadableStream
   public readonly timestamp = new Timestamp({ maxAge: Stream2.MAX_AGE })
@@ -179,6 +182,7 @@ export class Stream2 {
   }
 
   constructor(public readonly id = createID()) {
+    this.eventEmitter = new StreamEventEmitter({ streamId: id })
     this.root = new TransformStream<Uint8Array>({
       start: (controller) => {
         this.controller = controller

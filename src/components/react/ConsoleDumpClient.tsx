@@ -7,7 +7,6 @@ import { useCallback, useEffect, useRef } from 'react'
 import type { ActionBarEvent } from './ActionBar'
 import { Try } from '@asleepace/try'
 import { useUtils } from './useUtils'
-import { type LogEntry, makeLogEntry } from './useLogEntry'
 
 export type ConsoleDumpClientProps = {
   className?: string
@@ -38,51 +37,23 @@ export const ConsoleDumpClient = withAppProvider((props: ConsoleDumpClientProps)
 
   const downloadLogs = () => {
     if (!ctx.sessionId) return
-    const data = utils.createJsonDataFile({ sessionId: ctx.sessionId, logs: ctx.logs })
+    if (!ctx.stream?.logEntries) return
+    const data = utils.createJsonDataFile({ sessionId: ctx.sessionId, logs: ctx.stream.logEntries })
     utils.downloadJsonFile(data)
-    insertLog(makeLogEntry(`downloaded ${data.fileName}`))
-  }
-
-  const insertLog = (nextLog: LogEntry) => {
-    ctx.setLogs((prev) => [...prev, nextLog])
   }
 
   const clearLogs = () => {
     console.warn('clearing logs...')
-    ctx.setLogs([])
+    ctx.stream?.clear()
   }
 
   const scrollToBottom = () => {
     console.log('scrolling to bottom...')
     scrollContainerRef.current?.scrollTo({
       top: scrollContainerRef.current.scrollHeight,
-      behavior: ctx.logs.length > 300 ? 'instant' : 'smooth',
+      behavior: 'instant',
     })
   }
-
-  const onSubmitAction = useCallback((action: ActionBarEvent) => {
-    switch (action.type) {
-      // filter out current chat logs.
-      case 'search':
-        ctx.setSearchTerm(action.value)
-        return
-      // send a chat like message to the current stream.
-      case 'message':
-        dump({ type: 'message', text: action.value }).then(scrollToBottom)
-        action.reset()
-        return
-      // execute code in the browser.
-      case 'execute':
-        const res = Try.catch(() => eval(action.value) ?? '')
-        if (res.ok) return insertLog(makeLogEntry(res.value))
-        const json = JSON.stringify({ data: res.error?.name ?? 'an unknown error occurred.', type: 'error' })
-        insertLog(makeLogEntry(json))
-        return
-      default:
-        console.warn(`[main] unsupported action: "${action.type}"`)
-        return
-    }
-  }, [])
 
   const autoScroll = useCallback(() => {
     const AUTO_SCROLL_THRESHOLD = 50
@@ -99,7 +70,30 @@ export const ConsoleDumpClient = withAppProvider((props: ConsoleDumpClientProps)
 
   useEffect(() => {
     autoScroll()
-  }, [ctx.logs])
+  }, [ctx.stream?.logEntries.length])
+
+  const onSubmitAction = useCallback((action: ActionBarEvent) => {
+    switch (action.type) {
+      // filter out current chat logs.
+      case 'search':
+        ctx.setSearchTerm(action.value)
+        return
+      // send a chat like message to the current stream.
+      case 'message':
+        dump(action.value).then(scrollToBottom)
+        action.reset()
+        return
+      // execute code in the browser.
+      case 'execute':
+        const res = Try.catch(() => eval(action.value) ?? '')
+        if (res.ok) return dump(res.value).then(scrollToBottom)
+        dump(res.error?.name ?? 'an unknown error occurred.').then(scrollToBottom)
+        return
+      default:
+        console.warn(`[main] unsupported action: "${action.type}"`)
+        return
+    }
+  }, [])
 
   return (
     <div className={cn('w-full h-full max-h-screen flex flex-1 flex-col', props.className)}>
@@ -115,7 +109,7 @@ export const ConsoleDumpClient = withAppProvider((props: ConsoleDumpClientProps)
       {/* --- main context --- */}
       <main className="w-full max-w-full flex-1 flex flex-col overflow-hidden">
         <div ref={scrollContainerRef} className="flex-1 overflow-y-auto pb-4">
-          {ctx.logs.map((logEntry) => {
+          {ctx.stream?.logEntries.map((logEntry) => {
             return <LogEntryItem {...logEntry} key={logEntry.id} />
           })}
         </div>

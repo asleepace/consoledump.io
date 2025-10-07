@@ -2,10 +2,11 @@ import { useAppContext } from './AppContext'
 import { cn } from '@/lib/utils'
 import { Check, ChevronDown, ChevronRight, Copy } from 'lucide-react'
 import { getTypeBadge } from '@/components/react/useTheme'
-import { memo } from 'react'
+import { memo, useMemo } from 'react'
 import { formatTimestamp } from './useUtils'
 
-import { type LogEntry, getStylesFor } from './useLogEntry'
+import { getStylesFor } from './useLogEntry'
+import { type LogEntry } from './LogEntry'
 
 export type LogEntryProps = LogEntry & {
   className?: string
@@ -82,12 +83,29 @@ const ContentCode = ({
 /**
  * Displayed content for text logs.
  */
-const ContentText = ({ log, className }: { log: LogEntry; isExpanded?: boolean; className?: string }) => (
+const ContentText = (props: { html: string; isExpanded?: boolean; className?: string }) => (
   <span
-    className={cn('text-xs font-mono break-all py-0.5', className)}
-    dangerouslySetInnerHTML={{ __html: log.text }}
+    className={cn('text-xs font-mono break-all py-0.5', props.className)}
+    dangerouslySetInnerHTML={{ __html: props.html }}
   />
 )
+
+export function isStreamJson(json: unknown): json is { type: 'json' | 'html' | 'text'; text?: string; html?: string } {
+  if (!json || typeof json !== 'object') return false
+  const data = json as Record<string, string>
+  return 'type' in data && ('html' in data || 'text' in data)
+}
+
+export function getCodeBlock(htmlString: string | undefined): string | undefined {
+  if (!htmlString) return undefined
+  const parser = new DOMParser()
+  const doc = parser.parseFromString(htmlString, 'text/html')
+  const codeElements = doc.querySelectorAll('code, pre')
+  for (const codeBlock of codeElements) {
+    if (!codeBlock?.textContent) continue
+    return codeBlock.textContent
+  }
+}
 
 /**
  * ## LogEntryItem
@@ -102,9 +120,37 @@ export const LogEntryItem = memo(({ className, ...log }: LogEntryProps) => {
   const isExpanded = expandedLogs.has(log.id)
 
   const style = getStylesFor(log)
-  const [badgeName] = log.type.split(':')
+  const badgeName = log.content.type === 'stream-event' ? log.content.data.type : 'message'
 
-  console.log({ log })
+  function getDisplayedHtml() {
+    const { content } = log
+
+    console.log('[LogEntryItem] content:', content)
+
+
+    if (content.type === 'stream-event') {
+
+      if (content.data.type === 'connected') {
+        const streamId = content.data.streamId
+        return `<span class="text-blue-500">connected to stream <a class="text-orange-500" href="/${streamId}">${streamId}</span>`
+      }
+
+      return content.data.html ?? content.data.json ?? content.data.text
+    }
+
+    if (content.type === 'json-object') {
+      return String(content.data)
+    }
+
+    if (content.type === 'json-array') {
+      return content.data.map((item) => JSON.stringify(item))
+    }
+
+    return content.data
+  }
+
+  const htmlContent = getDisplayedHtml()
+  const code = undefined
 
   return (
     <div className={cn('w-full font-mono', className)}>
@@ -124,9 +170,9 @@ export const LogEntryItem = memo(({ className, ...log }: LogEntryProps) => {
           </div>
           {/* --- content --- */}
           <div className="flex-1 min-w-0">
-            {log.content.code ? (
+            {code ? (
               <ContentCode
-                content={log.content.code}
+                content={code}
                 textColor={style.textStyle}
                 className={theme.code}
                 isExpanded={isExpanded}
@@ -136,12 +182,12 @@ export const LogEntryItem = memo(({ className, ...log }: LogEntryProps) => {
                 }}
               />
             ) : (
-              <ContentText log={log.content.json?.text ?? log} className={style.textStyle} />
+              <ContentText html={htmlContent} className={style.textStyle} />
             )}
           </div>
           {/* --- actions --- */}
           <BtnCopyToClipboard
-            onClick={() => copyToClipboard({ content: log.text, id: log.id })}
+            onClick={() => copyToClipboard({ content: htmlContent, id: log.id })}
             isCopied={isCopied}
             className={cn(isCopied && theme.textMuted)}
           />

@@ -1,7 +1,8 @@
 import { StreamMessage } from '@/lib/client/stream-message'
 import { Try } from '@asleepace/try'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useClient } from './useClient'
+import { type LogEntry, makeLog } from './LogEntry'
 
 export type EventStreamConfig = {
   logEvents?: boolean
@@ -20,17 +21,10 @@ export interface ClientStream {
   childId: string | undefined
   isConnected: boolean
   isError: boolean
-  messages: StreamMessage[]
-  getLastMessage: () => undefined | StreamMessage
+  logEntries: LogEntry[]
   clear: () => void
   start: () => Promise<any>
   close: () => void
-}
-
-function getSessionIdFromPath(path: string | undefined): string | undefined {
-  if (!path || path === '/') return undefined
-  const maybeSessionId = path.slice(1)?.trim()
-  return maybeSessionId
 }
 
 function hasChildId(obj: unknown): obj is { childId: string } {
@@ -43,8 +37,8 @@ export function useEventStream(config: EventStreamConfig): ClientStream {
   const [isInitializing, setIsInitializing] = useState(false)
   const [isConnected, setIsConnected] = useState(false)
   const [isError, setIsError] = useState(false)
-  const [messages, setMessages] = useState<StreamMessage[]>([])
   const [childId, setChildId] = useState<string | undefined>()
+  const [logEntries, setLogEntries] = useState<LogEntry[]>([])
 
   /** extracts the sessionId from current url. */
   const client = useClient()
@@ -64,6 +58,13 @@ export function useEventStream(config: EventStreamConfig): ClientStream {
     return result
   }
 
+  useEffect(() => {
+    return () => {
+      console.warn('[useEventStream] unmounting...')
+      setLogEntries([])
+    }
+  }, [])
+
   /** whenever the sessionId changes we need to reset state and reconnect. */
   const stream = useMemo(() => {
     if (!client.sessionId) return undefined
@@ -78,17 +79,12 @@ export function useEventStream(config: EventStreamConfig): ClientStream {
     }
 
     eventSource.onmessage = (ev) => {
-      // @note log events
-      console.log(ev.data)
-
-      const message = new StreamMessage(ev.data)
-
-      if (!childId && hasChildId(message?.json)) {
-        setChildId(message.json.childId)
+      const log = makeLog(ev)
+      if (!log) {
+        console.warn('[useEventStream] invalid log for:', ev)
+        return
       }
-
-      setMessages((prevMessages) => [...prevMessages, message])
-      config.onMessage?.(message)
+      setLogEntries((prev) => [...prev, log])
     }
 
     eventSource.onerror = (ev) => {
@@ -105,19 +101,16 @@ export function useEventStream(config: EventStreamConfig): ClientStream {
     childId,
     isConnected,
     isError,
-    messages,
-    getLastMessage: () => {
-      return messages.at(-1)
-    },
+    logEntries,
     clear: () => {
-      setMessages([])
+      setLogEntries([])
     },
     start: async () => await initializeStream(),
     close: () => {
       stream?.close()
       setIsError(false)
       setIsConnected(false)
-      setMessages([])
+      setLogEntries([])
     },
   }
 }
