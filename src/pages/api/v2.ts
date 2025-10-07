@@ -16,7 +16,7 @@ function errorResponse(options: { status: number; statusText: string }) {
   )
 }
 
-export const GET: APIRoute = (ctx) => {
+export const GET: APIRoute = async (ctx) => {
   const streamId = ctx.url.searchParams.get('id')
   console.log('[v2] GET streamId:', streamId)
   if (!streamId) return errorResponse({ status: 405, statusText: 'Missing streamId.' })
@@ -30,10 +30,15 @@ export const GET: APIRoute = (ctx) => {
   const stream = session.getStream(streamId)
   if (!stream) return errorResponse({ status: 404, statusText: 'Stream not found.' })
 
-  return new Response(stream.pull(), {
+  const body = await stream.pull()
+  return new Response(body, {
     headers: {
-      'Content-Type': 'text/event-stream',
-      'X-Accel-Buffering': 'no',
+      'access-control-allow-origin': '*',
+      'access-control-allow-methods': 'HEAD, GET, POST, PUT, DELETE, OPTIONS',
+      'content-type': 'text/event-stream',
+      'transfer-encoding': 'chunked',
+      'x-accel-buffering': 'no',
+      'x-stream-id': stream.getStreamId(),
     },
   })
 }
@@ -48,10 +53,13 @@ export const POST: APIRoute = async (ctx) => {
   const stream = session.getStream(streamId)
   if (!stream) return errorResponse({ status: 404, statusText: 'Stream not found.' })
 
-  await stream.push(ctx.request.body)
-  return new Response(null, {
-    status: 200,
+  console.log('[v2] piping body to stream (bodyUsed=', ctx.request.bodyUsed, ', locked=', ctx.request.body.locked, ')')
+
+  stream.push(ctx.request.body).catch((err) => {
+    console.warn('[v2] error pushing stream:', err)
   })
+
+  return Response.json({ ok: true })
 }
 
 export const OPTIONS: APIRoute = async () => {

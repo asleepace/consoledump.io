@@ -1,4 +1,4 @@
-console.clear()
+import { Mutex } from '@asleepace/mutex'
 
 interface CircularBuffer {
   buffer: Uint8Array
@@ -147,6 +147,7 @@ export interface BufferedStream {
   close: () => Promise<void>
   metadata: () => StreamMetadata
   getStreamId: () => string
+  isReady: Promise<void>
 }
 
 /**
@@ -157,6 +158,9 @@ export function createBufferedStream({ bufferSize, streamId, transformer }: Stre
   // internal state for buffer, subscriptions, etc.
   const buffer = makeCircularBuffer({ bufferSize })
   const subscribers = new Set<StreamSubscriber>()
+  const mutex = new Mutex()
+
+  const isReady = Promise.withResolvers<void>()
 
   const meta: StreamMetadata = {
     status: 'init',
@@ -217,7 +221,10 @@ export function createBufferedStream({ bufferSize, streamId, transformer }: Stre
       start: (controller) => {
         self = addSubscriber(controller)
       },
-      pull: () => writeToSubscription(self),
+      pull: () => {
+        if (!self) return console.warn('[subscription] missing self!')
+        writeToSubscription(self)
+      },
       cancel: (reason) => {
         console.log('[subscription] cancelled:', reason)
         subscribers.delete(self)
@@ -225,12 +232,37 @@ export function createBufferedStream({ bufferSize, streamId, transformer }: Stre
     })
   }
 
+  interface StreamMessage {
+    id: number
+    event?: string
+    data: Uint8Array
+  }
+
+  const encoder = new TextEncoder()
+  let eventId = 0
+  function encodeMessage(message: StreamMessage): Uint8Array<ArrayBuffer> {
+    const evnt = message.event ? `\nevent: ${message.event}` : ''
+    const head = encoder.encode(`id: ${message.id}${evnt}\ndata: `)
+    const tail = encoder.encode(`\n\n`)
+    const headLength = head.length
+    const tailLength = tail.length
+    const dataLength = message.data.length
+    const buffer = new Uint8Array(headLength + tailLength + dataLength)
+    buffer.set(head, 0)
+    buffer.set(message.data, headLength)
+    buffer.set(tail, headLength + dataLength)
+    return buffer
+  }
+
   // base writable stream which should be written to
   const writableStream = new WritableStream<Uint8Array>({
-    start: () => {
+    start: (controller) => {
+      console.log('[writable] writable isReady!')
       meta.status = 'open'
+      isReady.resolve()
     },
     write: (chunk) => {
+      console.log('[writable] writing:', chunk)
       meta.updatedAt = new Date()
       buffer.write(chunk)
       subscribers.forEach(writeToSubscription)
@@ -244,6 +276,7 @@ export function createBufferedStream({ bufferSize, streamId, transformer }: Stre
   })
 
   return {
+    isReady: isReady.promise,
     metadata: () => meta,
     getStreamId: () => streamId,
 
@@ -252,26 +285,41 @@ export function createBufferedStream({ bufferSize, streamId, transformer }: Stre
 
     /** pushes data from a readable stream to all subscriptions. */
     push: async (readable: ReadableStream<Uint8Array>) => {
+      const lock = await mutex.acquireLock({ timeout: 10_000 })
       try {
-        return readable.pipeThrough(transformer).pipeTo(writableStream, {
-          preventAbort: false,
-          preventCancel: false,
-          preventClose: false,
-        })
+        await readable
+          .pipeThrough(
+            new TransformStream({
+              transform(chunk, controller) {
+                controller.enqueue(encodeMessage({ id: eventId++, data: chunk }))
+              },
+            })
+          )
+          .pipeTo(writableStream, { preventAbort: false, preventCancel: false, preventClose: true })
       } catch (e) {
-        console.warn('[circular-strema] push error:', e)
+        console.warn('[circular-stream] push error:', e)
+      } finally {
+        lock.releaseLock()
       }
     },
 
     write: async (chunk: Uint8Array) => {
-      await new ReadableStream({
-        start(controller) {
-          controller.enqueue(chunk)
-          controller.close()
-        },
-      })
-        .pipeThrough(transformer)
-        .pipeTo(writableStream)
+      await isReady.promise
+      const lock = await mutex.acquireLock({ timeout: 10_000 })
+      try {
+        console.log('[circular-stream] writing...')
+        await new ReadableStream({
+          start(controller) {
+            controller.enqueue(encodeMessage({ id: eventId++, data: chunk }))
+            controller.close()
+          },
+        }).pipeTo(writableStream, { preventClose: true })
+      } catch (e) {
+        console.warn('[circular-stream] write error:', e)
+      } finally {
+        console.log('[circular-stream] write finished!')
+        lock.releaseLock()
+      }
     },
 
     close: async () => {

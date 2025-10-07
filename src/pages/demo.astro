@@ -44,9 +44,23 @@ export const prerender = false
 </style>
 
 <script>
+  const abortController = new AbortController()
+
+  window.addEventListener('beforeunload', () => {
+    console.log('[client] beforeunload:', abortController.abort())
+  })
+
+  window.addEventListener('blur', () => {
+    console.log('[client] blur:', abortController.abort())
+  })
+
   const dump = (...args: any[]) =>
     fetch('/api/v2?id=123456', {
+      signal: abortController.signal,
       method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+      },
       body: JSON.stringify(args),
     })
 
@@ -54,6 +68,10 @@ export const prerender = false
   eventSource.onopen = () => {
     console.log('event source opened!')
     dump({ client: 'connected' })
+
+    setInterval(() => {
+      dump({ ping: true })
+    }, 5_000)
   }
 
   eventSource.onerror = (ev) => {

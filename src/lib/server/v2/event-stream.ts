@@ -32,7 +32,22 @@ function createMessageEncoder() {
       const message = encodeMessage({ id: eventId++, data: chunk })
       controller.enqueue(message)
     },
+    flush: (controller) => {
+      console.log('[event-stream] flush called!')
+    },
   })
+}
+
+function createEncoder() {
+  const textEncoder = new TextEncoder()
+  return {
+    text(text: string): Uint8Array {
+      return textEncoder.encode(text)
+    },
+    json(json: any): Uint8Array {
+      return this.text(JSON.stringify(json))
+    },
+  }
 }
 
 /**
@@ -48,11 +63,7 @@ const createStreamId = () => `${crypto.randomUUID().split('-')[0]}`
 export function getStreamContext() {
   const bufferSize = 1024 * 64
 
-  function encodeText(text: string) {
-    return new TextEncoder().encode(text)
-  }
-
-  const cleanup = new FinalizationRegistry((streamId) => {})
+  const enocde = createEncoder()
 
   return {
     newStream(streamId = createStreamId()): BufferedStream {
@@ -61,8 +72,8 @@ export function getStreamContext() {
         streamId,
         bufferSize,
       })
-      activeStreams.set(stream.getStreamId(), stream)
-      stream.write(encodeText('[stream] connected!'))
+      activeStreams.set(streamId, stream)
+      stream.write(enocde.json({ type: 'stream:started', streamId, createdAt: new Date() }))
       return stream
     },
     hasStream(streamId: string): boolean {
@@ -74,7 +85,7 @@ export function getStreamContext() {
     async pipeToSession(streamId: string, readable: ReadableStream<Uint8Array>) {
       const stream = this.getStream(streamId)
       if (!stream) return console.warn(`missing session "${streamId}"!`)
-      return stream.push(readable)
+      await stream.push(readable)
     },
   }
 }
