@@ -256,7 +256,7 @@ export function createBufferedStream({ bufferSize, streamId, transformer }: Stre
         return readable.pipeThrough(transformer).pipeTo(writableStream, {
           preventAbort: false,
           preventCancel: false,
-          preventClose: true,
+          preventClose: false,
         })
       } catch (e) {
         console.warn('[circular-strema] push error:', e)
@@ -264,12 +264,14 @@ export function createBufferedStream({ bufferSize, streamId, transformer }: Stre
     },
 
     write: async (chunk: Uint8Array) => {
-      const writer = writableStream.getWriter()
-      try {
-        await writer.write(chunk)
-      } finally {
-        writer.releaseLock()
-      }
+      await new ReadableStream({
+        start(controller) {
+          controller.enqueue(chunk)
+          controller.close()
+        },
+      })
+        .pipeThrough(transformer)
+        .pipeTo(writableStream)
     },
 
     close: async () => {

@@ -48,6 +48,12 @@ const createStreamId = () => `${crypto.randomUUID().split('-')[0]}`
 export function getStreamContext() {
   const bufferSize = 1024 * 64
 
+  function encodeText(text: string) {
+    return new TextEncoder().encode(text)
+  }
+
+  const cleanup = new FinalizationRegistry((streamId) => {})
+
   return {
     newStream(streamId = createStreamId()): BufferedStream {
       const stream = createBufferedStream({
@@ -56,6 +62,7 @@ export function getStreamContext() {
         bufferSize,
       })
       activeStreams.set(stream.getStreamId(), stream)
+      stream.write(encodeText('[stream] connected!'))
       return stream
     },
     hasStream(streamId: string): boolean {
@@ -67,7 +74,7 @@ export function getStreamContext() {
     async pipeToSession(streamId: string, readable: ReadableStream<Uint8Array>) {
       const stream = this.getStream(streamId)
       if (!stream) return console.warn(`missing session "${streamId}"!`)
-      return await stream.push(readable)
+      return stream.push(readable)
     },
   }
 }

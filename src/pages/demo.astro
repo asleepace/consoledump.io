@@ -44,16 +44,27 @@ export const prerender = false
 </style>
 
 <script>
+  const dump = (...args: any[]) =>
+    fetch('/api/v2?id=123456', {
+      method: 'POST',
+      body: JSON.stringify(args),
+    })
+
   const eventSource = new EventSource('/api/v2?id=123456')
   eventSource.onopen = () => {
     console.log('event source opened!')
+    dump({ client: 'connected' })
   }
 
   eventSource.onerror = (ev) => {
     console.warn('event source error:', ev)
+    eventSource.close()
   }
 
   eventSource.onmessage = (ev) => {
     console.log(ev.data)
   }
+
+  // @ts-ignore
+  console.dump = dump
 </script>
