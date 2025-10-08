@@ -1,0 +1,24 @@
+id: 0
+data: {"type":"client:connected","childId":"e09723ab"}
+
+id: 1
+data: [{"client":"connected"}]
+
+id: 2
+data: {"type":"client:connected","childId":"e2a67d6a"}
+
+id: 3
+data: [{"client":"connected"}]
+
+id: 4
+data: {"type":"client:connected","childId":"430770bd"}
+
+id: 5
+data: [{"client":"connected"}]
+
+id: 6
+data: ["Hello,  world!"]
+
+id: 7
+data: ["Hello,  world!",123,[1,2,3],"🚀"]
+

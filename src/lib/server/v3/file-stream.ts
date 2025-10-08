@@ -143,6 +143,7 @@ type ChunkCallback = (chunk: ByteStream) => void | Promise<void>
 
 async function iterateFileChunks(file: Bun.BunFile, callback: ChunkCallback) {
   if (!(await file.exists())) return void console.warn('[iterate] file not found:', file.name)
+  console.log('[file] loading:', file.name, file.size)
   return await iterateChunks(file.stream(), callback)
 }
 
@@ -177,15 +178,36 @@ async function iterateChunks(readableStream: ReadableStream, callback: ChunkCall
  */
 export async function createFileBasedStream(options: { streamId: string }) {
   const encoder = createServerSideEventEncoder()
-  const filePath = `public/dump-${options.streamId}.text`
+  const filePath = `./public/dumps/${options.streamId}.log`
   const file = Bun.file(filePath)
   const fileWriter = file.writer()
   const mutex = new Mutex()
 
+  const doesFileExist = await file.exists()
+  console.log('[stream] file:', {
+    name: file.name,
+    exists: doesFileExist,
+    size: file.size,
+  })
+
   const activeStreams = new Set<ReadableStreamDefaultController>()
 
+  const meta = {
+    streamId: options.streamId,
+    lastChildId: 0,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    get totalStreams() {
+      return activeStreams.size
+    },
+  }
+
   /** an in-memory buffer which holds a short preview of data. */
-  // const sharedBuffer = makeCircularBuffer({ bufferSize: 1024 * 1024 * 5 })
+  const sharedBuffer = makeCircularBuffer({ bufferSize: 1024 * 1024 * 5 })
+
+  function sendEvent(data: object): void {
+    publish(Response.json(data).body!)
+  }
 
   /** broadcast a chunk to all active streams. */
   function broadcastToStreams(chunk: ByteStream) {
@@ -202,48 +224,68 @@ export async function createFileBasedStream(options: { streamId: string }) {
 
   /** Publishes incoming data to file + live subscribers. */
   async function publish(readableStream: ReadableByteStream): Promise<void> {
+    meta.updatedAt = new Date()
     const lock = await mutex.acquireLock()
     try {
       const incomingStream = readableStream.pipeThrough(encoder.transformToServerSideEvent())
 
       await iterateChunks(incomingStream, async (chunk) => {
+        sharedBuffer.write(chunk)
+        broadcastToStreams(chunk)
         fileWriter.write(chunk)
         await fileWriter.flush()
-        broadcastToStreams(chunk)
       })
     } finally {
       lock.releaseLock()
     }
   }
 
+  async function handleGarbageCollection() {
+    if (activeStreams.size > 0) return
+    console.log('[stream] garbase collection called!')
+    await fileWriter.end()
+  }
+
   /**
    * Returns SSE stream with file history + live updates
    */
   async function createSubscription() {
+    let childId = crypto.randomUUID().slice(0, 8)
     let cleanup = () => {}
     return new ReadableStream({
       type: 'bytes',
       async start(controller) {
-        const lock = await mutex.acquireLock({ timeout: 5_000 })
-        try {
-          // send history
-          await iterateFileChunks(file, (chunks) => {
-            controller.enqueue(chunks)
-          })
+        sendEvent({ type: 'client:connected', childId })
 
+        if (sharedBuffer.wrapCount > 0) {
+          const lock = await mutex.acquireLock({ timeout: 5_000 })
+          try {
+            // send history
+            await iterateFileChunks(file, (chunks) => {
+              controller.enqueue(chunks)
+            })
+
+            activeStreams.add(controller)
+            cleanup = () => activeStreams.delete(controller)
+          } catch (e) {
+            console.error('[subscribe] error:', e)
+            activeStreams.delete(controller)
+            Try.catch(() => controller.error(e))
+          } finally {
+            lock.releaseLock()
+          }
+        } else {
+          controller.enqueue(sharedBuffer.buffer.slice(0, sharedBuffer.writePosition))
           activeStreams.add(controller)
           cleanup = () => activeStreams.delete(controller)
-        } catch (e) {
-          console.error('[subscribe] error:', e)
-          activeStreams.delete(controller)
-          Try.catch(() => controller.error(e))
-        } finally {
-          lock.releaseLock()
         }
       },
       cancel() {
+        sendEvent({ type: 'client:closed', childId })
         console.log('[subscription] closed!')
+        sendEvent({ type: 'stream:closed' })
         cleanup()
+        handleGarbageCollection()
       },
     })
   }
@@ -260,9 +302,7 @@ export async function createFileBasedStream(options: { streamId: string }) {
     },
     async subscribe() {
       console.log('[subscribe] called!')
-      publish(Response.json({ streamId: 123, type: 'client:connected' }).body!)
       const responseBody = await createSubscription()
-      console.log('[subscribe] returning subscription...')
       return new Response(responseBody, {
         headers: {
           'content-type': 'text/event-stream',
