@@ -102,6 +102,37 @@ async function iterateChunks(readableStream: ReadableStream, callback: ChunkCall
   }
 }
 
+class StreamSubscriber {
+  public readonly createdAt = new Date()
+  public updatedAt = new Date()
+  public isAlive = true
+
+  public get lastAliveInMs() {
+    return Date.now() - +this.updatedAt
+  }
+
+  constructor(public readonly controller: ReadableByteStreamController, public cleanup = () => {}) {}
+
+  public send(chunk: ByteStream) {
+    try {
+      this.controller.enqueue(chunk)
+      this.updatedAt = new Date()
+    } catch (e) {
+      console.warn('[subscriber] error:', e)
+      this.isAlive = false
+      Try.catch(() => this.controller.error(e))
+      this.cleanup()
+    }
+  }
+
+  public close() {
+    console.log('[subscriber] closed!')
+    this.controller.close()
+    this.cleanup()
+    this.isAlive = false
+  }
+}
+
 /**
  * ## File Base Stream
  *
@@ -128,7 +159,7 @@ export async function createFileBasedStream(options: { streamId: string }) {
   await bufferedFile.hydrateBuffer()
   await bufferedFile.getInfo()
 
-  const activeStreams = new Set<ReadableStreamDefaultController>()
+  const activeStreams = new Set<StreamSubscriber>()
   const sse = makeServerSideEventEncoder()
 
   const meta = {
@@ -148,14 +179,8 @@ export async function createFileBasedStream(options: { streamId: string }) {
 
   /** broadcast a chunk to all active streams. */
   function broadcastToStreams(chunk: ByteStream) {
-    for (const stream of activeStreams) {
-      try {
-        stream.enqueue(chunk)
-      } catch (e) {
-        console.warn('[broadcast] error:', e)
-        activeStreams.delete(stream)
-        Try.catch(() => stream.error(e))
-      }
+    for (const subscriber of activeStreams) {
+      subscriber.send(chunk)
     }
   }
 
@@ -182,8 +207,14 @@ export async function createFileBasedStream(options: { streamId: string }) {
 
   /** Called when no more active streams are left. */
   async function handleGarbageCollection() {
+    for (const subscriber of activeStreams) {
+      // TODO: remove closed clients.
+      if (!subscriber.isAlive) {
+        activeStreams.delete(subscriber)
+      }
+    }
     if (activeStreams.size > 0) return
-    console.log('[stream] garbase collection called!')
+    console.log('[stream] garbage collection called!')
     await bufferedFile.close()
   }
 
@@ -196,22 +227,24 @@ export async function createFileBasedStream(options: { streamId: string }) {
     return new ReadableStream({
       type: 'bytes',
       async start(controller) {
+        const subscriber = new StreamSubscriber(controller, () => {
+          activeStreams.delete(subscriber)
+        })
+
         try {
           // pass first message with streamId and info
-          controller.enqueue(sse.data({ childId, ...meta }))
+          subscriber.send(sse.data({ childId, ...meta }))
 
           // hydrate stream
           for await (const chunk of bufferedFile.streamData()) {
-            controller.enqueue(chunk.slice())
+            subscriber.send(chunk.slice())
           }
         } catch (e) {
           console.error('[subscribe] error:', e)
-          activeStreams.delete(controller)
           Try.catch(() => controller.error(e))
         } finally {
           // add to subscribers
-          activeStreams.add(controller)
-          cleanup = () => activeStreams.delete(controller)
+          activeStreams.add(subscriber)
         }
       },
       cancel() {
