@@ -35,10 +35,18 @@ export const ConsoleDumpClient = withAppProvider((props: ConsoleDumpClientProps)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const utils = useUtils()
 
+  useEffect(() => {
+    // define dump on the client:
+    // @ts-ignore
+    console.dump = dump
+    // @ts-ignore
+    window.dump = dump
+  }, [])
+
   const downloadLogs = () => {
     if (!ctx.sessionId) return
-    if (!ctx.stream?.logEntries) return
-    const data = utils.createJsonDataFile({ sessionId: ctx.sessionId, logs: ctx.stream.logEntries })
+    const logs = ctx.stream?.events ?? []
+    const data = utils.createJsonDataFile({ sessionId: ctx.sessionId, logs: [] })
     utils.downloadJsonFile(data)
   }
 
@@ -70,7 +78,7 @@ export const ConsoleDumpClient = withAppProvider((props: ConsoleDumpClientProps)
 
   useEffect(() => {
     autoScroll()
-  }, [ctx.stream?.logEntries.length])
+  }, [ctx.stream?.events.length])
 
   const onSubmitAction = useCallback((action: ActionBarEvent) => {
     switch (action.type) {
