@@ -26,26 +26,49 @@ export const GET: APIRoute = async ({ url }) => {
   if (!streamId) {
     return new ApiError('Missing required parameter "id".').toResponse({ status: 400 })
   }
-  return getStreamContext().getStreamResponse(streamId)
+
+  const streamContext = getStreamContext()
+
+  // NOTE: auto-create stream if it currently doesn't exist.
+  if (!streamContext.hasStream(streamId)) {
+    streamContext.createStream(streamId)
+  }
+
+  // Return the current stream.
+  return streamContext.getStreamResponse(streamId)
 }
 
 export const POST: APIRoute = async ({ url, request }) => {
   const streamId = url.searchParams.get('id')
+
+  // Ensure the streamId param has been set.
   if (!streamId) {
     return new ApiError('Missing required parameter "id".').toResponse({ status: 400 })
   }
+
+  // Ensure the incoming request has a body.
   if (!request.body || request.bodyUsed) {
     return new ApiError('Missing or invalid request body.').toResponse({ status: 400 })
   }
+
+  // Get the current stream conetxt
   const stream = getStreamContext().getStream(streamId)
+
+  // Handle case where stream not found.
   if (!stream) {
     return new ApiError('Stream not found.', { method: 'POST', streamId }).toResponse({ status: 404 })
   }
+
+  // Handle case where stream is closed.
   if (stream.isClosed) {
     return new ApiError('Stream is closed.', { method: 'POST' }).toResponse({ status: 410 })
   }
+
+  // Push incoming request body to all stream subscriptions.
   stream.push(request.body).catch((err) => {
     console.warn('[v2] error pushing stream:', err)
   })
+
+  // Immediately return an ok response.
   return Response.json({ ok: true })
 }

@@ -1,14 +1,15 @@
 import { Mutex } from '@asleepace/mutex'
+import { ApiError } from './api-error'
 
 interface CircularBuffer {
   buffer: Uint8Array
   bufferSize: number
   writePosition: number
   wrapCount: number
-  totalWritten: number
-  getDataView(readPosition: number): Uint8Array<ArrayBufferLike>
+  readonly totalBytesWritten: number
+  getDataView(readCursor: ReadCursor): Uint8Array<ArrayBufferLike>
   setWritePosition(writePosition: number): void
-  canReadPosition(readPosition: number): boolean
+  getWriteCursor(): WriteCursor
   write(chunk: Uint8Array): void
 }
 
@@ -21,21 +22,19 @@ interface ChunkBufferSize {
   bufferSize: number
 }
 
-interface ReadPosition {
+interface ReadCursor {
+  wrapCount: number
   readPosition: number
-  bufferSize: number
 }
 
-class BufferError extends Error {}
-class InvalidReadPosition extends BufferError {
-  constructor({ readPosition, bufferSize }: ReadPosition) {
-    super(`CircularBuffer: Read position (${readPosition}) exceeds buffer size (${bufferSize}).`)
-  }
+interface WriteCursor {
+  wrapCount: number
+  writePosition: number
 }
 
-class ChunkTooLarge extends BufferError {
-  constructor({ chunkSize, bufferSize }: ChunkBufferSize) {
-    super(`CircularBuffer: Tried to write chunk (${chunkSize} bytes) to buffer (${bufferSize} bytes).`)
+class ChunkTooLarge extends ApiError {
+  constructor(info: ChunkBufferSize) {
+    super(`CircularBuffer: Chunk too large!`, info)
   }
 }
 
@@ -53,29 +52,51 @@ class ChunkTooLarge extends BufferError {
  */
 function makeCircularBuffer({ bufferSize }: BufferConfig): CircularBuffer {
   const buffer = new Uint8Array(bufferSize)
+
+  type CachedDataFrame = ReadCursor & {
+    dataFrame?: Uint8Array<ArrayBuffer>
+  }
+
+  const cached: CachedDataFrame = {
+    dataFrame: undefined,
+    readPosition: 0,
+    wrapCount: 0,
+  }
+
+  function hasCached({ readPosition, wrapCount }: ReadCursor): boolean {
+    return Boolean(cached.dataFrame && cached.readPosition === readPosition && cached.wrapCount === wrapCount)
+  }
+
+  function setCached(value: CachedDataFrame): void {
+    cached.dataFrame = value.dataFrame
+    cached.readPosition = value.readPosition
+    cached.wrapCount = value.wrapCount
+  }
+
+  function clearCached() {
+    cached.dataFrame = undefined
+    cached.readPosition = -1
+    cached.wrapCount = -1
+  }
+
   return {
     buffer,
     bufferSize,
     writePosition: 0,
-    totalWritten: 0,
     wrapCount: 0,
+    get totalBytesWritten(): number {
+      return this.wrapCount * bufferSize + this.writePosition
+    },
+    getWriteCursor() {
+      return { writePosition: this.writePosition, wrapCount: this.wrapCount }
+    },
     setWritePosition(writePosition: number) {
       this.writePosition = writePosition % bufferSize
     },
-    canReadPosition(readPosition: number) {
-      if (readPosition < 0 || readPosition >= this.bufferSize) {
-        return false
-      }
-      // Haven't filled buffer yet
-      if (this.totalWritten <= this.bufferSize) {
-        return readPosition <= this.writePosition
-      }
-
-      // Buffer has wrapped - check if position hasn't been overwritten
-      const bytesOverwritten = this.totalWritten - this.bufferSize
-      return readPosition >= bytesOverwritten % this.bufferSize
-    },
     write(chunk: Uint8Array): void {
+      // clear cached data frames on each write.
+      clearCached()
+
       // handle edge case where the chunk is bigger than the buffer
       if (chunk.length > bufferSize) {
         throw new ChunkTooLarge({ chunkSize: chunk.length, bufferSize })
@@ -87,7 +108,6 @@ function makeCircularBuffer({ bufferSize }: BufferConfig): CircularBuffer {
       // handle case where data fits in current buffer
       if (writePos + chunkLength <= bufferSize) {
         this.buffer.set(chunk, writePos)
-        this.totalWritten += chunk.length
         this.setWritePosition(writePos + chunkLength)
         return
       }
@@ -96,24 +116,54 @@ function makeCircularBuffer({ bufferSize }: BufferConfig): CircularBuffer {
       const firstPartSize = bufferSize - writePos
       this.buffer.set(chunk.subarray(0, firstPartSize), writePos)
       this.buffer.set(chunk.subarray(firstPartSize), 0)
-      this.totalWritten += chunk.length
-      this.wrapCount += 1
+      this.wrapCount++
       this.setWritePosition(writePos + chunkLength)
     },
-    getDataView(readPosition: number) {
-      if (!this.canReadPosition(readPosition)) throw new InvalidReadPosition({ readPosition, bufferSize })
-      if (readPosition === this.writePosition) return new Uint8Array(0)
-      if (readPosition <= this.writePosition) return this.buffer.subarray(readPosition, this.writePosition)
+    getDataView({ readPosition, wrapCount }: ReadCursor) {
+      const wrappedOffset = this.wrapCount - wrapCount
+
+      // @note throw on impossible state where subscription is ahead of buffer in times wrapped,
+      // this signifies a bug in the code and needs to be handled.
+      if (wrappedOffset < 0 || wrappedOffset >= 2) {
+        throw new ApiError('Requested wrap count is out of sync with buffer:', { wrappedOffset })
+      }
+
+      // read position and cursor are in sync with buffer
+      if (readPosition === this.writePosition && wrapCount === this.wrapCount) {
+        return new Uint8Array(0)
+      }
+
+      // handle case where we have a cached dataview frame
+      if (hasCached({ readPosition, wrapCount })) {
+        console.log('[buffer] cache hit!')
+        return cached.dataFrame!
+      }
+
+      // handle edge case where buffer has completely wrapped one full time
+      if (readPosition === this.writePosition && wrappedOffset === 1) {
+        const dataFrame = new Uint8Array(bufferSize)
+        dataFrame.set(this.buffer.subarray(this.writePosition), 0)
+        dataFrame.set(this.buffer.subarray(0, this.writePosition), this.writePosition)
+        setCached({ readPosition, wrapCount, dataFrame })
+        return dataFrame
+      }
+
+      // handle normal case where we just need to return a slice.
+      if (readPosition <= this.writePosition) {
+        return this.buffer.subarray(readPosition, this.writePosition)
+      }
+
       // Buffer has wrapped: need to combine two parts
       const firstPartSize = this.bufferSize - readPosition
       const secondPartSize = this.writePosition
       const totalSize = firstPartSize + secondPartSize
 
       // Only create new array when buffer wraps (unavoidable)
-      const result = new Uint8Array(totalSize)
-      result.set(this.buffer.subarray(readPosition), 0)
-      result.set(this.buffer.subarray(0, this.writePosition), firstPartSize)
-      return result
+      const dataFrame = new Uint8Array(totalSize)
+      dataFrame.set(this.buffer.subarray(readPosition), 0)
+      dataFrame.set(this.buffer.subarray(0, this.writePosition), firstPartSize)
+      setCached({ wrapCount, readPosition, dataFrame })
+      return dataFrame
     },
   }
 }
@@ -171,9 +221,72 @@ export function createServerSideEventEncoder() {
   }
 }
 
+// --- Keep Alive ---
+
+function startKeepAlive(controller: ReadableByteStreamController, { interval = 15_000 } = {}) {
+  const message = new TextEncoder().encode(': keep-alive\n\n')
+  const intervalId = setInterval(() => controller.enqueue(message), interval)
+  return () => clearInterval(intervalId)
+}
+
+type Status = 'init' | 'open' | 'closed'
+
+interface ReadableSubscription {
+  status: Status
+  write: (chunk: ArrayBufferView<ArrayBuffer>) => void
+  setCursor: (cursor: WriteCursor) => void
+  cleanup: () => void
+  destroy: () => void
+  readPosition: number
+  wrapCount: number
+}
+
+//  --- Readable Stream Logic ---
+
+function createReadableStream(parent: {
+  keepAlive: number
+  onStarted: (sub: ReadableSubscription) => void
+  onPullLatestData: (sub: ReadableSubscription) => void
+  onClosed?: (sub: ReadableSubscription) => void
+}) {
+  const ctx: ReadableSubscription = {
+    status: 'init',
+    readPosition: 0,
+    wrapCount: 0,
+    write: () => {},
+    cleanup: () => {},
+    destroy: () => {},
+    setCursor(cursor: WriteCursor) {
+      this.readPosition = cursor.writePosition
+      this.wrapCount = cursor.wrapCount
+    },
+  }
+  return new ReadableStream({
+    type: 'bytes',
+    start: (controller) => {
+      console.log('[subscriber] started!')
+      ctx.status = 'open'
+      ctx.write = (chunk) => controller.enqueue(chunk)
+      ctx.cleanup = startKeepAlive(controller)
+      ctx.destroy = () => controller.close()
+      parent.onStarted(ctx)
+    },
+    pull: () => {
+      console.log('[subscriber] pulled!')
+      parent.onPullLatestData(ctx)
+    },
+    cancel: (reason: string) => {
+      console.log('[subscriber] closed:', reason)
+      ctx.status = 'closed'
+      ctx.cleanup()
+      parent.onClosed?.(ctx)
+    },
+  })
+}
+
 interface StreamMetadata {
   streamId: string
-  status: 'init' | 'open' | 'closed'
+  status: Status
   updatedAt: Date
   readonly createdAt: Date
   readonly totalSubscribers: number
@@ -185,12 +298,6 @@ interface StreamConfig {
   bufferSize: number
   keepAliveInterval?: number
   onCleanup?: (meta: StreamMetadata) => void | Promise<void>
-}
-
-interface StreamSubscriber {
-  controller: ReadableByteStreamController
-  readPosition: number
-  wrapCount: number
 }
 
 export interface BufferedStream {
@@ -225,7 +332,7 @@ export function createBufferedStream({
 }: StreamConfig): BufferedStream {
   // internal state for buffer, subscriptions, etc.
   const buffer = makeCircularBuffer({ bufferSize })
-  const subscribers = new Set<StreamSubscriber>()
+  const subscribers = new Set<ReadableSubscription>()
   const textEncoder = new TextEncoder()
   const mutex = new Mutex()
 
@@ -238,7 +345,7 @@ export function createBufferedStream({
     createdAt: new Date(),
     updatedAt: new Date(),
     get totalBytesWritten() {
-      return buffer.totalWritten
+      return buffer.totalBytesWritten
     },
     get totalSubscribers() {
       return subscribers.size
@@ -248,63 +355,14 @@ export function createBufferedStream({
   /**
    *  Helper method for writing data to a subscriber.
    *
-   *  @todo fix rare edge case where data wraps back to current position
-   *  so the read positions appear the same.
+   *  @todo find a way to cache the dataview slice.
    */
-  function writeToSubscription(subscription: StreamSubscriber) {
-    if (buffer.writePosition === subscription.readPosition && buffer.wrapCount === subscription.wrapCount) return
-    const readPos = subscription.readPosition
-    const dataView = buffer.getDataView(readPos)
+  function writeToSubscription(subscription: ReadableSubscription) {
+    const dataView = buffer.getDataView(subscription)
     // skip writing if empty
     if (dataView.length === 0) return
-    // write data view to stream
-    subscription.controller.enqueue(dataView.slice())
-    subscription.readPosition = buffer.writePosition
-    subscription.wrapCount = buffer.wrapCount
-  }
-
-  /**
-   * Create a new subscription with a readable stream controller, this will
-   * be added to the set of stream subscribers and contains helpers for
-   * shutting down.
-   */
-  function addSubscriber(controller: ReadableByteStreamController) {
-    const sub: StreamSubscriber = {
-      controller,
-      readPosition: 0,
-      wrapCount: 0,
-    }
-    subscribers.add(sub)
-    return sub
-  }
-
-  function startKeepAlive(callback: () => void) {
-    const intervalId = setInterval(callback, keepAliveInterval)
-    return () => clearInterval(intervalId)
-  }
-
-  // helper method for creating a subscription
-  function createSubscription() {
-    let self: StreamSubscriber
-    return new ReadableStream({
-      type: 'bytes',
-      start: (controller) => {
-        self = addSubscriber(controller)
-        startKeepAlive(() => {
-          // send a server-side event comment to keep stream alive
-          const heartbeat = textEncoder.encode(': keep-alive\n\n')
-          controller.enqueue(heartbeat)
-        })
-      },
-      pull: () => {
-        if (!self) return console.warn('[subscription] missing self!')
-        writeToSubscription(self)
-      },
-      cancel: (reason) => {
-        console.log('[subscription] cancelled:', reason)
-        subscribers.delete(self)
-      },
-    })
+    subscription.write(dataView.slice())
+    subscription.setCursor(buffer.getWriteCursor())
   }
 
   function handleWriteToBuffer(chunk: Uint8Array) {
@@ -320,7 +378,6 @@ export function createBufferedStream({
     let head = 0
     let tail = i * bufferSize
     while (tail <= chunk.length) {
-      console.log('[circular-stream] parsing large chunk...')
       const subChunk = chunk.slice(head, tail)
       if (subChunk.length === 0) break
       buffer.write(subChunk)
@@ -343,7 +400,7 @@ export function createBufferedStream({
     close: () => {
       meta.status = 'closed'
       console.warn('[writable] stream closed!')
-      subscribers.forEach((sub) => sub.controller.close())
+      subscribers.forEach((sub) => sub.destroy())
       subscribers.clear()
       onCleanup?.(meta)
     },
@@ -371,7 +428,23 @@ export function createBufferedStream({
     },
 
     /** returns a new readable stream subscription. */
-    pull: () => createSubscription(),
+    pull: () =>
+      createReadableStream({
+        keepAlive: keepAliveInterval,
+        onStarted(subscription) {
+          subscribers.add(subscription)
+        },
+        onPullLatestData(subscription) {
+          const dataView = buffer.getDataView(subscription)
+          if (dataView.length === 0) return
+
+          subscription.write(dataView.slice())
+          subscription.setCursor(buffer.getWriteCursor())
+        },
+        onClosed(sub) {
+          subscribers.delete(sub)
+        },
+      }),
 
     /** pushes data from a readable stream to all subscriptions. */
     push: async (readable: ReadableStream<Uint8Array>) => {
@@ -412,7 +485,7 @@ export function createBufferedStream({
     close: async () => {
       meta.status = 'closed'
       writableStream.close()
-      subscribers.forEach((sub) => sub.controller.close())
+      subscribers.forEach((sub) => sub.destroy())
       subscribers.clear()
     },
   }

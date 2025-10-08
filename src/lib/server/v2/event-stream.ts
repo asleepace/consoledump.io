@@ -47,7 +47,7 @@ export function getStreamContext() {
     /**
      *  Memory usage of all active streams in MB.
      */
-    getMemoryUsage() {
+    getMemoryUsage(): number {
       return activeStreams.size * bufferSize
     },
     createStream(streamId = createStreamId()): BufferedStream {
