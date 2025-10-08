@@ -359,8 +359,7 @@ export function createBufferedStream({
    */
   function writeToSubscription(subscription: ReadableSubscription) {
     const dataView = buffer.getDataView(subscription)
-    // skip writing if empty
-    if (dataView.length === 0) return
+    if (dataView.length === 0) return // skip writing if empty
     subscription.write(dataView.slice())
     subscription.setCursor(buffer.getWriteCursor())
   }
