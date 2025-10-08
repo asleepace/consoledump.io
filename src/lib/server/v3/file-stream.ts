@@ -9,36 +9,46 @@ import { Try } from '@asleepace/try'
  * Also includes several helper methods for encoding different types
  * of text data like comments, json, plain.
  */
-export function createServerSideEventEncoder() {
+export function makeServerSideEventEncoder() {
   const textEncoder = new TextEncoder()
   let eventId = 0
   return {
-    encode(message: { data: Uint8Array; id: number; event?: string }): Uint8Array<ArrayBuffer> {
-      const evnt = message.event ? `\nevent: ${message.event}` : ''
-      const head = textEncoder.encode(`id: ${message.id}${evnt}\ndata: `)
+    event(message: { data?: Uint8Array; id?: number; event?: string }): ByteStream {
+      const evnt = message.event ? `event: ${message.event}` : ''
+      const idno = message.id ? `id: ${message.id}` : ''
+      const data = message.data ? `data:` : ''
+      const head = textEncoder.encode([idno, evnt, data].filter((s) => !!s).join('\n'))
       const tail = textEncoder.encode(`\n\n`)
       const headLength = head.length
       const tailLength = tail.length
-      const dataLength = message.data.length
+      const dataLength = message.data?.length ?? 0
       const buffer = new Uint8Array(headLength + tailLength + dataLength)
       buffer.set(head, 0)
-      buffer.set(message.data, headLength)
+      if (message.data) {
+        buffer.set(message.data, headLength)
+      }
       buffer.set(tail, headLength + dataLength)
       return buffer
     },
-    json(jsonData: object): Uint8Array<ArrayBuffer> {
+    /** returns an encoded json object in data: {} only sse format. */
+    data(jsonObject: object): ByteStream {
+      const data = this.json(jsonObject)
+      return this.event({ data })
+    },
+    json(jsonData: object): ByteStream {
       return this.text(JSON.stringify(jsonData))
     },
-    text(textData: string): Uint8Array<ArrayBuffer> {
+    text(textData: string): ByteStream {
       return textEncoder.encode(textData)
     },
-    comment(comment: `: ${string}`): Uint8Array<ArrayBuffer> {
+    /** returns a sse comment ": exmaple" which is ignored by `EventSource`. */
+    comment(comment: `: ${string}`): ByteStream {
       return textEncoder.encode(comment + '\n\n')
     },
     transformToServerSideEvent() {
       return new TransformStream<Uint8Array>({
         transform: (data, controller) => {
-          const sse = this.encode({ data, id: eventId++ })
+          const sse = this.event({ data, id: eventId++ })
           controller.enqueue(sse)
         },
       })
@@ -177,7 +187,6 @@ async function iterateChunks(readableStream: ReadableStream, callback: ChunkCall
  * @note this is currently just a PoC
  */
 export async function createFileBasedStream(options: { streamId: string }) {
-  const encoder = createServerSideEventEncoder()
   const filePath = `./public/dumps/${options.streamId}.log`
   const file = Bun.file(filePath)
   const fileWriter = file.writer()
@@ -191,6 +200,7 @@ export async function createFileBasedStream(options: { streamId: string }) {
   })
 
   const activeStreams = new Set<ReadableStreamDefaultController>()
+  const sse = makeServerSideEventEncoder()
 
   const meta = {
     streamId: options.streamId,
@@ -203,9 +213,21 @@ export async function createFileBasedStream(options: { streamId: string }) {
   }
 
   /** an in-memory buffer which holds a short preview of data. */
+  const bufferSize = 1024 * 1024 * 5
   const sharedBuffer = makeCircularBuffer({ bufferSize: 1024 * 1024 * 5 })
 
-  function sendEvent(data: object): void {
+  /** hydrate buffer if the file size is small enough. */
+  if (file.size < bufferSize) {
+    console.log('[buffer] hydrating')
+    await iterateFileChunks(file, (chunk) => {
+      sharedBuffer.write(chunk)
+    })
+  } else {
+    console.warn('[buffer] file size too large to hydrate!', file.size)
+  }
+
+  /** publish data to all streams. */
+  function broadcast(data: object): void {
     publish(Response.json(data).body!)
   }
 
@@ -227,7 +249,7 @@ export async function createFileBasedStream(options: { streamId: string }) {
     meta.updatedAt = new Date()
     const lock = await mutex.acquireLock()
     try {
-      const incomingStream = readableStream.pipeThrough(encoder.transformToServerSideEvent())
+      const incomingStream = readableStream.pipeThrough(sse.transformToServerSideEvent())
 
       await iterateChunks(incomingStream, async (chunk) => {
         sharedBuffer.write(chunk)
@@ -255,7 +277,7 @@ export async function createFileBasedStream(options: { streamId: string }) {
     return new ReadableStream({
       type: 'bytes',
       async start(controller) {
-        sendEvent({ type: 'client:connected', childId })
+        controller.enqueue(sse.data({ childId, ...meta }))
 
         if (sharedBuffer.wrapCount > 0) {
           const lock = await mutex.acquireLock({ timeout: 5_000 })
@@ -267,6 +289,7 @@ export async function createFileBasedStream(options: { streamId: string }) {
 
             activeStreams.add(controller)
             cleanup = () => activeStreams.delete(controller)
+            broadcast({ type: 'client:connected', childId })
           } catch (e) {
             console.error('[subscribe] error:', e)
             activeStreams.delete(controller)
@@ -281,9 +304,7 @@ export async function createFileBasedStream(options: { streamId: string }) {
         }
       },
       cancel() {
-        sendEvent({ type: 'client:closed', childId })
         console.log('[subscription] closed!')
-        sendEvent({ type: 'stream:closed' })
         cleanup()
         handleGarbageCollection()
       },
