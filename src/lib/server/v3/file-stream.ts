@@ -2,6 +2,8 @@ import { Mutex } from '@asleepace/mutex'
 import { ApiError } from '../v2/api-error'
 import { Try } from '@asleepace/try'
 
+import { BufferedFile } from './buffered-file'
+
 /**
  * Creates a server-side event encoder which is used to re-encode
  * arbitrary bytes as sse messages.
@@ -72,80 +74,8 @@ const KB = 1024
 const MB = KB * KB
 const GB = KB * MB
 
-const MAX_BUFFER_SIZE = 5 * MB
-
-/**
- *  ## Circular Bufffer
- *
- *  Returns a circular buffer which has a fixed sized, but can be written to
- *  an unlimited amount of times.
- *
- *  @note this class can throw if the chunk size is too large or an invalid
- *  readPosition is passed.
- */
-export function makeCircularBuffer({ bufferSize = MAX_BUFFER_SIZE }): CircularBuffer {
-  const buffer = new Uint8Array(bufferSize)
-
-  return {
-    buffer,
-    bufferSize,
-    writePosition: 0,
-    totalBytesWritten: 0,
-    wrapCount: 0,
-    setWritePosition(chunkSize: number) {
-      this.writePosition = (this.writePosition + chunkSize) % bufferSize
-      this.totalBytesWritten += chunkSize
-    },
-    getAvailableSpace() {
-      return bufferSize - this.writePosition
-    },
-    write(chunk: Uint8Array): void {
-      if (chunk.length > this.bufferSize) {
-        throw new ApiError('Chunk too large!', { chunkSize: chunk.length, bufferSize })
-      }
-
-      const writePos = this.writePosition
-      const chunkLength = chunk.length
-
-      // handle case where data fits in current buffer
-      if (writePos + chunkLength <= bufferSize) {
-        this.buffer.set(chunk, writePos)
-        this.setWritePosition(chunkLength)
-        return
-      }
-
-      // handle case where data wraps current buffer
-      const firstPartSize = bufferSize - writePos
-      this.buffer.set(chunk.subarray(0, firstPartSize), writePos)
-      this.buffer.set(chunk.subarray(firstPartSize), 0)
-      this.wrapCount++
-      this.writePosition = (writePos + chunkLength) % this.bufferSize
-      this.totalBytesWritten += chunkLength
-    },
-    getDataView(readPosition: number) {
-      // read position and cursor are in sync with buffer
-      if (readPosition === this.writePosition) {
-        return new Uint8Array(0)
-      }
-
-      // handle normal case where we just need to return a slice.
-      if (readPosition <= this.writePosition) {
-        return this.buffer.subarray(readPosition, this.writePosition)
-      }
-
-      // Buffer has wrapped: need to combine two parts
-      const firstPartSize = this.bufferSize - readPosition
-      const secondPartSize = this.writePosition
-      const totalSize = firstPartSize + secondPartSize
-
-      // Only create new array when buffer wraps (unavoidable)
-      const dataFrame = new Uint8Array(totalSize)
-      dataFrame.set(this.buffer.subarray(readPosition), 0)
-      dataFrame.set(this.buffer.subarray(0, this.writePosition), firstPartSize)
-      return dataFrame
-    },
-  }
-}
+const BUFFER_SIZE = 5 * MB
+const MAX_FILE_SIZE = 20 * MB
 
 type ByteStream = Uint8Array<ArrayBuffer>
 type ReadableByteStream = ReadableStream<ByteStream>
@@ -187,17 +117,16 @@ async function iterateChunks(readableStream: ReadableStream, callback: ChunkCall
  * @note this is currently just a PoC
  */
 export async function createFileBasedStream(options: { streamId: string }) {
-  const filePath = `./public/dumps/${options.streamId}.log`
-  const file = Bun.file(filePath)
-  const fileWriter = file.writer()
   const mutex = new Mutex()
 
-  const doesFileExist = await file.exists()
-  console.log('[stream] file:', {
-    name: file.name,
-    exists: doesFileExist,
-    size: file.size,
+  const bufferedFile = new BufferedFile({
+    fileName: `${options.streamId}.log`,
+    maxFileSize: MAX_FILE_SIZE,
+    bufferSize: BUFFER_SIZE,
   })
+
+  await bufferedFile.hydrateBuffer()
+  await bufferedFile.getInfo()
 
   const activeStreams = new Set<ReadableStreamDefaultController>()
   const sse = makeServerSideEventEncoder()
@@ -212,22 +141,8 @@ export async function createFileBasedStream(options: { streamId: string }) {
     },
   }
 
-  /** an in-memory buffer which holds a short preview of data. */
-  const bufferSize = 1024 * 1024 * 5
-  const sharedBuffer = makeCircularBuffer({ bufferSize: 1024 * 1024 * 5 })
-
-  /** hydrate buffer if the file size is small enough. */
-  if (file.size < bufferSize) {
-    console.log('[buffer] hydrating')
-    await iterateFileChunks(file, (chunk) => {
-      sharedBuffer.write(chunk)
-    })
-  } else {
-    console.warn('[buffer] file size too large to hydrate!', file.size)
-  }
-
   /** publish data to all streams. */
-  function broadcast(data: object): void {
+  function broadcastEvent(data: object): void {
     publish(Response.json(data).body!)
   }
 
@@ -244,19 +159,23 @@ export async function createFileBasedStream(options: { streamId: string }) {
     }
   }
 
+  /** Witable stream which broadcasts to all subscribers. */
+  function writableBroadcast() {
+    return new WritableStream({
+      write: (chunk) => broadcastToStreams(chunk),
+    })
+  }
+
   /** Publishes incoming data to file + live subscribers. */
   async function publish(readableStream: ReadableByteStream): Promise<void> {
-    meta.updatedAt = new Date()
     const lock = await mutex.acquireLock()
     try {
-      const incomingStream = readableStream.pipeThrough(sse.transformToServerSideEvent())
-      await iterateChunks(incomingStream, async (chunk) => {
-        sharedBuffer.write(chunk)
-        broadcastToStreams(chunk)
-        fileWriter.write(chunk)
-        await fileWriter.flush()
-      })
+      await readableStream
+        .pipeThrough(sse.transformToServerSideEvent())
+        .pipeThrough(bufferedFile.persistTransform())
+        .pipeTo(writableBroadcast(), { preventClose: true })
     } finally {
+      meta.updatedAt = new Date()
       lock.releaseLock()
     }
   }
@@ -265,7 +184,7 @@ export async function createFileBasedStream(options: { streamId: string }) {
   async function handleGarbageCollection() {
     if (activeStreams.size > 0) return
     console.log('[stream] garbase collection called!')
-    await fileWriter.end()
+    await bufferedFile.close()
   }
 
   /**
@@ -277,28 +196,20 @@ export async function createFileBasedStream(options: { streamId: string }) {
     return new ReadableStream({
       type: 'bytes',
       async start(controller) {
-        controller.enqueue(sse.data({ childId, ...meta }))
+        try {
+          // pass first message with streamId and info
+          controller.enqueue(sse.data({ childId, ...meta }))
 
-        if (sharedBuffer.wrapCount > 0) {
-          const lock = await mutex.acquireLock({ timeout: 5_000 })
-          try {
-            // send history
-            await iterateFileChunks(file, (chunks) => {
-              controller.enqueue(chunks)
-            })
-
-            activeStreams.add(controller)
-            cleanup = () => activeStreams.delete(controller)
-            broadcast({ type: 'client:connected', childId })
-          } catch (e) {
-            console.error('[subscribe] error:', e)
-            activeStreams.delete(controller)
-            Try.catch(() => controller.error(e))
-          } finally {
-            lock.releaseLock()
+          // hydrate stream
+          for await (const chunk of bufferedFile.streamData()) {
+            controller.enqueue(chunk.slice())
           }
-        } else {
-          controller.enqueue(sharedBuffer.buffer.slice(0, sharedBuffer.writePosition))
+        } catch (e) {
+          console.error('[subscribe] error:', e)
+          activeStreams.delete(controller)
+          Try.catch(() => controller.error(e))
+        } finally {
+          // add to subscribers
           activeStreams.add(controller)
           cleanup = () => activeStreams.delete(controller)
         }
@@ -315,7 +226,7 @@ export async function createFileBasedStream(options: { streamId: string }) {
     publish,
     async close() {
       console.log('[close] called!')
-      await fileWriter.end()
+      await bufferedFile.close()
       activeStreams.forEach((stream) => {
         Try.catch(() => stream.close())
       })

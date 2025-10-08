@@ -52,6 +52,23 @@ export class BufferedFile {
     this.filePath = filePath
   }
 
+  public async getInfo() {
+    const fileStat = await this.file.stat()
+    const fileInfo = {
+      filePath: this.filePath,
+      fileSize: this.file.size,
+      exists: await this.file.exists(),
+      isInMemory: this.isInMemory,
+      isHydrated: this.isHydrated,
+      bufferSize: this.options.bufferSize,
+      maxFileSize: this.options.maxFileSize,
+      createdAt: fileStat.birthtime.toLocaleDateString('en-US', { dateStyle: 'medium' }),
+      updatedAt: fileStat.atime.toLocaleDateString('en-US', { dateStyle: 'medium' }),
+    } as const
+    console.log(fileInfo)
+    return fileInfo
+  }
+
   public async hydrateBuffer() {
     if (this.isHydrated) return
     if (!(await this.file.exists())) {
@@ -75,6 +92,15 @@ export class BufferedFile {
 
     this.isHydrated = true
     this.isInMemory = true
+  }
+
+  public persistTransform() {
+    return new TransformStream({
+      transform: (chunk, controller) => {
+        this.write(chunk)
+        controller.enqueue(chunk)
+      }
+    })
   }
 
   public async write(chunk: Uint8Array) {
