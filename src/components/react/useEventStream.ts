@@ -22,6 +22,8 @@ export interface ClientStream {
   isConnected: boolean
   isError: boolean
   logEntries: LogEntry[]
+  events: MessageEvent<string>[]
+  meta: Record<string, any>
   clear: () => void
   start: () => Promise<any>
   close: () => void
@@ -39,6 +41,9 @@ export function useEventStream(config: EventStreamConfig): ClientStream {
   const [isError, setIsError] = useState(false)
   const [childId, setChildId] = useState<string | undefined>()
   const [logEntries, setLogEntries] = useState<LogEntry[]>([])
+
+  const [events, setEvents] = useState<MessageEvent<string>[]>([])
+  const [meta, setMeta] = useState<Record<string, any>>({})
 
   /** extracts the sessionId from current url. */
   const client = useClient()
@@ -65,6 +70,15 @@ export function useEventStream(config: EventStreamConfig): ClientStream {
     }
   }, [])
 
+  useEffect(() => {
+    if (events.length === 0) return
+    if (Object.keys(meta).length !== 0) return
+    const maybeMeta = Try.catch(() => JSON.parse(events[0].data))
+    if (!maybeMeta.ok) return
+    console.log('[meta] stream:', maybeMeta)
+    setMeta(maybeMeta)
+  }, [events, meta])
+
   /** whenever the sessionId changes we need to reset state and reconnect. */
   const stream = useMemo(() => {
     if (!client.sessionId) return undefined
@@ -79,11 +93,17 @@ export function useEventStream(config: EventStreamConfig): ClientStream {
     }
 
     eventSource.onmessage = (ev) => {
+      setEvents((prev) => [...prev, ev])
+      if (!meta) {
+        setMeta(() => Try.catch(() => JSON.parse(ev.data)).unwrapOr(undefined))
+      }
+
       const log = makeLog(ev)
       if (!log) {
         console.warn('[useEventStream] invalid log for:', ev)
         return
       }
+
       setLogEntries((prev) => [...prev, log])
     }
 
@@ -102,8 +122,11 @@ export function useEventStream(config: EventStreamConfig): ClientStream {
     isConnected,
     isError,
     logEntries,
+    events,
+    meta,
     clear: () => {
       setLogEntries([])
+      setEvents([])
     },
     start: async () => await initializeStream(),
     close: () => {
@@ -111,6 +134,7 @@ export function useEventStream(config: EventStreamConfig): ClientStream {
       setIsError(false)
       setIsConnected(false)
       setLogEntries([])
+      setEvents([])
     },
   }
 }

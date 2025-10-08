@@ -16,8 +16,8 @@ if (!streamId) {
 }
 
 const method = Astro.request.method
-const stream = await sessions.getOrCreate(streamId)
 
+// handle CORS requests
 if (method === 'OPTIONS') {
   return new Response(null, {
     headers: {
@@ -27,6 +27,10 @@ if (method === 'OPTIONS') {
   })
 }
 
+// get or create a stream session
+const stream = await sessions.getOrCreate(streamId)
+
+// handle posting data to stream
 if (method === 'POST') {
   if (!Astro.request.body) return Response.json({ error: 'Missing POST body!' }, { status: 500 })
   stream.publish(Astro.request.body)

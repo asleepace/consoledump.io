@@ -7,6 +7,7 @@ import { useCallback, useEffect, useRef } from 'react'
 import type { ActionBarEvent } from './ActionBar'
 import { Try } from '@asleepace/try'
 import { useUtils } from './useUtils'
+import { MessageItem } from './MessageItem'
 
 export type ConsoleDumpClientProps = {
   className?: string
@@ -109,9 +110,13 @@ export const ConsoleDumpClient = withAppProvider((props: ConsoleDumpClientProps)
       {/* --- main context --- */}
       <main className="w-full max-w-full flex-1 flex flex-col overflow-hidden">
         <div ref={scrollContainerRef} className="flex-1 overflow-y-auto pb-4">
-          {ctx.stream?.logEntries.map((logEntry) => {
-            return <LogEntryItem {...logEntry} key={logEntry.id} />
+          {ctx.stream?.events.map((message) => {
+            return <MessageItem message={message} key={message.lastEventId} />
           })}
+
+          {/* {ctx.stream?.logEntries.map((logEntry) => {
+            return <LogEntryItem {...logEntry} key={logEntry.id} />
+          })} */}
         </div>
       </main>
     </div>
