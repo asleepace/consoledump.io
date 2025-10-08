@@ -2,7 +2,6 @@ import { withAppProvider, type AppCtx } from './AppContext'
 import { AppNavigationBar } from './AppNavigationBar'
 import { useAppContext } from './AppContext'
 import { cn } from '@/lib/utils'
-import { LogEntryItem } from './LogEntryItem'
 import { useCallback, useEffect, useRef } from 'react'
 import type { ActionBarEvent } from './ActionBar'
 import { Try } from '@asleepace/try'
@@ -110,13 +109,9 @@ export const ConsoleDumpClient = withAppProvider((props: ConsoleDumpClientProps)
       {/* --- main context --- */}
       <main className="w-full max-w-full flex-1 flex flex-col overflow-hidden">
         <div ref={scrollContainerRef} className="flex-1 overflow-y-auto pb-4">
-          {ctx.stream?.events.map((message) => {
-            return <MessageItem message={message} key={message.lastEventId} />
+          {ctx.stream?.events.map((message, index) => {
+            return <MessageItem message={message} key={`${message.lastEventId ?? 'system'}-${index}`} />
           })}
-
-          {/* {ctx.stream?.logEntries.map((logEntry) => {
-            return <LogEntryItem {...logEntry} key={logEntry.id} />
-          })} */}
         </div>
       </main>
     </div>

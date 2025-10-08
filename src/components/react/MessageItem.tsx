@@ -4,7 +4,6 @@ import { Check, ChevronDown, ChevronRight, Copy } from 'lucide-react'
 import { getTypeBadge } from '@/components/react/useTheme'
 import { memo, useMemo } from 'react'
 import { formatTimestamp } from './useUtils'
-import { getStylesFor } from './useLogEntry'
 
 /** Timestamp */
 const LogTimestamp = ({ className, createdAt = new Date() }: { className?: string; createdAt?: Date }) => {
@@ -101,6 +100,31 @@ export function getCodeBlock(htmlString: string | undefined): string | undefined
   }
 }
 
+export type EventType = 'connected' | 'system' | 'client' | 'message' | 'error'
+
+export function getStylesFor(eventType: EventType) {
+  const badgeForSource = {
+    connected: 'badge-green',
+    system: 'badge-emerald',
+    client: 'badge-indigo',
+    message: 'badge-zinc',
+    error: 'badge-red',
+  }
+
+  const textColorForSource = {
+    connected: 'text-green-500',
+    system: 'text-emerald-500',
+    client: 'text-indigo-500',
+    message: 'text-zinc-500',
+    error: 'text-red-500',
+  }
+
+  return {
+    badge: badgeForSource[eventType],
+    textStyle: textColorForSource[eventType],
+  }
+}
+
 interface Props {
   message: MessageEvent<string>
   className?: string
@@ -118,8 +142,8 @@ export const MessageItem = memo(({ className, message }: Props) => {
   const isCopied = copiedId === message.lastEventId
   const isExpanded = expandedLogs.has(message.lastEventId)
 
-  const style = getStylesFor({ content: 'json' })
-  const badgeName = 'stream'
+  const style = getStylesFor('message')
+  const badgeName = 'message'
 
   const htmlContent = `<span>${message.data}</span>`
 

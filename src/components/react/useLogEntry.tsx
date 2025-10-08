@@ -43,10 +43,9 @@ export function getCodeBlock(htmlString: string | undefined): string | undefined
   }
 }
 
-export function getStylesFor({ content }: LogEntry) {
-  const type =
-    content.type === 'stream-event' ? (content.data.type === 'connected' ? 'client' : content.data.type) : 'message'
+export type EventType = 'connected' | 'system' | 'client' | 'message' | 'error'
 
+export function getStylesFor(eventType: EventType) {
   const badgeForSource = {
     connected: 'badge-green',
     system: 'badge-emerald',
@@ -64,7 +63,7 @@ export function getStylesFor({ content }: LogEntry) {
   }
 
   return {
-    badge: badgeForSource[type],
-    textStyle: textColorForSource[type],
+    badge: badgeForSource[eventType],
+    textStyle: textColorForSource[eventType],
   }
 }
