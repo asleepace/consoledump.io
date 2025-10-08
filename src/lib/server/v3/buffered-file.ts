@@ -99,7 +99,7 @@ export class BufferedFile {
       transform: (chunk, controller) => {
         this.write(chunk)
         controller.enqueue(chunk)
-      }
+      },
     })
   }
 
@@ -157,7 +157,7 @@ export class BufferedFile {
   }
 
   /** returns a readable stream of entire history. */
-  public streamData(): ReadableStream<Uint8Array> {
+  public byteStream(): ReadableStream<Uint8Array> {
     if (!this.isInMemory) return this.file.stream()
     return new ReadableStream({
       start: (controller) => {
@@ -165,6 +165,15 @@ export class BufferedFile {
         controller.close()
       },
     })
+  }
+
+  public async deleteFile() {
+    try {
+      await this.fileWriter.end(new Error('Deleting file.'))
+      return this.file.delete()
+    } catch (e) {
+      console.warn('[buffered-file] failed to delete:', e)
+    }
   }
 
   /** closes file. */

@@ -15,7 +15,7 @@ export function makeServerSideEventEncoder() {
   const textEncoder = new TextEncoder()
   let eventId = 0
   return {
-    event(message: { data?: Uint8Array; id?: number; event?: string }): ByteStream {
+    event(message: { data?: Uint8Array; id?: number; event?: string }): ByteChunk {
       const evnt = message.event ? `event: ${message.event}` : ''
       const idno = message.id ? `id: ${message.id}` : ''
       const data = message.data ? `data:` : ''
@@ -33,22 +33,22 @@ export function makeServerSideEventEncoder() {
       return buffer
     },
     /** returns an encoded json object in data: {} only sse format. */
-    data(jsonObject: object): ByteStream {
+    data(jsonObject: object): ByteChunk {
       const data = this.json(jsonObject)
       return this.event({ data })
     },
-    json(jsonData: object): ByteStream {
+    json(jsonData: object): ByteChunk {
       return this.text(JSON.stringify(jsonData))
     },
-    text(textData: string): ByteStream {
+    text(textData: string): ByteChunk {
       return textEncoder.encode(textData)
     },
     /** returns a sse comment ": exmaple" which is ignored by `EventSource`. */
-    comment(comment: `: ${string}`): ByteStream {
+    comment(comment: `: ${string}`): ByteChunk {
       return textEncoder.encode(comment + '\n\n')
     },
     transformToServerSideEvent() {
-      return new TransformStream<Uint8Array>({
+      return new TransformStream<ByteChunk>({
         transform: (data, controller) => {
           const sse = this.event({ data, id: eventId++ })
           controller.enqueue(sse)
@@ -58,17 +58,7 @@ export function makeServerSideEventEncoder() {
   }
 }
 
-interface CircularBuffer {
-  buffer: Uint8Array
-  bufferSize: number
-  writePosition: number
-  wrapCount: number
-  totalBytesWritten: number
-  getAvailableSpace(): number
-  getDataView(readPosition: number): Uint8Array<ArrayBufferLike>
-  setWritePosition(chunkSize: number): void
-  write(chunk: Uint8Array): void
-}
+// --- constants ---
 
 const KB = 1024
 const MB = KB * KB
@@ -77,30 +67,10 @@ const GB = KB * MB
 const BUFFER_SIZE = 5 * MB
 const MAX_FILE_SIZE = 20 * MB
 
-type ByteStream = Uint8Array<ArrayBuffer>
-type ReadableByteStream = ReadableStream<ByteStream>
-type ChunkCallback = (chunk: ByteStream) => void | Promise<void>
+type ByteChunk = Uint8Array<ArrayBuffer>
+type ByteStream = ReadableStream<ByteChunk>
 
-async function iterateFileChunks(file: Bun.BunFile, callback: ChunkCallback) {
-  if (!(await file.exists())) return void console.warn('[iterate] file not found:', file.name)
-  console.log('[file] loading:', file.name, file.size)
-  return await iterateChunks(file.stream(), callback)
-}
-
-async function iterateChunks(readableStream: ReadableStream, callback: ChunkCallback) {
-  const reader = readableStream.getReader()
-  try {
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
-      await callback(value)
-    }
-  } catch (e) {
-    console.warn('[chunks] error:', e)
-  } finally {
-    reader.releaseLock()
-  }
-}
+// --- stream subscriber ---
 
 class StreamSubscriber {
   public readonly createdAt = new Date()
@@ -113,7 +83,7 @@ class StreamSubscriber {
 
   constructor(public readonly controller: ReadableByteStreamController, public cleanup = () => {}) {}
 
-  public send(chunk: ByteStream) {
+  public send(chunk: ByteChunk) {
     try {
       this.controller.enqueue(chunk)
       this.updatedAt = new Date()
@@ -172,13 +142,8 @@ export async function createFileBasedStream(options: { streamId: string }) {
     },
   }
 
-  /** publish data to all streams. */
-  function broadcastEvent(data: object): void {
-    publish(Response.json(data).body!)
-  }
-
   /** broadcast a chunk to all active streams. */
-  function broadcastToStreams(chunk: ByteStream) {
+  function broadcastToStreams(chunk: ByteChunk) {
     for (const subscriber of activeStreams) {
       subscriber.send(chunk)
     }
@@ -192,7 +157,7 @@ export async function createFileBasedStream(options: { streamId: string }) {
   }
 
   /** Publishes incoming data to file + live subscribers. */
-  async function publish(readableStream: ReadableByteStream): Promise<void> {
+  async function publish(readableStream: ByteStream): Promise<void> {
     const lock = await mutex.acquireLock()
     try {
       await readableStream
@@ -227,6 +192,7 @@ export async function createFileBasedStream(options: { streamId: string }) {
     return new ReadableStream({
       type: 'bytes',
       async start(controller) {
+        // instantiate a new subscription with a ref to the controller
         const subscriber = new StreamSubscriber(controller, () => {
           activeStreams.delete(subscriber)
         })
@@ -236,7 +202,7 @@ export async function createFileBasedStream(options: { streamId: string }) {
           subscriber.send(sse.data({ childId, ...meta }))
 
           // hydrate stream
-          for await (const chunk of bufferedFile.streamData()) {
+          for await (const chunk of bufferedFile.byteStream()) {
             subscriber.send(chunk.slice())
           }
         } catch (e) {
@@ -257,18 +223,24 @@ export async function createFileBasedStream(options: { streamId: string }) {
 
   return {
     publish,
+    /** broadcast an event to all streams & file. */
+    broadcastEvent(data: object): void {
+      publish(Response.json(data).body!)
+    },
+    async delete() {
+      this.close()
+      return bufferedFile.deleteFile()
+    },
     async close() {
       console.log('[close] called!')
       await bufferedFile.close()
-      activeStreams.forEach((stream) => {
-        Try.catch(() => stream.close())
-      })
+      activeStreams.forEach((sub) => sub.close())
       activeStreams.clear()
     },
     async subscribe() {
       console.log('[subscribe] called!')
-      const responseBody = await createSubscription()
-      return new Response(responseBody, {
+      const streamBody = await createSubscription()
+      return new Response(streamBody, {
         headers: {
           'content-type': 'text/event-stream',
           'cache-control': 'no-cache',
