@@ -250,7 +250,6 @@ export async function createFileBasedStream(options: { streamId: string }) {
     const lock = await mutex.acquireLock()
     try {
       const incomingStream = readableStream.pipeThrough(sse.transformToServerSideEvent())
-
       await iterateChunks(incomingStream, async (chunk) => {
         sharedBuffer.write(chunk)
         broadcastToStreams(chunk)
@@ -262,6 +261,7 @@ export async function createFileBasedStream(options: { streamId: string }) {
     }
   }
 
+  /** Called when no more active streams are left. */
   async function handleGarbageCollection() {
     if (activeStreams.size > 0) return
     console.log('[stream] garbase collection called!')
