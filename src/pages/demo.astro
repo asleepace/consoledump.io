@@ -38,7 +38,6 @@ export const prerender = false
 
 <script>
   import { Try } from '@asleepace/try'
-  import type { RecordType } from 'astro:schema'
 
   let abortController = new AbortController()
 
@@ -87,7 +86,7 @@ export const prerender = false
   }
 
   const dump = (...args: any[]) =>
-    fetch('/api/v2?id=123456', {
+    fetch('/api/v3?id=abc123', {
       signal: abortController.signal,
       method: 'POST',
       headers: {
@@ -96,7 +95,7 @@ export const prerender = false
       body: JSON.stringify(args),
     })
 
-  const eventSource = new EventSource('/api/v2?id=123456')
+  const eventSource = new EventSource('/api/v3?id=abc123')
   eventSource.onopen = () => {
     console.log('event source opened!')
     dump({ client: 'connected' })
@@ -127,5 +126,7 @@ export const prerender = false
 
   // @ts-ignore
   console.dump = dump
+
+  // @ts-ignore
   window.dump = dump
 </script>
