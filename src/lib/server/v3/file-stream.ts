@@ -259,7 +259,10 @@ export async function createFileBasedStream(options: { streamId: string }) {
       activeStreams.clear()
     },
     async subscribe() {
+      console.log('[subscribe] called!')
+      publish(Response.json({ streamId: 123, type: 'client:connected' }).body!)
       const responseBody = await createSubscription()
+      console.log('[subscribe] returning subscription...')
       return new Response(responseBody, {
         headers: {
           'content-type': 'text/event-stream',

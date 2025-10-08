@@ -1,0 +1,15 @@
+id: 0
+data: {"streamId":123,"type":"client:connected"}
+
+id: 1
+data: [{"client":"connected"}]
+
+id: 2
+data: {"streamId":123,"type":"client:connected"}
+
+id: 3
+data: [{"client":"connected"}]
+
+id: 4
+data: [{"test":true}]
+
