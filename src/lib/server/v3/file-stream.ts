@@ -1,6 +1,7 @@
 import { Mutex } from '@asleepace/mutex'
 import { ApiError } from '../v2/api-error'
 import { Try } from '@asleepace/try'
+import { ServerSideEventEncoder } from './sse-encoder'
 
 import { BufferedFile } from './buffered-file'
 
@@ -67,8 +68,8 @@ const GB = KB * MB
 const BUFFER_SIZE = 5 * MB
 const MAX_FILE_SIZE = 20 * MB
 
-type ByteChunk = Uint8Array<ArrayBuffer>
-type ByteStream = ReadableStream<ByteChunk>
+export type ByteChunk = Uint8Array<ArrayBuffer>
+export type ByteStream = ReadableStream<ByteChunk>
 
 // --- stream subscriber ---
 
@@ -103,6 +104,37 @@ class StreamSubscriber {
   }
 }
 
+class StreamSubscriberStore extends Set<StreamSubscriber> {
+  public maxAge = 24 * 60 * 60 * 1000
+
+  get isEmpty() {
+    return this.size === 0
+  }
+
+  public runGarbageCollector() {
+    this.forEach((sub) => {
+      if (!sub.isAlive || sub.lastAliveInMs >= this.maxAge) {
+        this.delete(sub)
+      }
+    })
+  }
+
+  public getPublisher = () => new WritableStream({
+    write: (chunk) => this.publish(chunk)
+  })
+
+  public publish(chunk: ByteChunk) {
+    for (const subscriber of this) {
+      subscriber.send(chunk)
+    }
+  }
+
+  public subscribe(subscriber: StreamSubscriber) {
+    this.add(subscriber)
+    subscriber.cleanup = () => this.delete(subscriber)
+  }
+}
+
 /**
  * ## File Base Stream
  *
@@ -129,8 +161,12 @@ export async function createFileBasedStream(options: { streamId: string }) {
   await bufferedFile.hydrateBuffer()
   await bufferedFile.getInfo()
 
-  const activeStreams = new Set<StreamSubscriber>()
-  const sse = makeServerSideEventEncoder()
+  // const activeStreams = new Set<StreamSubscriber>()
+
+  const activeStreams = new StreamSubscriberStore()
+
+  // NOTE: the callback is trigger when calling .broadcast()
+  const sse = new ServerSideEventEncoder((chunk) => activeStreams.publish(chunk))
 
   const meta = {
     streamId: options.streamId,
@@ -142,28 +178,14 @@ export async function createFileBasedStream(options: { streamId: string }) {
     },
   }
 
-  /** broadcast a chunk to all active streams. */
-  function broadcastToStreams(chunk: ByteChunk) {
-    for (const subscriber of activeStreams) {
-      subscriber.send(chunk)
-    }
-  }
-
-  /** Witable stream which broadcasts to all subscribers. */
-  function writableBroadcast() {
-    return new WritableStream({
-      write: (chunk) => broadcastToStreams(chunk),
-    })
-  }
-
   /** Publishes incoming data to file + live subscribers. */
   async function publish(readableStream: ByteStream): Promise<void> {
     const lock = await mutex.acquireLock()
     try {
       await readableStream
-        .pipeThrough(sse.transformToServerSideEvent())
+        .pipeThrough(sse.getServerSideEventTransformer())
         .pipeThrough(bufferedFile.persistTransform())
-        .pipeTo(writableBroadcast(), { preventClose: true })
+        .pipeTo(activeStreams.getPublisher(), { preventClose: true })
     } finally {
       meta.updatedAt = new Date()
       lock.releaseLock()
@@ -172,13 +194,8 @@ export async function createFileBasedStream(options: { streamId: string }) {
 
   /** Called when no more active streams are left. */
   async function handleGarbageCollection() {
-    for (const subscriber of activeStreams) {
-      // TODO: remove closed clients.
-      if (!subscriber.isAlive) {
-        activeStreams.delete(subscriber)
-      }
-    }
-    if (activeStreams.size > 0) return
+    activeStreams.runGarbageCollector()
+    if (!activeStreams.isEmpty) return
     console.log('[stream] garbage collection called!')
     await bufferedFile.close()
   }
@@ -199,7 +216,8 @@ export async function createFileBasedStream(options: { streamId: string }) {
 
         try {
           // pass first message with streamId and info
-          subscriber.send(sse.data({ childId, ...meta }))
+          const initialData = JSON.stringify({ childId, ...meta })
+          subscriber.send(sse.encode({ data: initialData }))
 
           // hydrate stream
           for await (const chunk of bufferedFile.byteStream()) {
