@@ -52,7 +52,7 @@ This project is written using [Astro](https://astro.build/), [Bun.js](https://bu
 |-----------|----------|-----------|
 | `5.12.9`  | `1.2.20` | `^19.2.0` |
 
-Most of the core application logic can be found in the [`@/lib/`](./src/lib/) directory.
+Most of the core application logic can be found in the [`@/lib/`](./src/lib/) directory, and mainly in [`stream.ts`](src/lib/server/stream.ts).
 
 - [`@/components/`](src/components/):
   - [`astro/`](src/components/astro/): Astro specific components.
@@ -67,6 +67,39 @@ Most of the core application logic can be found in the [`@/lib/`](./src/lib/) di
 - [`@/middleware/`](src/middleware/): Astro backend middleware.
 - [`@/pages/`](src/pages/): Astro based routes (pages live here).
 - [`@/styles/`](src/styles/): CSS, Tailwind, Themes.
+
+## Technical Snippets
+
+The following are useful bits of information about this project:
+
+- ### Exception Handling
+
+Exceptions thrown by the application should generally use the custom `ApiError` wrapper:
+
+```tsx
+import { ApiError } from '@/libs/shared'
+
+throw new ApiError("Uh oh!")
+throw new ApiError("Uh oh!", { info: 123 })
+
+const e = new ApiError("Something bad happened.")
+console.log(e instanceof Error)   // true
+console.log(e instanceof ApiError) // true
+
+e.toResponse() // convert to HTTP response
+```
+
+The middleware will catch any errors thrown by the routes and convert them to an HTTP Error response.
+
+```ts
+export const GET: APIRoute = (ctx) => {
+  if (!ctx.locals.sessionId) {
+    throw new ApiError('Missing session id.')
+  }
+  return Response.json({ ok: true })
+}
+```
+
 
 ## Notes
 

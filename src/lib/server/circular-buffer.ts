@@ -1,4 +1,4 @@
-import { ApiError } from './api-error'
+import { ApiError } from '../shared/api-error'
 
 interface CircularBuffer {
   buffer: Uint8Array
@@ -27,7 +27,9 @@ const MAX_BUFFER_SIZE = 5 * MB
  *  @note this class can throw if the chunk size is too large or an invalid
  *  readPosition is passed.
  */
-export function makeCircularBuffer({ bufferSize = MAX_BUFFER_SIZE }): CircularBuffer {
+export function makeCircularBuffer({
+  bufferSize = MAX_BUFFER_SIZE,
+}): CircularBuffer {
   const buffer = new Uint8Array(bufferSize)
 
   return {
@@ -45,7 +47,10 @@ export function makeCircularBuffer({ bufferSize = MAX_BUFFER_SIZE }): CircularBu
     },
     write(chunk: Uint8Array): void {
       if (chunk.length > this.bufferSize) {
-        throw new ApiError('Chunk too large!', { chunkSize: chunk.length, bufferSize })
+        throw new ApiError('Chunk too large!', {
+          chunkSize: chunk.length,
+          bufferSize,
+        })
       }
 
       const writePos = this.writePosition

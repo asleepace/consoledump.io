@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro'
-import { ApiError } from '@/lib/server/api-error'
+import { ApiError } from '@/lib/shared/api-error'
 import { sessions } from '@/lib/server'
 
 export const prerender = false
@@ -13,7 +13,8 @@ export const prerender = false
 export const HEAD: APIRoute = async ({ url }) => {
   const id = url.searchParams.get('id')
 
-  if (!id) return new ApiError('Missing required param :id', { id }).toResponse()
+  if (!id)
+    return new ApiError('Missing required param :id', { id }).toResponse()
 
   await sessions.getOrCreate(id)
 
@@ -34,7 +35,8 @@ export const HEAD: APIRoute = async ({ url }) => {
 export const GET: APIRoute = async ({ url, request }) => {
   const id = url.searchParams.get('id')
 
-  if (!id) return new ApiError('Missing required param :id', { id }).toResponse()
+  if (!id)
+    return new ApiError('Missing required param :id', { id }).toResponse()
 
   const stream = await sessions.getOrCreate(id)
 

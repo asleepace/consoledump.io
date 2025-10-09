@@ -1,4 +1,4 @@
-import { ApiError } from './api-error'
+import { ApiError } from '../shared/api-error'
 import { createFileBasedStream } from './stream'
 
 type DumpSession = Awaited<ReturnType<typeof createFileBasedStream>>
