@@ -1,14 +1,14 @@
 import { ApiError } from './api-error'
-import { createFileBasedStream } from './file-stream'
+import { createFileBasedStream } from './stream'
 
 type DumpSession = Awaited<ReturnType<typeof createFileBasedStream>>
 
 /**
  * ## ConsoleDumpSession
- * 
+ *
  * Store which holds all active console dump sessions and handles
  * creating, reading, updating and deleting.
- * 
+ *
  * @note this is the main entrypoint.
  */
 export class ConsoleDumpSessions {
@@ -30,16 +30,12 @@ export class ConsoleDumpSessions {
 
   public async createSession(id: string) {
     if (this.activeSessions.size >= this.options.maxSessions) {
-      throw new ApiError('Too many sessions!', { total: this.activeSessions.size })
+      throw new ApiError('Too many sessions!', {
+        total: this.activeSessions.size,
+      })
     }
-
     const session = await createFileBasedStream({ streamId: id })
     this.activeSessions.set(id, session)
-    // broadcast first message with metadata about the stream
-    session.broadcastEvent({
-      streamId: id,
-      createdAt: new Date(),
-    })
     return session
   }
 

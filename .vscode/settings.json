@@ -1,5 +1,6 @@
 {
   "editor.gotoLocation.multipleDefinitions": "goto",
+  "typescript.format.enable": true,
   "editor.formatOnSave": true,
   "prettier.semi": false,
   "prettier.tabWidth": 2,

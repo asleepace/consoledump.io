@@ -8,6 +8,8 @@ import { Try } from '@asleepace/try'
 import { useUtils } from './useUtils'
 import { MessageItem } from './MessageItem'
 
+import { useCurrentUrl } from '@/hooks/useCurrentUrl'
+
 export type ConsoleDumpClientProps = {
   className?: string
 }
@@ -35,6 +37,8 @@ export const ConsoleDumpClient = withAppProvider((props: ConsoleDumpClientProps)
   const ctx = useAppContext()
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const utils = useUtils()
+
+  const currentUrl = useCurrentUrl()
 
   useEffect(() => {
     // define dump on the client:

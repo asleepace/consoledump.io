@@ -2,6 +2,8 @@ import { Mutex } from '@asleepace/mutex'
 import { Try } from '@asleepace/try'
 import { ServerSideEventEncoder } from './sse-encoder'
 import { BufferedFile } from './buffered-file'
+import { urlStore } from '@/lib/shared/url-store'
+import { ids } from '@/lib/shared/ids'
 
 // --- constants ---
 
@@ -16,22 +18,11 @@ const MAX_AGE_24_HOURS = 24 * 60 * 60 * 1000
 export type ByteChunk = Uint8Array<ArrayBuffer>
 export type ByteStream = ReadableStream<ByteChunk>
 
-declare const __clientIdBrand: unique symbol
-export type ClientId = string & {
-  [__clientIdBrand]: boolean
-}
-
-/** client ids are in the format 0x3AAB. */
-function generateClientId(): ClientId {
-  const bytes = crypto.getRandomValues(new Uint8Array(2))
-  const hex = Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('')
-  return `0x${hex.toUpperCase()}` as ClientId
-}
 
 // --- stream subscriber ---
 
 class StreamSubscriber {
-  public id: string = generateClientId()
+  public id: string = ids.generateClientId()
   public readonly createdAt = new Date()
   public updatedAt = new Date()
   public isAlive = true
@@ -186,6 +177,9 @@ export async function createFileBasedStream(options: { streamId: string }) {
    */
   async function createSubscription() {
     let subscriber: StreamSubscriber | undefined
+
+    urlStore.setCurrentHref(options.streamId as SessionId) // used via getServerSnapshot()
+
     return new ReadableStream({
       type: 'bytes',
       async start(controller) {

@@ -1,6 +1,6 @@
 import { defineMiddleware } from 'astro:middleware'
 import { ApiError } from '@/lib/server/api-error'
-import { getSessionIdForRequest } from '@/lib/shared/session-id'
+import { getSessionIdForRequest } from '@/lib/shared/ids'
 
 /**
  *  ## Middleware
