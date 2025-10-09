@@ -54,10 +54,20 @@ This project is written using [Astro](https://astro.build/), [Bun.js](https://bu
 
 Most of the core application logic can be found in the [`@/lib/`](./src/lib/) directory.
 
-- `@/compontents/`:
+- [`@/components/`](src/components/):
   - [`astro/`](src/components/astro/): Astro specific components.
   - [`react/`](src/components/react/): React components (main client app).
-- `@/lib/`:
-  - [`client/`](src/lib/client/): client-side logic
-  - [`server/`](src/lib/server/): server-side logic
-  - [`shared/`](src/lib/shared/): shared client & server logic
+- [`@/content/`](src/content/): Markdown for docs
+- [`@/hooks/`](src/hooks/): Client-side react based hooks.
+- [`@/layouts/`](src/layouts/): Astro based layouts (HTML, CSS, Meta)
+- [`@/lib/`](src/lib/):
+  - [`client/`](src/lib/client/): client-side logic.
+  - [`server/`](src/lib/server/): server-side logic.
+  - [`shared/`](src/lib/shared/): shared client & server logic.
+- [`@/middleware/`](src/middleware/): Astro backend middleware.
+- [`@/pages/`](src/pages/): Astro based routes (pages live here).
+- [`@/styles/`](src/styles/): CSS, Tailwind, Themes.
+
+## Notes
+
+See [`src/env.d.ts`](src/env.d.ts) for global type definitions.
