@@ -113,7 +113,7 @@ export function getStylesFor(eventType: string) {
     connected: 'text-green-500',
     system: 'text-emerald-500',
     client: 'text-indigo-500',
-    message: 'text-zinc-500',
+    message: 'text-zinc-600',
     error: 'text-red-500',
   }
   type SourceTypes = keyof typeof badgeForSource
@@ -129,24 +129,62 @@ interface Props {
 }
 
 interface ClientConnected {
-  eventName: 'client:connected'
   streamId: string
   clientId: string
 }
+
+interface SystemClientConnected {
+  eventName: 'client:connected'
+  eventData: {
+    clientId: string
+  }
+}
+interface SystemClientClosed {
+  eventName: 'client:closed'
+  eventData: {
+    clientId: string
+  }
+}
+
+type SystemEvent =  SystemClientConnected | SystemClientClosed
 
 function getUrlSafe(path: string) {
   if (typeof window === 'undefined') return `/${path}`
   return Try.catch(() => new URL(path, window.location.origin).href).unwrapOr(`/${path}`)
 }
 
+function getSafeJson<T = object>(data: string): T | undefined {
+  return Try.catch(() => JSON.parse(data)).value
+}
+
 function getMessageForEvent(ev: MessageEvent) {
-  console.log(ev.type)
-  if (ev.type === 'message') return ev.data
+  if (ev.type === 'message') {
+
+    const json = getSafeJson(ev.data)
+
+    if (json && Array.isArray(json)) {
+      return json.map((item) => {
+        if (item && typeof item === 'object') return JSON.stringify(item)
+        return String(item)
+      }).join(" ")
+    }
+
+    return ev.data
+  }
 
   if (ev.type === 'client') {
     const clientEvent = ev.data as ClientConnected
     const currentHref = getUrlSafe(clientEvent.streamId)
     return `connected to stream <a class="text-orange-400 hover:underline" href="${currentHref}">${currentHref}</a>`
+  }
+
+  if (ev.type === 'system') {
+    const systemEvent = getSafeJson<SystemEvent>(ev.data)
+    if (!systemEvent) return ev.data
+    if (systemEvent.eventName === 'client:connected') {
+      const clientId = systemEvent.eventData.clientId
+      return `client (<a class="text-orange-400" href="#${clientId}">#${clientId}</a>) connected to stream!`
+    }
   }
 
   return ev.data

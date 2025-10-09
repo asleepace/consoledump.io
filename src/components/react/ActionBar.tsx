@@ -92,7 +92,7 @@ export function ActionBar(props: ActionBarProps) {
     const actionEvent = makeAction({ value: currentValue, type: mode.type, reset })
     historyRef.current.insert(actionEvent)
     props.onSubmit(actionEvent)
-    inputRef.current?.blur()
+    // inputRef.current?.blur()
   }, [mode, mode.type])
 
   useKeydown(

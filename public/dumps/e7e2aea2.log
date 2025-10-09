@@ -2,5 +2,29 @@ id: 0
 data: {"streamId":"e7e2aea2","createdAt":"2025-10-09T06:37:50.273Z"}
 
 id: 1
-data: ["hello, world!"]
+data: ["hello world!"]
+
+id: 2
+data: ["this is a test"]
+
+id: 3
+data: ["woowowwowowoww"]
+
+id: 4
+data: ["testing"]
+
+id: 5
+data: ["Lets gooo"]
+
+id: 6
+data: ["<span class=\"text-red-500\">XSS_GANG</span>"]
+
+id: 7
+data: ["sdfsdfsdfsdfsdf"]
+
+id: 8
+data: ["{ name: \"colin\" }"]
+
+id: 9
+data: [2]
 
