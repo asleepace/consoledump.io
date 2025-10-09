@@ -4,6 +4,7 @@ import { Check, ChevronDown, ChevronRight, Copy } from 'lucide-react'
 import { memo } from 'react'
 import { formatTimestamp } from './useUtils'
 import { z } from 'astro/zod'
+import { Try } from '@asleepace/try'
 
 /** Timestamp */
 const LogTimestamp = ({ className, createdAt = new Date() }: { className?: string; createdAt?: Date }) => {
@@ -133,14 +134,19 @@ interface ClientConnected {
   clientId: string
 }
 
+function getUrlSafe(path: string) {
+  if (typeof window === 'undefined') return `/${path}`
+  return Try.catch(() => new URL(path, window.location.origin).href).unwrapOr(`/${path}`)
+}
+
 function getMessageForEvent(ev: MessageEvent) {
   console.log(ev.type)
   if (ev.type === 'message') return ev.data
 
   if (ev.type === 'client') {
     const clientEvent = ev.data as ClientConnected
-    const currentHref = typeof window !== "undefined" ? new URL(clientEvent.streamId, window.location.origin).href : `/${clientEvent.streamId}`
-    return `connected to stream <a className="text-orange-400" href="${currentHref}">${currentHref}</a>`
+    const currentHref = getUrlSafe(clientEvent.streamId)
+    return `connected to stream <a class="text-orange-400 hover:underline" href="${currentHref}">${currentHref}</a>`
   }
 
   return ev.data
