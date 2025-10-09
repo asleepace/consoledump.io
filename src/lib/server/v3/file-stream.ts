@@ -1,63 +1,7 @@
 import { Mutex } from '@asleepace/mutex'
-import { ApiError } from '../v2/api-error'
 import { Try } from '@asleepace/try'
 import { ServerSideEventEncoder } from './sse-encoder'
-
 import { BufferedFile } from './buffered-file'
-
-/**
- * Creates a server-side event encoder which is used to re-encode
- * arbitrary bytes as sse messages.
- *
- * Also includes several helper methods for encoding different types
- * of text data like comments, json, plain.
- */
-export function makeServerSideEventEncoder() {
-  const textEncoder = new TextEncoder()
-  let eventId = 0
-  return {
-    event(message: { data?: Uint8Array; id?: number; event?: string }): ByteChunk {
-      const evnt = message.event ? `event: ${message.event}` : ''
-      const idno = message.id ? `id: ${message.id}` : ''
-      const data = message.data ? `data:` : ''
-      const head = textEncoder.encode([idno, evnt, data].filter((s) => !!s).join('\n'))
-      const tail = textEncoder.encode(`\n\n`)
-      const headLength = head.length
-      const tailLength = tail.length
-      const dataLength = message.data?.length ?? 0
-      const buffer = new Uint8Array(headLength + tailLength + dataLength)
-      buffer.set(head, 0)
-      if (message.data) {
-        buffer.set(message.data, headLength)
-      }
-      buffer.set(tail, headLength + dataLength)
-      return buffer
-    },
-    /** returns an encoded json object in data: {} only sse format. */
-    data(jsonObject: object): ByteChunk {
-      const data = this.json(jsonObject)
-      return this.event({ data })
-    },
-    json(jsonData: object): ByteChunk {
-      return this.text(JSON.stringify(jsonData))
-    },
-    text(textData: string): ByteChunk {
-      return textEncoder.encode(textData)
-    },
-    /** returns a sse comment ": exmaple" which is ignored by `EventSource`. */
-    comment(comment: `: ${string}`): ByteChunk {
-      return textEncoder.encode(comment + '\n\n')
-    },
-    transformToServerSideEvent() {
-      return new TransformStream<ByteChunk>({
-        transform: (data, controller) => {
-          const sse = this.event({ data, id: eventId++ })
-          controller.enqueue(sse)
-        },
-      })
-    },
-  }
-}
 
 // --- constants ---
 
@@ -74,15 +18,16 @@ export type ByteStream = ReadableStream<ByteChunk>
 // --- stream subscriber ---
 
 class StreamSubscriber {
+  public id: string = crypto.randomUUID().slice(0, 8)
   public readonly createdAt = new Date()
   public updatedAt = new Date()
   public isAlive = true
-
+ 
   public get lastAliveInMs() {
     return Date.now() - +this.updatedAt
   }
 
-  constructor(public readonly controller: ReadableByteStreamController, public cleanup = () => {}) {}
+  constructor(public readonly controller: ReadableByteStreamController) {}
 
   public send(chunk: ByteChunk) {
     try {
@@ -92,30 +37,41 @@ class StreamSubscriber {
       console.warn('[subscriber] error:', e)
       this.isAlive = false
       Try.catch(() => this.controller.error(e))
-      this.cleanup()
     }
   }
 
   public close() {
     console.log('[subscriber] closed!')
     this.controller.close()
-    this.cleanup()
     this.isAlive = false
   }
 }
 
+/**
+ * Store which manages stream subscribers.
+ */
 class StreamSubscriberStore extends Set<StreamSubscriber> {
   public maxAge = 24 * 60 * 60 * 1000
 
-  get isEmpty() {
+  public setMaxAge(maxAge: number) {
+    this.maxAge = maxAge
+  }
+
+  get isEmpty(): boolean {
     return this.size === 0
   }
 
-  public runGarbageCollector() {
-    this.forEach((sub) => {
-      if (!sub.isAlive || sub.lastAliveInMs >= this.maxAge) {
-        this.delete(sub)
+  public runGarbageCollector(): string[] {
+    const closedSubscriber: StreamSubscriber[] = []
+    for (const subscriber of this) {
+      const isExpired = subscriber.lastAliveInMs <= this.maxAge
+      if (!subscriber.isAlive || isExpired) {
+        closedSubscriber.push(subscriber)
       }
+    }
+    return closedSubscriber.map((subscriber) => {
+      this.delete(subscriber)
+      return subscriber.id
     })
   }
 
@@ -127,11 +83,6 @@ class StreamSubscriberStore extends Set<StreamSubscriber> {
     for (const subscriber of this) {
       subscriber.send(chunk)
     }
-  }
-
-  public subscribe(subscriber: StreamSubscriber) {
-    this.add(subscriber)
-    subscriber.cleanup = () => this.delete(subscriber)
   }
 }
 
@@ -152,22 +103,24 @@ class StreamSubscriberStore extends Set<StreamSubscriber> {
 export async function createFileBasedStream(options: { streamId: string }) {
   const mutex = new Mutex()
 
+  /** Persisted file with in-memory circular buffer. */
   const bufferedFile = new BufferedFile({
     fileName: `${options.streamId}.log`,
     maxFileSize: MAX_FILE_SIZE,
     bufferSize: BUFFER_SIZE,
   })
 
+  /** Hydrate in-memory buffer with persisted data. */
   await bufferedFile.hydrateBuffer()
   await bufferedFile.getInfo()
 
-  // const activeStreams = new Set<StreamSubscriber>()
-
+  /** Set of all active client text/even-streams and helpers. */
   const activeStreams = new StreamSubscriberStore()
 
   // NOTE: the callback is trigger when calling .broadcast()
   const sse = new ServerSideEventEncoder((chunk) => activeStreams.publish(chunk))
 
+  /** Metadata for session. */
   const meta = {
     streamId: options.streamId,
     lastChildId: 0,
@@ -194,9 +147,18 @@ export async function createFileBasedStream(options: { streamId: string }) {
 
   /** Called when no more active streams are left. */
   async function handleGarbageCollection() {
-    activeStreams.runGarbageCollector()
+    // 1. Close in-active or stale streams
+    const closedStreamIds = activeStreams.runGarbageCollector()
+
+    // 2. Broadcast system message of closed streams.
+    closedStreamIds.forEach((childId) => {
+      sse.broadcastEvent({ name: 'client:closed', data: { childId }})
+    })
+
+    // 3. Close session if no more streams.
     if (!activeStreams.isEmpty) return
     console.log('[stream] garbage collection called!')
+    sse.broadcastEvent('system', { name: 'stream:closed', data: { closedAt: new Date() }})
     await bufferedFile.close()
   }
 
@@ -204,58 +166,65 @@ export async function createFileBasedStream(options: { streamId: string }) {
    * Returns SSE stream with file history + live updates
    */
   async function createSubscription() {
-    let childId = crypto.randomUUID().slice(0, 8)
-    let cleanup = () => {}
+    let subscriber: StreamSubscriber | undefined
     return new ReadableStream({
       type: 'bytes',
       async start(controller) {
         // instantiate a new subscription with a ref to the controller
-        const subscriber = new StreamSubscriber(controller, () => {
-          activeStreams.delete(subscriber)
-        })
+        subscriber = new StreamSubscriber(controller)
+        const clientId = subscriber.id
 
         try {
-          // pass first message with streamId and info
-          const initialData = JSON.stringify({ childId, ...meta })
+          // 1. pass first message with streamId and info and broadcast status
+          const initialData = JSON.stringify({ clientId, ...meta })
           subscriber.send(sse.encode({ data: initialData }))
+          sse.sendSystemEvent('client:connected', { clientId })
 
-          // hydrate stream
+          // 2. hydrate stream
           for await (const chunk of bufferedFile.byteStream()) {
             subscriber.send(chunk.slice())
           }
+
+          // 3. add to subscribers
+          activeStreams.add(subscriber)
         } catch (e) {
           console.error('[subscribe] error:', e)
           Try.catch(() => controller.error(e))
-        } finally {
-          // add to subscribers
-          activeStreams.add(subscriber)
         }
       },
       cancel() {
         console.log('[subscription] closed!')
-        cleanup()
+        if (subscriber) activeStreams.delete(subscriber)
         handleGarbageCollection()
       },
     })
   }
 
   return {
+    /** publishes data to all streams and persists to file. */
     publish,
     /** broadcast an event to all streams & file. */
     broadcastEvent(data: object): void {
       publish(Response.json(data).body!)
     },
-    async delete() {
-      this.close()
-      return bufferedFile.deleteFile()
+    /** broadcast a server-side event with type `"system"`. */
+    broadcastSystemEvent(eventName: string, eventData?: object) {
+      sse.sendSystemEvent(eventName, eventData)
     },
+    /** closes all active clients and buffered file. */
     async close() {
       console.log('[close] called!')
       await bufferedFile.close()
       activeStreams.forEach((sub) => sub.close())
       activeStreams.clear()
     },
-    async subscribe() {
+    /** closes all active clients and then deletes file (permanent). */
+    async delete() {
+      this.close()
+      return bufferedFile.deleteFile()
+    },
+    /** returns a new text/event-stream subscribed to the session. */
+    async subscribe(): Promise<Response> {
       console.log('[subscribe] called!')
       const streamBody = await createSubscription()
       return new Response(streamBody, {

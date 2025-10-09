@@ -13,17 +13,44 @@ export class ServerSideEventEncoder {
 
   constructor(public onBroadcastEvent: (chunk: ByteChunk) => void) {}
 
+  /**
+   * Sends a server-side event with type `"system"` and optional JSON data.
+   * 
+   * @param {string} eventName description of event added.
+   * @param {object} eventData optional event data.
+   * 
+   * NOTE: this does not include an `"id"` field and will not show up as part
+   * of the text/event-stream.
+   * 
+   * ```ts
+   * const eventSource = new EventSource('/abc123')
+   * 
+   * eventSource.addEventListener('system', (ev) => {
+   *   const systemMsg = JSON.parse(ev.data)
+   *   console.log(systemMsg.eventName)
+   *   console.log(systemMsg.eventData.childId)
+   * })
+   * ```
+   */
+  public sendSystemEvent(eventName: string, eventData?: object) {
+    this.onBroadcastEvent(this.encode({ type: 'system', data: JSON.stringify({ eventName, eventData }) }))
+  }
+
   /** encodes data into sse format and triggers `onBroadcastEvent` callback. */
-  public broadcast(data: string | object | ByteChunk, {
-    type = 'system'
-  }: { type?: string }) {
-    if (!data) return
+  public broadcastEvent(type: string): void
+  public broadcastEvent(type: string, data: object): void
+  public broadcastEvent(data: object): void
+  public broadcastEvent(typeOrData: string | object, data?: object): void {
     const id = this.lastEventId++
-    if (typeof data === 'string' || data instanceof Uint8Array) {
-      this.onBroadcastEvent(this.encode({ data, id }))
-    } else {
-      this.onBroadcastEvent(this.encode({ data: JSON.stringify(data), id }))
+    if (typeof typeOrData === 'object') {
+      this.onBroadcastEvent(this.encode({ id, data: JSON.stringify(typeOrData) }))
+      return
     }
+    if (typeof typeOrData === 'string' && !data) {
+      this.onBroadcastEvent(this.encode({ id, type: typeOrData }))
+    }
+
+    this.onBroadcastEvent(this.encode({ id, type: typeOrData, data: JSON.stringify(data) }))
   }
 
   /** encode data as a server-side event. */

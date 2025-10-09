@@ -24,7 +24,7 @@ export interface ClientStream {
 
 export function useEventStream(): ClientStream {
   const [isInitializing, setIsInitializing] = useState(false)
-  const [isConnected, setIsConnected] = useState(false)
+  const [isConnected, setIsConnected] = useState(true) // start as true
   const [isError, setIsError] = useState(false)
   const [childId, setChildId] = useState<string | undefined>()
 
@@ -56,9 +56,6 @@ export function useEventStream(): ClientStream {
     if (!maybeMeta.ok) return
     console.log('[meta] stream:', maybeMeta.value)
     setMeta(maybeMeta.value)
-
-  
-
   }, [events, meta])
 
   /** whenever the sessionId changes we need to reset state and reconnect. */
@@ -69,18 +66,35 @@ export function useEventStream(): ClientStream {
       withCredentials: true,
     })
 
+    /** 
+     * subscribe to custom "system" events send by backend.
+     * @see ServerSideEventEncoder
+     */
+    eventSource.addEventListener('system', (ev) => {
+      console.warn('[event-stream] system:', ev.data)
+      setEvents((prev) => [...prev, ev])
+    })
+
     eventSource.onopen = () => {
       console.log('[event-stream] connected!')
       setIsConnected(true)
     }
 
+    let currentId = 0
+
     eventSource.onmessage = (ev) => {
-      setEvents((prev) => [...prev, ev])
-      // first message should be metadata for stream
-      // and will not have message id.
-      if (!meta && !ev.lastEventId) {
-        setMeta(() => Try.catch(() => JSON.parse(ev.data)).unwrapOr(undefined))
+      // NOTE: important the firs message should contain metadata
+      // about the stream and client.
+      if (currentId++ === 0) {
+        const metaEvent = new MessageEvent('client', {
+          data: JSON.parse(ev.data)
+        })
+        setEvents((prev) => [metaEvent])
+        setMeta(metaEvent)
+      } else {
+        setEvents((prev) => [...prev, ev])
       }
+
     }
 
     eventSource.onerror = (ev) => {

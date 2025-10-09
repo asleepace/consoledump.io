@@ -1,9 +1,9 @@
 import { useAppContext } from './AppContext'
 import { cn } from '@/lib/utils'
 import { Check, ChevronDown, ChevronRight, Copy } from 'lucide-react'
-import { getTypeBadge } from '@/components/react/useTheme'
-import { memo, useMemo } from 'react'
+import { memo } from 'react'
 import { formatTimestamp } from './useUtils'
+import { z } from 'astro/zod'
 
 /** Timestamp */
 const LogTimestamp = ({ className, createdAt = new Date() }: { className?: string; createdAt?: Date }) => {
@@ -100,9 +100,7 @@ export function getCodeBlock(htmlString: string | undefined): string | undefined
   }
 }
 
-export type EventType = 'connected' | 'system' | 'client' | 'message' | 'error'
-
-export function getStylesFor(eventType: EventType) {
+export function getStylesFor(eventType: string) {
   const badgeForSource = {
     connected: 'badge-green',
     system: 'badge-emerald',
@@ -110,7 +108,6 @@ export function getStylesFor(eventType: EventType) {
     message: 'badge-zinc',
     error: 'badge-red',
   }
-
   const textColorForSource = {
     connected: 'text-green-500',
     system: 'text-emerald-500',
@@ -118,10 +115,10 @@ export function getStylesFor(eventType: EventType) {
     message: 'text-zinc-500',
     error: 'text-red-500',
   }
-
+  type SourceTypes = keyof typeof badgeForSource
   return {
-    badge: badgeForSource[eventType],
-    textStyle: textColorForSource[eventType],
+    badge: badgeForSource[eventType as SourceTypes] ?? badgeForSource.message,
+    textStyle: textColorForSource[eventType as SourceTypes],
   }
 }
 
@@ -129,6 +126,26 @@ interface Props {
   message: MessageEvent<string>
   className?: string
 }
+
+interface ClientConnected {
+  eventName: 'client:connected'
+  streamId: string
+  clientId: string
+}
+
+function getMessageForEvent(ev: MessageEvent) {
+  console.log(ev.type)
+  if (ev.type === 'message') return ev.data
+
+  if (ev.type === 'client') {
+    const clientEvent = ev.data as ClientConnected
+    const currentHref = typeof window !== "undefined" ? new URL(clientEvent.streamId, window.location.origin).href : `/${clientEvent.streamId}`
+    return `connected to stream <a className="text-orange-400" href="${currentHref}">${currentHref}</a>`
+  }
+
+  return ev.data
+}
+
 
 /**
  * ## MessageItem
@@ -142,10 +159,12 @@ export const MessageItem = memo(({ className, message }: Props) => {
   const isCopied = copiedId === message.lastEventId
   const isExpanded = expandedLogs.has(message.lastEventId)
 
-  const style = getStylesFor('message')
-  const badgeName = 'message'
+  const badgeName = message.type ?? 'message'
+  const style = getStylesFor(badgeName)
 
-  const htmlContent = `<span>${message.data}</span>`
+  
+  const msg = getMessageForEvent(message)
+  const htmlContent = `<span>${msg}</span>`
 
   return (
     <div className={cn('w-full font-mono', className)}>
