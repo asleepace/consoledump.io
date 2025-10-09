@@ -1,4 +1,4 @@
-import { ApiError } from '../v2/api-error'
+import { ApiError } from './api-error'
 
 interface CircularBuffer {
   buffer: Uint8Array

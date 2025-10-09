@@ -201,6 +201,7 @@ export async function createFileBasedStream(options: { streamId: string }) {
   }
 
   return {
+    get id() { return options.streamId },
     /** publishes data to all streams and persists to file. */
     publish,
     /** broadcast an event to all streams & file. */

@@ -1,7 +1,6 @@
 import type { APIRoute } from 'astro'
-import { Stream2 } from '@/lib/server/stream'
-import { sessions } from '@/lib/server/v3'
-import { ApiError } from '@/lib/server/v2/api-error'
+import { ApiError } from '@/lib/server/api-error'
+import { sessions } from '@/lib/server'
 
 export const prerender = false
 

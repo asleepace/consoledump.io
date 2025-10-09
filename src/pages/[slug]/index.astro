@@ -1,21 +1,13 @@
 ---
 import { ConsoleDumpClient } from '@/components/react/ConsoleDumpClient'
 import Layout from '@/layouts/Layout.astro'
-// import { Stream2 } from '@/lib/server/stream'
+import { sessions } from '@/lib/server/'
 
-import { sessions } from '@/lib/server/v3'
-
+// NOTE: do not server-side render!
 export const prerender = false
 
 const { slug: streamId } = Astro.params
-
-console.log(`[page:${streamId}] ${Astro.request.method}`)
-
-if (!streamId) {
-  return Response.json({ error: 'Missing streamId.' }, { status: 500 })
-}
-
-const method = Astro.request.method
+const { method } = Astro.request
 
 // handle CORS requests
 if (method === 'OPTIONS') {
@@ -25,6 +17,10 @@ if (method === 'OPTIONS') {
       'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
     },
   })
+}
+
+if (!streamId) {
+  return Response.json({ error: 'Missing streamId.' }, { status: 500 })
 }
 
 // get or create a stream session
