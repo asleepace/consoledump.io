@@ -143,10 +143,9 @@ export async function createFileBasedStream(options: { streamId: string }) {
   /** Metadata for session. */
   const meta = {
     streamId: options.streamId,
-    lastChildId: 0,
     createdAt: new Date(),
     updatedAt: new Date(),
-    get totalStreams() {
+    get clients() {
       return activeStreams.size
     },
   }
