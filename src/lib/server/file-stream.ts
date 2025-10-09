@@ -16,10 +16,22 @@ const MAX_AGE_24_HOURS = 24 * 60 * 60 * 1000
 export type ByteChunk = Uint8Array<ArrayBuffer>
 export type ByteStream = ReadableStream<ByteChunk>
 
+declare const __clientIdBrand: unique symbol
+export type ClientId = string & {
+  [__clientIdBrand]: boolean
+}
+
+/** client ids are in the format 0x3AAB. */
+function generateClientId(): ClientId {
+  const bytes = crypto.getRandomValues(new Uint8Array(2))
+  const hex = Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('')
+  return `0x${hex.toUpperCase()}` as ClientId
+}
+
 // --- stream subscriber ---
 
 class StreamSubscriber {
-  public id: string = crypto.randomUUID().slice(0, 8)
+  public id: string = generateClientId()
   public readonly createdAt = new Date()
   public updatedAt = new Date()
   public isAlive = true

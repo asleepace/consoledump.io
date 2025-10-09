@@ -174,7 +174,7 @@ function getMessageForEvent(ev: MessageEvent) {
   if (ev.type === 'client') {
     const clientEvent = ev.data as ClientConnected
     const currentHref = getUrlSafe(clientEvent.streamId)
-    return `connected to stream <a class="text-orange-400 hover:underline" href="${currentHref}">${currentHref}</a>`
+    return `connected (id: <a href="#${clientEvent.clientId}" class="text-orange-400 hover:underline">#${clientEvent.clientId}</a>) to stream <a class="text-orange-400 hover:underline" href="${currentHref}">${currentHref}</a>`
   }
 
   if (ev.type === 'system') {
