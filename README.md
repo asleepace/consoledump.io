@@ -71,3 +71,7 @@ Most of the core application logic can be found in the [`@/lib/`](./src/lib/) di
 ## Notes
 
 See [`src/env.d.ts`](src/env.d.ts) for global type definitions.
+
+## License
+
+This project is distributed under the [MIT License](./LICENSE).
