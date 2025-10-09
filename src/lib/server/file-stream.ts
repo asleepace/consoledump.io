@@ -11,6 +11,7 @@ const GB = KB * MB
 
 const BUFFER_SIZE = 5 * MB
 const MAX_FILE_SIZE = 20 * MB
+const MAX_AGE_24_HOURS = 24 * 60 * 60 * 1000
 
 export type ByteChunk = Uint8Array<ArrayBuffer>
 export type ByteStream = ReadableStream<ByteChunk>
@@ -29,7 +30,13 @@ class StreamSubscriber {
 
   constructor(public readonly controller: ReadableByteStreamController) {}
 
-  public send(chunk: ByteChunk) {
+  public canBeRemoved() {
+    if (!this.isAlive) return true
+    if (this.lastAliveInMs >= MAX_AGE_24_HOURS) return true
+    return false
+  }
+
+  public write(chunk: ByteChunk) {
     try {
       this.controller.enqueue(chunk)
       this.updatedAt = new Date()
@@ -41,6 +48,7 @@ class StreamSubscriber {
   }
 
   public close() {
+    if (!this.isAlive) return
     console.log('[subscriber] closed!')
     this.controller.close()
     this.isAlive = false
@@ -62,17 +70,17 @@ class StreamSubscriberStore extends Set<StreamSubscriber> {
   }
 
   public runGarbageCollector(): string[] {
-    const closedSubscriber: StreamSubscriber[] = []
-    for (const subscriber of this) {
-      const isExpired = subscriber.lastAliveInMs <= this.maxAge
-      if (!subscriber.isAlive || isExpired) {
-        closedSubscriber.push(subscriber)
-      }
-    }
-    return closedSubscriber.map((subscriber) => {
-      this.delete(subscriber)
-      return subscriber.id
-    })
+    const closed: StreamSubscriber[] = this.filter((subsciber) => subsciber.canBeRemoved())
+    closed.forEach((sub) => sub.close())
+    return closed.map((sub) => sub.id)
+  }
+
+  public filter(callback: (subscriber: StreamSubscriber, index?: number) => boolean) {
+    return Array.from(this).filter(callback)
+  }
+
+  public map<T>(callbackFn: (subscriber: StreamSubscriber, index?: number) => T): T[] {
+    return Array.from(this).map(callbackFn)
   }
 
   public getPublisher = () => new WritableStream({
@@ -81,7 +89,7 @@ class StreamSubscriberStore extends Set<StreamSubscriber> {
 
   public publish(chunk: ByteChunk) {
     for (const subscriber of this) {
-      subscriber.send(chunk)
+      subscriber.write(chunk)
     }
   }
 }
@@ -117,7 +125,7 @@ export async function createFileBasedStream(options: { streamId: string }) {
   /** Set of all active client text/even-streams and helpers. */
   const activeStreams = new StreamSubscriberStore()
 
-  // NOTE: the callback is trigger when calling .broadcast()
+  /** NOTE: the callback is trigger when calling .broadcast() */
   const sse = new ServerSideEventEncoder((chunk) => activeStreams.publish(chunk))
 
   /** Metadata for session. */
@@ -177,12 +185,12 @@ export async function createFileBasedStream(options: { streamId: string }) {
         try {
           // 1. pass first message with streamId and info and broadcast status
           const initialData = JSON.stringify({ clientId, ...meta })
-          subscriber.send(sse.encode({ data: initialData }))
+          subscriber.write(sse.encode({ data: initialData }))
           sse.sendSystemEvent('client:connected', { clientId })
 
           // 2. hydrate stream
           for await (const chunk of bufferedFile.byteStream()) {
-            subscriber.send(chunk.slice())
+            subscriber.write(chunk.slice())
           }
 
           // 3. add to subscribers

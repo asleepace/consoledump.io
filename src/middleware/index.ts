@@ -1,4 +1,6 @@
 import { defineMiddleware } from 'astro:middleware'
+import { ApiError } from '@/lib/server/api-error'
+import { getSessionIdForRequest } from '@/lib/shared/session-id'
 
 /**
  *  ## Middleware
@@ -8,10 +10,12 @@ import { defineMiddleware } from 'astro:middleware'
  */
 export const onRequest = defineMiddleware(async (context, next) => {
   try {
+    /** extract sessionId from incoming url, path or headers. */
+    const sessionId = getSessionIdForRequest(context.request)
+    context.locals.sessionId = sessionId
+
     return await next()
   } catch (e) {
-    const err = e instanceof Error ? e : new Error(String(e))
-    console.log('[middleware] error:', err.message)
-    return Response.json({ error: true, message: err.message }, { status: 500 })
+    return ApiError.from(e).toResponse()
   }
 })

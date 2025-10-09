@@ -11,6 +11,13 @@ export type ErrorResponseInit = Record<string, string | number | boolean> & Resp
  *  Universal error class for the application.
  */
 export class ApiError extends Error {
+  /** cast and item to an ApiError instance if it's not already. */
+  static from(err: unknown): ApiError {
+    if (err instanceof ApiError) return err
+    if (err instanceof Error) new ApiError(err.message, err)
+    return new ApiError(err)
+  }
+
   static throw(...args: any[]): never {
     throw new ApiError(...args)
   }

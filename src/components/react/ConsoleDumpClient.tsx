@@ -12,8 +12,9 @@ export type ConsoleDumpClientProps = {
   className?: string
 }
 
-function dump(...args: any[]) {
-  return fetch(window.location.pathname, {
+async function dump(...args: any[]): Promise<void> {
+  if (typeof window === 'undefined') return console.warn('[dump] window not defined!')
+  await fetch(window.location.pathname, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -37,17 +38,14 @@ export const ConsoleDumpClient = withAppProvider((props: ConsoleDumpClientProps)
 
   useEffect(() => {
     // define dump on the client:
-    // @ts-ignore
     console.dump = dump
-    // @ts-ignore
     window.dump = dump
   }, [])
 
   const downloadLogs = () => {
     if (!ctx.sessionId) return
-    const logs = ctx.stream?.events ?? []
     const data = utils.createJsonDataFile({ sessionId: ctx.sessionId, logs: [] })
-    utils.downloadJsonFile(data)
+    utils.downloadJsonFile({ fileName: `${ctx.sessionId}.log`, data })
   }
 
   const clearLogs = () => {

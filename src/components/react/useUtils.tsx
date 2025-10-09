@@ -1,5 +1,4 @@
-import { Try } from '@asleepace/try'
-import type { LogEntry } from './LogEntry'
+import { Try, type TryResult } from '@asleepace/try'
 
 /**
  * Format a date to a HH:MM:SS timestamp.
@@ -12,18 +11,15 @@ export function formatTimestamp(date: Date): string {
   return [hours, mins, secs].join(':')
 }
 
-export interface JsonFileData {
-  fileName: string
-  sessionId: string
-  timestamp: Date
-  data: LogEntry[]
+export function safeEncodeJson(data: object) {
+  return Try.catch(() => JSON.stringify(data, null, 2) as string)
 }
 
-export function encodeJsonSafe(data: object) {
-  return Try.catch(() => JSON.stringify(data, null, 2))
+export function safeDecodeJson<T>(json: string) {
+  return Try.catch(() => JSON.parse(json) as T)
 }
 
-export function createJsonDataFile(props: { sessionId: string; logs: LogEntry[] }): JsonFileData {
+export function createJsonDataFile(props: { sessionId: string; logs: any[] }) {
   return {
     fileName: `dump-${props.sessionId}.json`,
     sessionId: props.sessionId,
@@ -32,10 +28,10 @@ export function createJsonDataFile(props: { sessionId: string; logs: LogEntry[] 
   }
 }
 
-export function downloadJsonFile(fileData: JsonFileData) {
-  const data = encodeJsonSafe(fileData)
+export function downloadJsonFile(fileData: { fileName: string, data: object | object[] }) {
+  const data = safeEncodeJson(fileData)
   if (!data.ok) return console.warn('Failed to encode json data:', data.error)
-  const name = fileData.fileName || `dump-${fileData.sessionId}.json`
+  const name = fileData.fileName
   const blob = new Blob([data.value], { type: 'application/json' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
@@ -53,7 +49,7 @@ export function downloadJsonFile(fileData: JsonFileData) {
  */
 export function useUtils() {
   return {
-    encodeJsonSafe,
+    safeEncodeJson,
     formatTimestamp,
     createJsonDataFile,
     downloadJsonFile,
