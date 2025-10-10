@@ -1,12 +1,18 @@
-import { useCurrentUrl } from '@/hooks/useCurrentUrl'
 import { cn } from '@/lib/utils'
-import { useMemo } from 'react'
+import {
+  codeToHtml,
+  type BundledLanguage,
+  type BundledTheme,
+  type CodeToHastOptions,
+} from 'shiki'
+import { useAsyncEffect } from './useAsyncEffect'
 
-export type CodeSnippetProps = {
-  lang?: string
-  theme?: string
-  children: string
+export type CodeSnippetProps = CodeToHastOptions<
+  BundledLanguage,
+  BundledTheme
+> & {
   className?: string
+  children: string
 }
 
 /**
@@ -14,26 +20,23 @@ export type CodeSnippetProps = {
  * @param props
  * @returns
  */
-export function CodeSnippet(props: CodeSnippetProps) {
-  const url = useCurrentUrl()
-  const href = useMemo(() => {
-    const encoded = new URL('/docs/snippet', url)
-    if (props.lang) {
-      encoded.searchParams.set('lang', props.lang)
-    }
-    if (props.theme) {
-      encoded.searchParams.set('theme', props.theme)
-    }
-
-    encoded.searchParams.set('code', props.children)
-    return encoded.href
-  }, [url])
+export function CodeSnippet({
+  children,
+  lang = 'typescript',
+}: CodeSnippetProps) {
+  const codeHtml = useAsyncEffect(async () => {
+    return await codeToHtml(children, {
+      lang: lang,
+      theme: 'github-dark',
+    })
+  }, [children, lang])
 
   return (
-    <iframe
-      className={cn('flex flex-col w-full min-h-44 ', props.className)}
-      sandbox="allow-same-origin allow-scripts"
-      src={href}
-    />
+    <div className={cn('flex flex-col w-full')}>
+      <div
+        className={cn('[&_*]:!bg-transparent p-3')}
+        dangerouslySetInnerHTML={{ __html: codeHtml ?? '' }}
+      ></div>
+    </div>
   )
 }

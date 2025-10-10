@@ -1,7 +1,6 @@
 ---
 import '@/styles/global.css'
 import { Code } from 'astro:components'
-import SiteHead from '@/components/astro/SiteHead.astro'
 import type { CodeLanguage } from 'astro'
 
 export const prerender = false
@@ -16,20 +15,37 @@ const code =
   Astro.url.searchParams.get('code') ?? 'console.log("hello, world!")'
 const lang = Astro.url.searchParams.get('lang') ?? 'javascript'
 const theme = Astro.url.searchParams.get('theme') ?? 'github-dark'
+const className = Astro.url.searchParams.get('className')
 ---
 
 <!doctype html>
 <html>
-  <head>
-    <SiteHead />
-  </head>
-  <body class:list={['min-h-full w-full m-0 bg-transparent']}>
+  <body class:list={['min-h-0 bg-transparent w-full m-0']}>
     <Code
-      class:list={'w-full min-h-screen bg-transparent text-md **:*:[&::-webkit-scrollbar]:bg-transparent **:*:[&::-webkit-scrollbar-track]:bg-transparent'}
+      id="code-snippet"
+      class:list={['w-full bg-transparent text-md', className]}
       code={code}
       lang={lang as CodeLanguage}
       theme={theme as any}
     />
+    <script>
+      const updateHeight = () => {
+        const height =
+          document.getElementById('code-snippet')?.clientHeight ?? 0
+        window.parent.postMessage({ type: 'resize', height }, '*')
+      }
+
+      window.addEventListener('message', (e) => {
+        console.log('[iframe] received message!')
+        updateHeight()
+      })
+
+      document.addEventListener('DOMContentLoaded', () => {
+        console.log('[iframe] conent loaded!')
+        updateHeight()
+        new ResizeObserver(updateHeight).observe(document.body)
+      })
+    </script>
   </body>
 </html>
 
@@ -37,6 +53,11 @@ const theme = Astro.url.searchParams.get('theme') ?? 'github-dark'
   * {
     scrollbar-width: thin;
     scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+  }
+
+  html,
+  body {
+    /* min-height: fit-content !important; */
   }
 
   ::-webkit-scrollbar {

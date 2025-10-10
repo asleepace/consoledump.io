@@ -21,7 +21,6 @@ export interface ClientStream {
   close: () => void
 }
 
-
 export function useEventStream(): ClientStream {
   const [isInitializing, setIsInitializing] = useState(false)
   const [isConnected, setIsConnected] = useState(true) // start as true
@@ -66,17 +65,16 @@ export function useEventStream(): ClientStream {
       withCredentials: true,
     })
 
-    /** 
+    /**
      * subscribe to custom "system" events send by backend.
      * @see ServerSideEventEncoder
      */
     eventSource.addEventListener('system', (ev) => {
-      console.warn('[event-stream] system:', ev.data)
+      console.log('[console-dump] system:', ev.data)
       setEvents((prev) => [...prev, ev])
     })
 
     eventSource.onopen = () => {
-      console.log('[event-stream] connected!')
       setIsConnected(true)
     }
 
@@ -87,14 +85,13 @@ export function useEventStream(): ClientStream {
       // about the stream and client.
       if (currentId++ === 0) {
         const metaEvent = new MessageEvent('client', {
-          data: JSON.parse(ev.data)
+          data: JSON.parse(ev.data),
         })
         setEvents((prev) => [metaEvent])
         setMeta(metaEvent)
       } else {
         setEvents((prev) => [...prev, ev])
       }
-
     }
 
     eventSource.onerror = (ev) => {

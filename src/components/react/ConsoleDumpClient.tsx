@@ -40,9 +40,8 @@ export const ConsoleDumpClient = withAppProvider(
     const scrollContainerRef = useRef<HTMLDivElement>(null)
     const utils = useUtils()
 
-    console.log('[initial-url]', props.initialUrl)
-
     useEffect(() => {
+      console.log('[initial-url]', props.initialUrl.href)
       // define dump on the client:
       console.dump = dump
       window.dump = dump

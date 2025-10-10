@@ -48,7 +48,7 @@ const PanelSection = (props: React.PropsWithChildren<PanelProps>) => {
         </h3>
         {props.headerRight}
       </div>
-      <div>{props.children}</div>
+      <div className="flex flex-col shrink">{props.children}</div>
     </div>
   )
 }
@@ -89,22 +89,13 @@ export const InfoPanel = ({ className, url }: InfoPanelProps) => {
       {/* Side panel */}
       <div
         className={cn(
-          `fixed right-0 font-mono top-0 h-full w-144 bg-zinc-900 text-gray-200 z-50 transform transition-transform duration-300 ease-in-out`,
+          `fixed right-0 font-mono top-0 h-full max-h-screen w-full md:w-144 bg-zinc-900 text-gray-200 z-50 transform transition-transform duration-300 ease-in-out`,
           isInfoPanelOpen ? 'translate-x-0' : 'translate-x-full',
           className
         )}
       >
-        {/* Header */}
-        {/* <div className="flex items-center justify-between p-4">
-          <div className="flex items-center justify-baseline gap-4 mb-3">
-            <Info size={24} className="text-blue-400" />
-            <h3 className="text-lg font-mono font-semibold">Info</h3>
-          </div>
-
-        </div> */}
-
         {/* Content */}
-        <div className="p-4 flex flex-col overflow-y-auto gap-y-8 h-[calc(100%-60px)]">
+        <div className="p-4 *:text-sm *:text-zinc-400 flex flex-col overflow-y-auto gap-y-8 min-h-full]">
           {/* Info Section */}
 
           <PanelSection
@@ -132,10 +123,19 @@ export const InfoPanel = ({ className, url }: InfoPanelProps) => {
             headerTitle={'Code Snippet'}
             icon={<Code size={24} className="text-green-400" />}
           >
-            <div className="bg-zinc-800 rounded text-xs font-mono overflow-x-auto">
-              <CodeSnippet className="p-3 *:**:!bg-transparent">
-                {getCodeSnippet(url.href)}
-              </CodeSnippet>
+            <div className="rounded flex shrink min-h-0 flex-col gap-y-2 text-xs font-mono overflow-x-auto">
+              <p>{'Example usage (JS/TS):'}</p>
+              <div className="bg-zinc-800">
+                <CodeSnippet className="p-3 flex shrink">
+                  {getCodeSnippet(url.href)}
+                </CodeSnippet>
+              </div>
+              <p>{'Example usage (Bash):'}</p>
+              <div className="bg-zinc-800">
+                <CodeSnippet className="p-3 flex shrink" lang={'bash'}>
+                  {`curl -d "hello world" ${url.href}`}
+                </CodeSnippet>
+              </div>
             </div>
           </PanelSection>
 
