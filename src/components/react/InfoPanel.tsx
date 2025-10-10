@@ -1,12 +1,24 @@
 import { X, Code, FileText, Info, ChevronLeft } from 'lucide-react'
 import { useCurrentUrl } from '@/hooks/useCurrentUrl'
 import { useAppContext } from '@/hooks/useAppContext'
+import { CodeSnippet } from './CodeSnippet'
+import { cn } from '@/lib/utils'
 
-export const InfoPanel = () => {
+export interface InfoPanelProps {
+  className?: string
+  url: URL
+}
+
+const getCodeSnippet = (href: string) =>
+  `
+const dump = (...args) => fetch('${href}', {
+  method: 'POST',
+  body: JSON.stringify(args)
+})
+`.trim()
+
+export const InfoPanel = ({ className, url }: InfoPanelProps) => {
   const { isInfoPanelOpen, setIsInfoPanelOpen } = useAppContext()
-
-  const url = useCurrentUrl()
-
   const handleClose = () => setIsInfoPanelOpen(false)
   const handleOpen = () => setIsInfoPanelOpen(true)
 
@@ -32,13 +44,15 @@ export const InfoPanel = () => {
 
       {/* Side panel */}
       <div
-        className={`fixed right-0 font-mono top-0 h-full w-144 bg-zinc-900 text-gray-200 z-50 transform transition-transform duration-300 ease-in-out ${
-          isInfoPanelOpen ? 'translate-x-0' : 'translate-x-full'
-        }`}
+        className={cn(
+          `fixed right-0 font-mono top-0 h-full w-144 bg-zinc-900 text-gray-200 z-50 transform transition-transform duration-300 ease-in-out`,
+          isInfoPanelOpen ? 'translate-x-0' : 'translate-x-full',
+          className
+        )}
       >
         {/* Header */}
         <div className="flex items-center justify-between p-4">
-          <div className="flex items-center gap-4 mb-3">
+          <div className="flex items-center justify-baseline gap-4 mb-3">
             <Info size={24} className="text-blue-400" />
             <h3 className="text-lg font-mono font-semibold">
               Session Information
@@ -55,12 +69,14 @@ export const InfoPanel = () => {
         {/* Content */}
         <div className="p-4 overflow-y-auto h-[calc(100%-60px)]">
           {/* Info Section */}
-          <p className="text-sm text-zinc-400">
-            Connected to stream at{' '}
-            <a href={url.href} className="text-orange-400">
-              http://127.0.0.1:8082/adc9ee
-            </a>
-          </p>
+          <div className="flex flex-col text-sm gap-y-2 text-zinc-400">
+            <p>Connected to stream at:</p>
+            <div className="bg-zinc-800 rounded-sm p-2">
+              <a href={url.href} className="text-orange-400 ">
+                {url.href}
+              </a>
+            </div>
+          </div>
 
           {/* Code Snippet Section */}
           <div className="my-6">
@@ -68,37 +84,10 @@ export const InfoPanel = () => {
               <Code size={18} className="text-green-400" />
               <h3 className="font-semibold">Code Snippets</h3>
             </div>
-            <div className="bg-zinc-800 p-3 rounded text-xs font-mono overflow-x-auto">
-              <span className="text-purple-400">const</span>{' '}
-              <span className="text-blue-300">dump</span>{' '}
-              <span className="text-gray-300">=</span>{' '}
-              <span className="text-gray-300">(</span>
-              <span className="text-orange-300">...args</span>
-              <span className="text-gray-300">)</span>{' '}
-              <span className="text-purple-400">=&gt;</span>{' '}
-              <span className="text-blue-300">fetch</span>
-              <span className="text-gray-300">(</span>
-              <span className="text-yellow-300">
-                'http://127.0.0.1:8082/adc9ee'
-              </span>
-              <span className="text-gray-300">,</span>{' '}
-              <span className="text-gray-300">{'{'}</span> <br />
-              <p className="pl-4">
-                <span className="text-blue-300">method</span>
-                <span className="text-gray-300">:</span>{' '}
-                <span className="text-yellow-300">'POST'</span>
-                <span className="text-gray-300">,</span> <br />
-                <span className="text-blue-300">body</span>
-                <span className="text-gray-300">:</span>{' '}
-                <span className="text-blue-300">JSON</span>
-                <span className="text-gray-300">.</span>
-                <span className="text-blue-300">stringify</span>
-                <span className="text-gray-300">(</span>
-                <span className="text-orange-300">args</span>
-                <span className="text-gray-300">)</span>
-              </p>{' '}
-              <span className="text-gray-300">{'}'}</span>
-              <span className="text-gray-300">)</span>
+            <div className="bg-zinc-800 rounded text-xs font-mono overflow-x-auto">
+              <CodeSnippet className="p-3 *:**:!bg-transparent">
+                {getCodeSnippet(url.href)}
+              </CodeSnippet>
             </div>
           </div>
 

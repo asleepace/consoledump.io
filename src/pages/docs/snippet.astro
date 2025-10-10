@@ -1,0 +1,42 @@
+---
+import '@/styles/global.css'
+import { Code } from 'astro:components'
+import SiteHead from '@/components/astro/SiteHead.astro'
+import type { CodeLanguage } from 'astro'
+
+export const prerender = false
+
+/**
+ * GET /docs/snippet?lang=typescript&theme=github-dark&code="console.log('hello, world!');"
+ * 
+ * Displays a code snippet.
+ */
+
+const code =
+  Astro.url.searchParams.get('code') ?? 'console.log("hello, world!")'
+const lang = Astro.url.searchParams.get('lang') ?? 'javascript'
+const theme = Astro.url.searchParams.get('theme') ?? 'github-dark'
+
+---
+
+<!doctype html>
+<html>
+  <head>
+    <SiteHead />
+  </head>
+  <body class:list={['min-h-full w-full m-0 bg-transparent']}>
+    <Code
+      class:list={'w-full min-h-screen bg-transparent text-md'}
+      code={code}
+      lang={lang as CodeLanguage}
+      theme={theme as any}
+    />
+  </body>
+</html>
+
+<style>
+  pre {
+    background-color: transparent !important;
+    font-size: 14px;
+  }
+</style>

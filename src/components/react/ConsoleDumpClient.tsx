@@ -7,10 +7,10 @@ import type { ActionBarEvent } from './ActionBar'
 import { Try } from '@asleepace/try'
 import { useUtils } from '@/hooks/useUtils'
 import { MessageItem } from './MessageItem'
-import { useCurrentUrl } from '@/hooks/useCurrentUrl'
 import { InfoPanel } from './InfoPanel'
 
 export type ConsoleDumpClientProps = {
+  initialUrl: URL
   className?: string
 }
 
@@ -40,9 +40,7 @@ export const ConsoleDumpClient = withAppProvider(
     const scrollContainerRef = useRef<HTMLDivElement>(null)
     const utils = useUtils()
 
-    const [isInfoPanelOpen, setIsInfoPanelOpen] = useState(true)
-
-    const currentUrl = useCurrentUrl()
+    console.log('[initial-url]', props.initialUrl)
 
     useEffect(() => {
       // define dump on the client:
@@ -70,6 +68,10 @@ export const ConsoleDumpClient = withAppProvider(
         top: scrollContainerRef.current.scrollHeight,
         behavior: 'instant',
       })
+    }
+
+    const toggleInfoPanel = () => {
+      ctx.setIsInfoPanelOpen((prev) => !prev)
     }
 
     const autoScroll = useCallback(() => {
@@ -128,6 +130,7 @@ export const ConsoleDumpClient = withAppProvider(
         {/* --- site navigation --- */}
         <AppNavigationBar
           isConnected={ctx.stream?.isConnected}
+          onOpenInfoPanel={toggleInfoPanel}
           downloadLogs={downloadLogs}
           scrollToBottom={scrollToBottom}
           clearLogs={clearLogs}
@@ -136,7 +139,7 @@ export const ConsoleDumpClient = withAppProvider(
 
         {/* --- main context --- */}
         <main className="w-full max-w-full flex-1 flex flex-col overflow-hidden">
-          <InfoPanel />
+          <InfoPanel url={props.initialUrl} />
 
           <div ref={scrollContainerRef} className="flex-1 overflow-y-auto pb-4">
             {ctx.stream?.events.map((message, index) => {

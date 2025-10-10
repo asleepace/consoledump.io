@@ -61,6 +61,7 @@ export function OnlineIndicator({ isConnected }: { isConnected: boolean }) {
 
 export type AppNavigationBarProps = {
   onSubmitAction: (ev: ActionBarEvent) => void
+  onOpenInfoPanel: () => void
   scrollToBottom: () => void
   downloadLogs: () => void
   clearLogs: () => void
@@ -88,7 +89,7 @@ export function AppNavigationBar(props: AppNavigationBarProps) {
           <IconButton
             label="Scroll to bottom"
             className="text-blue-500 bg-blue-500/20 hover:bg-blue-500/50"
-            onClick={props.scrollToBottom}
+            onClick={props.onOpenInfoPanel}
           >
             <Info size={16} />
           </IconButton>

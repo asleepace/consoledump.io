@@ -1,6 +1,5 @@
-
 /**
- * Callback triggered when the store changes. 
+ * Callback triggered when the store changes.
  */
 export type CurrentUrlChangedCallback = (href: string) => void | Promise<void>
 
@@ -16,6 +15,10 @@ let sharedCurrentUrl = new URL(import.meta.env.SITE)
  * @link `src/hooks/useCurrentUrl`
  */
 export const urlStore = {
+  setUrl(url: URL) {
+    sharedCurrentUrl = url
+  },
+
   setCurrentHref(sessionId: SessionId) {
     if (!sessionId) return
     const url = new URL(`/${sessionId}`, import.meta.env.SITE)

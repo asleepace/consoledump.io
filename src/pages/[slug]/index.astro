@@ -2,6 +2,9 @@
 import { ConsoleDumpClient } from '@/components/react/ConsoleDumpClient'
 import Layout from '@/layouts/Layout.astro'
 import { sessions } from '@/lib/server/'
+import { urlStore } from '@/lib/shared/url-store'
+
+urlStore.setUrl(Astro.url)
 
 // NOTE: do not server-side render!
 export const prerender = false
@@ -28,12 +31,13 @@ const stream = await sessions.getOrCreate(streamId)
 
 // handle posting data to stream
 if (method === 'POST') {
-  if (!Astro.request.body) return Response.json({ error: 'Missing POST body!' }, { status: 500 })
+  if (!Astro.request.body)
+    return Response.json({ error: 'Missing POST body!' }, { status: 500 })
   stream.publish(Astro.request.body)
   return Response.json({ ok: true })
 }
 ---
 
 <Layout>
-  <ConsoleDumpClient client:load />
+  <ConsoleDumpClient initialUrl={Astro.url} client:load />
 </Layout>
