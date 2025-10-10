@@ -1,8 +1,6 @@
 import { defineMiddleware } from 'astro:middleware'
 import { ApiError } from '@/lib/shared/api-error'
 import { getSessionIdForRequest } from '@/lib/shared/ids'
-import { fileUtils } from '@/lib/server/file-utils'
-import { runGarbageCollection } from '@/lib/server/garbage-collector'
 
 /**
  *  ## Middleware
@@ -15,9 +13,6 @@ export const onRequest = defineMiddleware(async (context, next) => {
     /** extract sessionId from incoming url, path or headers. */
     const sessionId = getSessionIdForRequest(context.request)
     context.locals.sessionId = sessionId
-
-    await runGarbageCollection()
-
     return await next()
   } catch (e) {
     return ApiError.from(e).toResponse()

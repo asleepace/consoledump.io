@@ -4,6 +4,7 @@ import { ServerSideEventEncoder } from './sse-encoder'
 import { BufferedFile } from './buffered-file'
 import { urlStore } from '@/lib/shared/url-store'
 import { ids } from '@/lib/shared/ids'
+import { gc } from './garbage-collector'
 
 // --- constants ---
 
@@ -231,15 +232,16 @@ export async function createFileBasedStream(options: { streamId: string }) {
       await bufferedFile.close()
       activeStreams.forEach((sub) => sub.close())
       activeStreams.clear()
+      await gc.runGarbageCollection()
     },
     /** closes all active clients and then deletes file (permanent). */
     async delete() {
       this.close()
-      return bufferedFile.deleteFile()
+      await bufferedFile.deleteFile()
+      await gc.runGarbageCollection({ force: true })
     },
     /** returns a new text/event-stream subscribed to the session. */
     async subscribe(): Promise<Response> {
-      console.log('[subscribe] called!')
       const streamBody = await createSubscription()
       return new Response(streamBody, {
         headers: {

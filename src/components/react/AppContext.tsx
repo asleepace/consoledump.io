@@ -98,8 +98,6 @@ export function AppContextProvider(props: PropsWithChildren<{ sessionId?: string
   const client = useClient()
   const isDark = theme.mode === 'dark'
 
-  console.log('[AppContext] sessionId:', client.sessionId)
-
   // NOTE: Parse incoming messages here...
   const stream = useEventStream()
 
@@ -120,7 +118,6 @@ export function AppContextProvider(props: PropsWithChildren<{ sessionId?: string
         setIsConnected,
         setExpandedLogs,
         toggleExpand: (id: string) => {
-          console.log('[AppContext] toggle expand:', id)
           const next = new Set(expandedLogs)
           if (next.has(id)) {
             next.delete(id)

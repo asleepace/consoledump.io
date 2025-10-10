@@ -18,7 +18,7 @@ export const gc = {
   MAX_DISK_SPACE_GB: 2,
 
   get hasMemoryWarning() {
-    return this.diskUsagePercentage >= 0.8
+    return this.shouldRunCleanup || this.diskUsagePercentage >= 0.8
   },
 
   get maxFileSizeBytes() {
@@ -41,7 +41,7 @@ export const gc = {
     return (Date.now() - this.lastRanAt) / 60_000
   },
 
-  shouldRunCleanup: false,
+  shouldRunCleanup: true, // cleanup on start
   lastRanAt: Date.now(),
   totalBytesOnDisk: 0,
   totalFiles: 0,
@@ -86,11 +86,13 @@ async function bulkDeletion(files: Bun.BunFile[]) {
  *
  * @note add defensive mode against spam.
  */
-export async function runGarbageCollection() {
-  // run only every ~10 mins if no memory warning
-  if (gc.lastRanInMinutes <= 10 && !gc.hasMemoryWarning) return
+export async function runGarbageCollection({ force = false } = {}) {
+  // run only every ~10 mins if no memory warning (or not flagged)
+  // or called with `force: true`
+  if (!force && gc.lastRanInMinutes <= 10 && !gc.hasMemoryWarning) return
 
   console.log('[gc] running...')
+  gc.shouldRunCleanup = false
   gc.lastRanAt = Date.now()
   gc.totalBytesOnDisk = 0
   gc.totalFiles = 0
