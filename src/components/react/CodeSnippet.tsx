@@ -31,7 +31,7 @@ export function CodeSnippet(props: CodeSnippetProps) {
 
   return (
     <iframe
-      className={cn('flex flex-col w-full min-h-44', props.className)}
+      className={cn('flex flex-col w-full min-h-44 ', props.className)}
       sandbox="allow-same-origin allow-scripts"
       src={href}
     />

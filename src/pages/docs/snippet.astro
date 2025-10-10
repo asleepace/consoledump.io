@@ -8,7 +8,7 @@ export const prerender = false
 
 /**
  * GET /docs/snippet?lang=typescript&theme=github-dark&code="console.log('hello, world!');"
- * 
+ *
  * Displays a code snippet.
  */
 
@@ -16,7 +16,6 @@ const code =
   Astro.url.searchParams.get('code') ?? 'console.log("hello, world!")'
 const lang = Astro.url.searchParams.get('lang') ?? 'javascript'
 const theme = Astro.url.searchParams.get('theme') ?? 'github-dark'
-
 ---
 
 <!doctype html>
@@ -26,7 +25,7 @@ const theme = Astro.url.searchParams.get('theme') ?? 'github-dark'
   </head>
   <body class:list={['min-h-full w-full m-0 bg-transparent']}>
     <Code
-      class:list={'w-full min-h-screen bg-transparent text-md'}
+      class:list={'w-full min-h-screen bg-transparent text-md **:*:[&::-webkit-scrollbar]:bg-transparent **:*:[&::-webkit-scrollbar-track]:bg-transparent'}
       code={code}
       lang={lang as CodeLanguage}
       theme={theme as any}
@@ -34,7 +33,31 @@ const theme = Astro.url.searchParams.get('theme') ?? 'github-dark'
   </body>
 </html>
 
-<style>
+<style is:global>
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+  }
+
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+  }
+
   pre {
     background-color: transparent !important;
     font-size: 14px;

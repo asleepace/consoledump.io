@@ -1,8 +1,20 @@
-import { X, Code, FileText, Info, ChevronLeft } from 'lucide-react'
+import {
+  X,
+  Code,
+  FileText,
+  Info,
+  ChevronLeft,
+  Globe,
+  ChartArea,
+  ChartNoAxesColumn,
+} from 'lucide-react'
 import { useCurrentUrl } from '@/hooks/useCurrentUrl'
 import { useAppContext } from '@/hooks/useAppContext'
 import { CodeSnippet } from './CodeSnippet'
 import { cn } from '@/lib/utils'
+import { useMemo, type JSX } from 'react'
+import { ids } from '@/lib/shared/ids'
+import { safe } from '@/lib/shared/safe-utils'
 
 export interface InfoPanelProps {
   className?: string
@@ -11,16 +23,48 @@ export interface InfoPanelProps {
 
 const getCodeSnippet = (href: string) =>
   `
-const dump = (...args) => fetch('${href}', {
-  method: 'POST',
-  body: JSON.stringify(args)
-})
+const dump = (...args) => {
+  return fetch('${href}', {
+    method: 'POST',
+    body: JSON.stringify(args)
+  })
+}
 `.trim()
 
+type PanelProps = {
+  className?: string
+  icon?: JSX.Element
+  headerTitle: string
+  headerRight?: JSX.Element
+}
+
+const PanelSection = (props: React.PropsWithChildren<PanelProps>) => {
+  return (
+    <div>
+      <div className={cn('flex items-center gap-2 mb-3', props.className)}>
+        {props.icon}
+        <h3 className="text-lg text-zinc-200 font-semibold flex-1">
+          {props.headerTitle}
+        </h3>
+        {props.headerRight}
+      </div>
+      <div>{props.children}</div>
+    </div>
+  )
+}
+
 export const InfoPanel = ({ className, url }: InfoPanelProps) => {
-  const { isInfoPanelOpen, setIsInfoPanelOpen } = useAppContext()
+  const { isInfoPanelOpen, setIsInfoPanelOpen, ...app } = useAppContext()
   const handleClose = () => setIsInfoPanelOpen(false)
   const handleOpen = () => setIsInfoPanelOpen(true)
+
+  const isConnected = useMemo(() => {
+    return app.stream?.isConnected ?? false
+  }, [app])
+
+  const { sessionId, clientId } = useMemo(() => {
+    return safe.getIdsFromUrl(url)
+  }, [url])
 
   return (
     <>
@@ -51,52 +95,51 @@ export const InfoPanel = ({ className, url }: InfoPanelProps) => {
         )}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-4">
+        {/* <div className="flex items-center justify-between p-4">
           <div className="flex items-center justify-baseline gap-4 mb-3">
             <Info size={24} className="text-blue-400" />
-            <h3 className="text-lg font-mono font-semibold">
-              Session Information
-            </h3>
+            <h3 className="text-lg font-mono font-semibold">Info</h3>
           </div>
-          <button
-            onClick={handleClose}
-            className="text-zinc-400 hover:text-gray-200 transition-colors"
-          >
-            <X size={20} />
-          </button>
-        </div>
+
+        </div> */}
 
         {/* Content */}
-        <div className="p-4 overflow-y-auto h-[calc(100%-60px)]">
+        <div className="p-4 flex flex-col overflow-y-auto gap-y-8 h-[calc(100%-60px)]">
           {/* Info Section */}
-          <div className="flex flex-col text-sm gap-y-2 text-zinc-400">
-            <p>Connected to stream at:</p>
+
+          <PanelSection
+            headerTitle={`Session #${sessionId}`}
+            icon={<Globe size={24} className="text-orange-400" />}
+            headerRight={
+              <button
+                onClick={handleClose}
+                className="text-zinc-400 bg-zinc-800 p-2 rounded-full hover:text-gray-200 transition-colors"
+              >
+                <X size={20} />
+              </button>
+            }
+          >
+            <p className="text-sm p-1 text-zinc-500">Connected to stream at:</p>
             <div className="bg-zinc-800 rounded-sm p-2">
               <a href={url.href} className="text-orange-400 ">
                 {url.href}
               </a>
             </div>
-          </div>
+          </PanelSection>
 
           {/* Code Snippet Section */}
-          <div className="my-6">
-            <div className="flex items-center gap-2 mb-3">
-              <Code size={18} className="text-green-400" />
-              <h3 className="font-semibold">Code Snippets</h3>
-            </div>
+          <PanelSection
+            headerTitle={'Code Snippet'}
+            icon={<Code size={24} className="text-green-400" />}
+          >
             <div className="bg-zinc-800 rounded text-xs font-mono overflow-x-auto">
               <CodeSnippet className="p-3 *:**:!bg-transparent">
                 {getCodeSnippet(url.href)}
               </CodeSnippet>
             </div>
-          </div>
+          </PanelSection>
 
-          {/* Commands Section */}
-          <div className="mb-6">
-            <div className="flex items-center gap-2 mb-3">
-              <FileText size={18} className="text-orange-400" />
-              <h3 className="font-semibold">Example Usage</h3>
-            </div>
+          <PanelSection headerTitle="Example Usage">
             <div className="space-y-2">
               {[
                 'dump("Hello, world!")',
@@ -111,22 +154,46 @@ export const InfoPanel = ({ className, url }: InfoPanelProps) => {
                 </button>
               ))}
             </div>
-          </div>
+          </PanelSection>
 
           {/* Stats Section */}
-          <div>
-            <h3 className="font-semibold mb-3">Stats</h3>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-zinc-400">Messages:</span>
-                <span className="text-zinc-200">34</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-zinc-400">Uptime:</span>
-                <span className="text-zinc-200">2h 15m</span>
+          <PanelSection
+            headerTitle="Statistics"
+            icon={<ChartNoAxesColumn size={24} />}
+          >
+            <div className="px-0.5">
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-zinc-400">Session ID:</span>
+                  <span className="text-blue-300">{sessionId}</span>
+                </div>
+                {clientId ? (
+                  <div className="flex justify-between">
+                    <span className="text-zinc-400">Client ID:</span>
+                    <span className="text-blue-300">{clientId}</span>
+                  </div>
+                ) : null}
+                <div className="flex justify-between">
+                  <span className="text-zinc-400">Status:</span>
+                  <span
+                    className={isConnected ? 'text-green-400' : 'text-red-400'}
+                  >
+                    {isConnected ? 'Online' : 'Offline'}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-zinc-400">Messages:</span>
+                  <span className="text-zinc-200">
+                    {app.stream?.events.length ?? 0}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-zinc-400">Uptime:</span>
+                  <span className="text-zinc-200">2h 15m</span>
+                </div>
               </div>
             </div>
-          </div>
+          </PanelSection>
         </div>
       </div>
     </>
