@@ -1,14 +1,6 @@
-import React, { createContext, useEffect, useState, type PropsWithChildren } from 'react'
-import { use } from 'react'
-import { useEventStream, type ClientStream } from '@/components/react/useEventStream'
-import { useClient } from './useClient'
-
-/**
- * Hook which returns the current app context.
- */
-export function useAppContext() {
-  return use(AppContext)
-}
+import React, { createContext, useState, type PropsWithChildren } from 'react'
+import { useEventStream, type ClientStream } from '@/hooks/useEventStream'
+import { useClient } from '@/hooks/useClient'
 
 export type AppTheme = {
   mode: 'light' | 'dark'
@@ -85,13 +77,13 @@ export const AppContext = createContext<AppCtx>({
   expandedLogs: new Set(),
   sessionId: undefined,
   stream: undefined,
-  setTheme() {},
-  setCopiedId() {},
-  setSearchTerm() {},
-  setIsConnected() {},
-  setExpandedLogs() {},
-  toggleExpand() {},
-  copyToClipboard() {},
+  setTheme() { },
+  setCopiedId() { },
+  setSearchTerm() { },
+  setIsConnected() { },
+  setExpandedLogs() { },
+  toggleExpand() { },
+  copyToClipboard() { },
 })
 
 // --- app context provider ---
@@ -109,9 +101,7 @@ export function AppContextProvider(props: PropsWithChildren<{ sessionId?: string
   console.log('[AppContext] sessionId:', client.sessionId)
 
   // NOTE: Parse incoming messages here...
-  const stream = useEventStream({
-    logEvents: true,
-  })
+  const stream = useEventStream()
 
   return (
     <AppContext.Provider

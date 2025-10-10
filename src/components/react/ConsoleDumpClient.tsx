@@ -1,13 +1,12 @@
-import { withAppProvider, type AppCtx } from './AppContext'
+import { withAppProvider } from './AppContext'
 import { AppNavigationBar } from './AppNavigationBar'
-import { useAppContext } from './AppContext'
+import { useAppContext } from '@/hooks/useAppContext'
 import { cn } from '@/lib/utils'
 import { useCallback, useEffect, useRef } from 'react'
 import type { ActionBarEvent } from './ActionBar'
 import { Try } from '@asleepace/try'
-import { useUtils } from './useUtils'
+import { useUtils } from '@/hooks/useUtils'
 import { MessageItem } from './MessageItem'
-
 import { useCurrentUrl } from '@/hooks/useCurrentUrl'
 
 export type ConsoleDumpClientProps = {

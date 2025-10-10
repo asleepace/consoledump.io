@@ -1,8 +1,8 @@
-import { useAppContext } from './AppContext'
+import { useAppContext } from '@/hooks/useAppContext'
 import { cn } from '@/lib/utils'
 import { Check, ChevronDown, ChevronRight, Copy } from 'lucide-react'
 import { memo } from 'react'
-import { formatTimestamp } from './useUtils'
+import { formatTimestamp } from '@/hooks/useUtils'
 import { Try } from '@asleepace/try'
 
 /** Timestamp */

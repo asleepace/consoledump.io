@@ -1,8 +1,8 @@
-import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
-import { Search, ChevronDown, SendHorizonal, Code, Play, ChevronRight } from 'lucide-react'
+import { useState, useRef, useEffect, useCallback } from 'react'
+import { Search, SendHorizonal, Code, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { AppBackdropLayer } from './AppBackdropLayer'
-import { useKeydown } from '@/components/react/useKeydown'
+import { useKeydown } from '@/hooks/useKeydown'
 
 export type ModeType = 'search' | 'message' | 'execute'
 
