@@ -1,5 +1,6 @@
 import { ApiError } from '../shared/api-error'
 import { createFileBasedStream } from './stream'
+import { gc } from '@/lib/server/garbage-collector'
 
 type DumpSession = Awaited<ReturnType<typeof createFileBasedStream>>
 
@@ -8,6 +9,9 @@ type DumpSession = Awaited<ReturnType<typeof createFileBasedStream>>
  *
  * Store which holds all active console dump sessions and handles
  * creating, reading, updating and deleting.
+ * 
+ *  - Runs garbage collection when creating a stream
+ *  - Runs garbase collection when deleting a stream
  *
  * @note this is the main entrypoint.
  */
@@ -29,6 +33,8 @@ export class ConsoleDumpSessions {
   }
 
   public async createSession(id: string) {
+    await gc.runGarbageCollection() // run garbage collection
+
     if (this.activeSessions.size >= this.options.maxSessions) {
       throw new ApiError('Too many sessions!', {
         total: this.activeSessions.size,
@@ -43,6 +49,7 @@ export class ConsoleDumpSessions {
     const session = this.activeSessions.get(id)
     if (!session) return
     this.activeSessions.delete(id)
+    await gc.runGarbageCollection()
     return session.delete()
   }
 

@@ -9,9 +9,7 @@ export const siteConfig = {
   title: 'Consoledump',
   description: 'Easily debug in low visibility environments remotely for free with consoledump.io!',
   coverImage: 'https://consoledump.io/images/cover.png',
-
   keywords: 'remote, debug, debugging, logging, free, software, programming, engineering, asleepace',
-
   themeColor: '#171717',
   author: '@asleepace',
   robots: 'index, follow',
@@ -25,6 +23,14 @@ export const siteConfig = {
   },
   manifest: '/site.webmanifest',
   type: 'website',
+  /**
+   * Specific configuration for log files.
+   */
+  logFiles: {
+    outputDir: 'public/dump',
+    maxAgeHours: 24,
+    maxSizeInMb: 5,
+  },
 } as const
 
 /**

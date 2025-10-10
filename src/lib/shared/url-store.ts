@@ -19,7 +19,6 @@ export const urlStore = {
   setCurrentHref(sessionId: SessionId) {
     if (!sessionId) return
     const url = new URL(`/${sessionId}`, import.meta.env.SITE)
-    console.log('[url-store] href (server):', url.href)
     sharedCurrentUrl = url
   },
   /**
