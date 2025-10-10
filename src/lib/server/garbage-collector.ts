@@ -17,6 +17,10 @@ export const gc = {
   MAX_FILE_SIZE_MB: 5,
   MAX_DISK_SPACE_GB: 2,
 
+  get hasMemoryWarning() {
+    return this.diskUsagePercentage >= 0.8
+  },
+
   get maxFileSizeBytes() {
     return this.MAX_FILE_SIZE_MB * MB
   },
@@ -33,7 +37,12 @@ export const gc = {
     return round(this.totalBytesOnDisk / this.maxDiskSpaceBytes)
   },
 
+  get lastRanInMinutes(): number {
+    return (Date.now() - this.lastRanAt) / 60_000
+  },
+
   shouldRunCleanup: false,
+  lastRanAt: Date.now(),
   totalBytesOnDisk: 0,
   totalFiles: 0,
 
@@ -78,7 +87,11 @@ async function bulkDeletion(files: Bun.BunFile[]) {
  * @note add defensive mode against spam.
  */
 export async function runGarbageCollection() {
+  // run only every ~10 mins if no memory warning
+  if (gc.lastRanInMinutes <= 10 && !gc.hasMemoryWarning) return
+
   console.log('[gc] running...')
+  gc.lastRanAt = Date.now()
   gc.totalBytesOnDisk = 0
   gc.totalFiles = 0
 
@@ -90,9 +103,7 @@ export async function runGarbageCollection() {
   })
 
   // do nothing if we are under 80% usage
-  if (gc.diskUsagePercentage <= 0.8) {
-    return
-  }
+  if (!gc.hasMemoryWarning) return
 
   console.log('[gc] triggered:', {
     totalBytes: gc.totalBytesOnDisk,
@@ -105,12 +116,12 @@ export async function runGarbageCollection() {
     logFiles.filter((log) => Date.now() - log.lastModified >= gc.maxAgeInMs)
   )
 
-  if (gc.diskUsagePercentage <= 0.8) return
+  if (!gc.hasMemoryWarning) return
 
   // otherwise start deleting bulk files
   await bulkDeletion(logFiles.filter((log) => log.size >= gc.maxFileSizeBytes))
 
-  if (gc.diskUsagePercentage <= 0.8) return
+  if (!gc.hasMemoryWarning) return
 
   // if we are above memory (> 100%) usage clear everything!
   await bulkDeletion(logFiles)
