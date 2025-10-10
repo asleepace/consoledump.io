@@ -52,6 +52,7 @@ export type AppCtx = {
   searchTerm: string | undefined
   sessionId: string | undefined
   isConnected: boolean
+  isInfoPanelOpen: boolean
   isDark: boolean
   expandedLogs: Set<string>
   stream: ClientStream | undefined
@@ -60,6 +61,7 @@ export type AppCtx = {
   setSearchTerm: SetState<string | undefined>
   setIsConnected: SetState<boolean>
   setExpandedLogs: SetState<Set<string>>
+  setIsInfoPanelOpen: SetState<boolean>
 
   /** helpers */
   toggleExpand(id: string): void
@@ -75,25 +77,31 @@ export const AppContext = createContext<AppCtx>({
   isConnected: false,
   isDark: false,
   expandedLogs: new Set(),
+  isInfoPanelOpen: true,
+
   sessionId: undefined,
   stream: undefined,
-  setTheme() { },
-  setCopiedId() { },
-  setSearchTerm() { },
-  setIsConnected() { },
-  setExpandedLogs() { },
-  toggleExpand() { },
-  copyToClipboard() { },
+  setTheme() {},
+  setCopiedId() {},
+  setSearchTerm() {},
+  setIsConnected() {},
+  setExpandedLogs() {},
+  toggleExpand() {},
+  copyToClipboard() {},
+  setIsInfoPanelOpen() {},
 })
 
 // --- app context provider ---
 
-export function AppContextProvider(props: PropsWithChildren<{ sessionId?: string }>) {
+export function AppContextProvider(
+  props: PropsWithChildren<{ sessionId?: string }>
+) {
   const [theme, setTheme] = useState(AppThemes.dark)
   const [copiedId, setCopiedId] = useState<string | undefined>()
   const [searchTerm, setSearchTerm] = useState<string | undefined>()
   const [isConnected, setIsConnected] = useState<boolean>(false)
   const [expandedLogs, setExpandedLogs] = useState<Set<string>>(new Set())
+  const [isInfoPanelOpen, setIsInfoPanelOpen] = useState(true)
 
   const client = useClient()
   const isDark = theme.mode === 'dark'
@@ -111,8 +119,10 @@ export function AppContextProvider(props: PropsWithChildren<{ sessionId?: string
         isConnected,
         sessionId: client.sessionId,
         isDark,
+        isInfoPanelOpen,
         expandedLogs,
         setTheme: (mode) => setTheme(AppThemes[mode]),
+        setIsInfoPanelOpen,
         setCopiedId,
         setSearchTerm,
         setIsConnected,
@@ -140,7 +150,9 @@ export function AppContextProvider(props: PropsWithChildren<{ sessionId?: string
 
 // --- hoc wrapper ---
 
-export function withAppProvider<T extends {}>(Elem: (props: T) => React.ReactElement<T>) {
+export function withAppProvider<T extends {}>(
+  Elem: (props: T) => React.ReactElement<T>
+) {
   return (props: T) => (
     <AppContextProvider>
       <Elem {...props} />
