@@ -1,4 +1,4 @@
-import { useAppContext } from '@/components/react/AppContext'
+import { useAppContext } from '@/hooks/useAppContext'
 import { useCurrentUrl } from './useCurrentUrl'
 import { useCallback, useMemo } from 'react'
 import { safe } from '@/lib/shared/safe-utils'
