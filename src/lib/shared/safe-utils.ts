@@ -97,6 +97,10 @@ export function safeEval<T = any>(code: string): T | undefined {
   }).value
 }
 
+export function getUrlWithId(sessionId: string) {
+  return new URL(sessionId ?? '/', safeGetWindow()?.location.origin)
+}
+
 /** Various utils for safe(r) operations. */
 export const safe = {
   decodeJson: safeDecodeJson,
@@ -111,5 +115,6 @@ export const safe = {
   sessionStorageGet: safeSessionStorageGet,
   sessionStorageSet: safeSessionStorageSet,
   getIdsFromUrl: safeGetIdsFromUrl,
+  getUrlWithId,
   url: safeUrl,
 }

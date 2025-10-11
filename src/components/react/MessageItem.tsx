@@ -1,59 +1,12 @@
-import { useAppContext } from '@/hooks/useAppContext'
 import { cn } from '@/lib/utils'
-import { Check, ChevronDown, ChevronRight, Copy } from 'lucide-react'
-import { memo } from 'react'
-import { formatTimestamp } from '@/hooks/useUtils'
-import { Try } from '@asleepace/try'
+import { ChevronDown, ChevronRight } from 'lucide-react'
+import { memo, useCallback, useState } from 'react'
 import { textParser } from '@/lib/client/parser'
-
-/** Timestamp */
-const LogTimestamp = ({
-  className,
-  createdAt = new Date(),
-}: {
-  className?: string
-  createdAt?: Date
-}) => {
-  return (
-    <span className={cn('text-xs text-gray-400/40 font-mono shrink-0 w-16')}>
-      {formatTimestamp(createdAt)}
-    </span>
-  )
-}
-
-/** Type Badge */
-const LogBadge = (props: { className?: string; badgeName: string }) => {
-  return (
-    <span
-      className={cn(
-        'px-1.5 py-0.5 rounded text-xs font-mono font-medium shrink-0',
-        props.className
-      )}
-    >
-      {props.badgeName}
-    </span>
-  )
-}
-
-/** Copy to Clipboard Button */
-const BtnCopyToClipboard = (props: {
-  onClick: () => void
-  isCopied: boolean
-  className?: string
-}) => (
-  <button
-    onClick={props.onClick}
-    className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 p-1 hover:bg-blue-500/20 rounded"
-  >
-    {props.isCopied ? (
-      <Check className="w-3.5 h-3.5 text-emerald-500" />
-    ) : (
-      <Copy
-        className={cn('w-3.5 h-3.5 group-hover:text-blue-500', props.className)}
-      />
-    )}
-  </button>
-)
+import { copyToClipboard } from '@/lib/client/clipboard'
+import { safe } from '@/lib/shared/safe-utils'
+import { MessageTimestamp } from '@/components/react/MessageTimestamp'
+import { MessageBadge } from './MessageBadge'
+import { BtnCopyToClipboard } from './Buttons'
 
 /** Text Content Preview */
 const getContentPreview = ({
@@ -172,11 +125,6 @@ export function getStylesFor(eventType: string) {
   }
 }
 
-interface Props {
-  message: MessageEvent<string>
-  className?: string
-}
-
 interface ClientConnected {
   streamId: string
   clientId: string
@@ -197,20 +145,9 @@ interface SystemClientClosed {
 
 type SystemEvent = SystemClientConnected | SystemClientClosed
 
-function getUrlSafe(path: string) {
-  if (typeof window === 'undefined') return `/${path}`
-  return Try.catch(() => new URL(path, window.location.origin).href).unwrapOr(
-    `/${path}`
-  )
-}
-
-function getSafeJson<T = object>(data: string): T | undefined {
-  return Try.catch(() => JSON.parse(data)).value
-}
-
 function getMessageForEvent(ev: MessageEvent) {
   if (ev.type === 'message') {
-    const json = getSafeJson(ev.data)
+    const json = safe.decodeJson(ev.data)
 
     if (json && Array.isArray(json)) {
       return json
@@ -226,12 +163,12 @@ function getMessageForEvent(ev: MessageEvent) {
 
   if (ev.type === 'client') {
     const clientEvent = ev.data as ClientConnected
-    const currentHref = getUrlSafe(clientEvent.streamId)
+    const currentHref = safe.getUrlWithId(clientEvent.streamId)
     return `connected (id: <a href="#${clientEvent.clientId}" class="text-orange-400 hover:underline">#${clientEvent.clientId}</a>) to stream <a class="text-orange-400 hover:underline" href="${currentHref}">${currentHref}</a>`
   }
 
   if (ev.type === 'system') {
-    const systemEvent = getSafeJson<SystemEvent>(ev.data)
+    const systemEvent = safe.decodeJson<SystemEvent>(ev.data)
     if (!systemEvent) return ev.data
     if (systemEvent.eventName === 'client:connected') {
       const clientId = systemEvent.eventData.clientId
@@ -242,6 +179,11 @@ function getMessageForEvent(ev: MessageEvent) {
   return ev.data
 }
 
+interface Props {
+  message: MessageEvent<string>
+  className?: string
+}
+
 /**
  * ## MessageItem
  *
@@ -249,36 +191,35 @@ function getMessageForEvent(ev: MessageEvent) {
  * and provide support for actions like expanding, copying, etc.
  */
 export const MessageItem = memo(({ className, message }: Props) => {
-  const { theme, expandedLogs, copiedId, toggleExpand, copyToClipboard } =
-    useAppContext()
-
-  const isCopied = copiedId === message.lastEventId
-  const isExpanded = expandedLogs.has(message.lastEventId)
-
-
+  const [isExpanded, setIsExpanded] = useState(false)
+  const [isCopied, setIsCopied] = useState(false)
 
   const msg = getMessageForEvent(message)
   const content = textParser.parseText(msg)
-
   const htmlContent = content.html
   const badgeName = content.badgeName
   const style = getStylesFor(badgeName)
 
   console.log({ htmlContent })
 
+  const onCopied = useCallback(() => {
+    setIsCopied(true)
+    copyToClipboard(String(message.data))
+    setTimeout(() => setIsCopied(false), 1_000)
+  }, [])
+
   return (
     <div
-      onClick={() => toggleExpand(message.lastEventId)}
+      onClick={() => setIsExpanded(true)}
       className={cn('w-full font-mono', className)}
     >
       <div
-        key={message.lastEventId}
         className={cn(
           'group border-b border-t-transparent hover:border-t-gray-400/10 box-content border-t border-b-gray-400/10',
-          theme.hover
+          'hover:bg-gray-800/50'
         )}
       >
-        {/* --- log entry --- */}
+        {/* --- message content --- */}
         <div
           className={cn(
             'flex items-start gap-3 px-2 py-0.5',
@@ -287,11 +228,11 @@ export const MessageItem = memo(({ className, message }: Props) => {
         >
           {/* --- metadata --- */}
           <div className={cn('flex flex-row items-center gap-1 pt-0.5')}>
-            <LogTimestamp
-              createdAt={new Date(message.timeStamp)}
-              className={theme.textMuted}
+            <MessageTimestamp
+              timestamp={new Date(message.timeStamp)}
+              className={'text-zinc-400'}
             />
-            <LogBadge badgeName={badgeName} className={style.badge} />
+            <MessageBadge badgeName={badgeName} className={style.badge} />
           </div>
           {/* --- content --- */}
           <div className="flex-1 min-w-0">
@@ -299,14 +240,9 @@ export const MessageItem = memo(({ className, message }: Props) => {
           </div>
           {/* --- actions --- */}
           <BtnCopyToClipboard
-            onClick={() =>
-              copyToClipboard({
-                content: message.data,
-                id: message.lastEventId,
-              })
-            }
+            onClick={onCopied}
             isCopied={isCopied}
-            className={cn(isCopied && theme.textMuted)}
+            className={cn(isCopied && 'text-zinc-400')}
           />
         </div>
       </div>

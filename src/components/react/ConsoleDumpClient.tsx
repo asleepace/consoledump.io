@@ -2,7 +2,7 @@ import { withAppProvider } from './AppContext'
 import { AppNavigationBar } from './AppNavigationBar'
 import { useAppContext } from '@/hooks/useAppContext'
 import { cn } from '@/lib/utils'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ActionBarEvent } from './ActionBar'
 import { Try } from '@asleepace/try'
 import { useUtils } from '@/hooks/useUtils'
@@ -37,8 +37,9 @@ async function dump(...args: any[]): Promise<void> {
 export const ConsoleDumpClient = withAppProvider(
   (props: ConsoleDumpClientProps) => {
     const ctx = useAppContext()
-    const scrollContainerRef = useRef<HTMLDivElement>(null)
     const utils = useUtils()
+
+    const scrollContainerRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
       // define dump on the client:
@@ -85,7 +86,7 @@ export const ConsoleDumpClient = withAppProvider(
     }
 
     const autoScroll = useCallback(() => {
-      const AUTO_SCROLL_THRESHOLD = 50
+      const AUTO_SCROLL_THRESHOLD = 100
       const sv = scrollContainerRef.current
       if (!sv) return
       const containerOffset = sv.scrollHeight - sv.scrollTop
@@ -130,6 +131,15 @@ export const ConsoleDumpClient = withAppProvider(
       }
     }, [])
 
+    const msgs = useMemo(() => {
+      return (
+        ctx.stream?.events.map((msg) => {
+          console.log(msg.lastEventId)
+          return <MessageItem message={msg} key={msg.lastEventId} />
+        }) ?? []
+      )
+    }, [ctx.stream?.events])
+
     return (
       <div
         className={cn(
@@ -141,10 +151,10 @@ export const ConsoleDumpClient = withAppProvider(
         <AppNavigationBar
           isConnected={ctx.stream?.isConnected}
           onOpenInfoPanel={toggleInfoPanel}
-          downloadLogs={downloadLogs}
           scrollToBottom={scrollToBottom}
-          clearLogs={clearLogs}
           onSubmitAction={onSubmitAction}
+          downloadLogs={downloadLogs}
+          clearLogs={clearLogs}
         />
 
         {/* --- main context --- */}
@@ -152,14 +162,7 @@ export const ConsoleDumpClient = withAppProvider(
           <InfoPanel url={props.initialUrl} />
 
           <div ref={scrollContainerRef} className="flex-1 overflow-y-auto pb-4">
-            {ctx.stream?.events.map((message, index) => {
-              return (
-                <MessageItem
-                  message={message}
-                  key={`${message.lastEventId ?? 'system'}-${index}`}
-                />
-              )
-            })}
+            {msgs}
           </div>
         </main>
       </div>
