@@ -41,14 +41,29 @@ type PanelProps = {
 const PanelSection = (props: React.PropsWithChildren<PanelProps>) => {
   return (
     <div>
-      <div className={cn('flex items-center gap-2 mb-3', props.className)}>
+      <div className={cn('flex items-center gap-2 mb-4', props.className)}>
         {props.icon}
-        <div className="text-lg text-zinc-200 font-semibold flex-1">
+        <div className="text-lg text-zinc-200 font-semibold tracking-wide flex-1">
           {props.headerTitle}
         </div>
         {props.headerRight}
       </div>
       <div className="flex flex-col shrink">{props.children}</div>
+    </div>
+  )
+}
+
+const ICON_SIZE = 24
+
+const NumberedItem = (props: { number: string | number; children: string }) => {
+  return (
+    <div className="flex items-center gap-x-2">
+      <div className="aspect-square flex items-center justify-center rounded-full bg-zinc-800 w-6">
+        <span className="font-black text-xs font-mono tracking-wide text-zinc-500">
+          {props.number}
+        </span>
+      </div>
+      <p className="text-[13px] tracking-wide">{props.children}</p>
     </div>
   )
 }
@@ -86,7 +101,7 @@ export const InfoPanel = ({ className, url }: InfoPanelProps) => {
         />
       )}
 
-      {/* Side panel */}
+      {/* --- Side panel --- */}
       <div
         className={cn(
           `fixed right-0 font-mono top-0 h-full max-h-screen w-full md:w-128 bg-zinc-900 text-gray-200 z-50 transform transition-transform duration-300 ease-in-out`,
@@ -94,16 +109,13 @@ export const InfoPanel = ({ className, url }: InfoPanelProps) => {
           className
         )}
       >
-        {/* Content */}
-        <div className="p-4 *:text-sm *:text-zinc-400 flex flex-1 flex-col overflow-y-auto gap-y-8">
-          {/* Info Section */}
-
+        <div className="p-4 *:text-sm *:font-sans *:text-zinc-500 flex flex-1 min-h-max flex-col overflow-y-auto gap-y-4">
           <PanelSection
             className={'align-baseline'}
             headerTitle={
-              <h1>
-                {`Session ID: `}
-                <a className="text-indigo-400" href={sessionId}>
+              <h1 className="text-2xl -space-y-1">
+                <span className="text-2xl">Session ID:</span>
+                <a className="text-indigo-400 font-mono px-1" href={sessionId}>
                   {sessionId}
                 </a>
               </h1>
@@ -112,39 +124,49 @@ export const InfoPanel = ({ className, url }: InfoPanelProps) => {
             headerRight={
               <button
                 onClick={handleClose}
-                className="text-zinc-400 bg-zinc-800 p-2 rounded-full hover:text-gray-200 transition-colors"
+                className="text-zinc-400 bg-zinc-800 hover:bg-zinc-700 p-2 rounded-full hover:text-gray-200 transition-colors"
               >
                 <X size={18} />
               </button>
             }
           >
-            <p className="text-sm font-sans p-1 text-zinc-500">
-              Make HTTP requests to the following endpoint to see the data
-              appear here in real-time!
+            <p className="text-sm tracking-wide font-sans p-1 pb-2 text-zinc-500">
+              Make HTTP requests to the following endpoint:
             </p>
-            <div className="bg-zinc-800 rounded-sm p-2 flex gap-x-2">
-              <span>POST</span>
-              <span>{'@'}</span>
-              <a href={url.href} className="text-orange-400 text-sm]">
+            <div className="bg-zinc-800 font-mono rounded-sm p-2 flex gap-x-2">
+              <span className="font-semibold">POST</span>
+              <span className="text-zinc-600">{'@'}</span>
+              <a href={url.href} className="text-orange-400 font-mono text-sm]">
                 {url.href}
               </a>
+            </div>
+            <div className="flex flex-col py-4 gap-y-2">
+              <div className="flex flex-row border-[2px] rounded-lg border-zinc-700/30 p-2 items-start gap-y-2 justify-evenly px-1 gap-x-4">
+                <NumberedItem number={1}>Copy code</NumberedItem>
+                <NumberedItem number={2}>Send Logs</NumberedItem>
+                <NumberedItem number={3}>View in real time</NumberedItem>
+              </div>
             </div>
           </PanelSection>
 
           {/* Code Snippet Section */}
           <PanelSection
             headerTitle={'Code Snippet'}
-            icon={<Code size={24} className="text-green-400" />}
+            icon={<Code size={ICON_SIZE} className="text-green-400" />}
           >
             <div className="rounded flex shrink min-h-0 flex-col gap-y-2 text-sm font-mono overflow-x-auto">
-              <p className="font-sans">{'Example usage (JS/TS):'}</p>
+              <p className="font-sans tracking-wide px-1">
+                Example usage (JS/TS):
+              </p>
               <CodeSnippet
                 lang={'typescript'}
                 className="p-3 flex shrink rounded-sm bg-zinc-800"
               >
                 {getCodeSnippet(url.href)}
               </CodeSnippet>
-              <p className="pt-2">{'Example usage (Bash):'}</p>
+              <p className="pt-2 px-1 tracking-wide font-sans">
+                Example usage (Bash):
+              </p>
               <CodeSnippet
                 lang="bash"
                 className="p-3 flex shrink bg-zinc-800 rounded-sm"
@@ -154,8 +176,13 @@ export const InfoPanel = ({ className, url }: InfoPanelProps) => {
             </div>
           </PanelSection>
 
-          <PanelSection headerTitle="Example Usage">
-            <p className="text-sm font-sans pb-2">
+          {/* Example Usage Section */}
+          <PanelSection
+            className="mt-6"
+            headerTitle="Example Usage"
+            icon={<FileText size={ICON_SIZE} />}
+          >
+            <p className="text-sm tracking-wide font-sans px-1 pb-2">
               Click the following examples to see a live preview in the browser!
             </p>
             <div className="space-y-2">
@@ -178,8 +205,9 @@ export const InfoPanel = ({ className, url }: InfoPanelProps) => {
 
           {/* Stats Section */}
           <PanelSection
+            className="mt-6"
             headerTitle="Statistics"
-            icon={<ChartNoAxesColumn size={24} />}
+            icon={<ChartNoAxesColumn size={ICON_SIZE} />}
           >
             <div className="px-0.5">
               <div className="space-y-2 text-sm">
