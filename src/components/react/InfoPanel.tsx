@@ -34,7 +34,7 @@ const dump = (...args) => {
 type PanelProps = {
   className?: string
   icon?: JSX.Element
-  headerTitle: string
+  headerTitle: string | JSX.Element
   headerRight?: JSX.Element
 }
 
@@ -43,9 +43,9 @@ const PanelSection = (props: React.PropsWithChildren<PanelProps>) => {
     <div>
       <div className={cn('flex items-center gap-2 mb-3', props.className)}>
         {props.icon}
-        <h3 className="text-lg text-zinc-200 font-semibold flex-1">
+        <div className="text-lg text-zinc-200 font-semibold flex-1">
           {props.headerTitle}
-        </h3>
+        </div>
         {props.headerRight}
       </div>
       <div className="flex flex-col shrink">{props.children}</div>
@@ -89,30 +89,43 @@ export const InfoPanel = ({ className, url }: InfoPanelProps) => {
       {/* Side panel */}
       <div
         className={cn(
-          `fixed right-0 font-mono top-0 h-full max-h-screen w-full md:w-144 bg-zinc-900 text-gray-200 z-50 transform transition-transform duration-300 ease-in-out`,
+          `fixed right-0 font-mono top-0 h-full max-h-screen w-full md:w-128 bg-zinc-900 text-gray-200 z-50 transform transition-transform duration-300 ease-in-out`,
           isInfoPanelOpen ? 'translate-x-0' : 'translate-x-full',
           className
         )}
       >
         {/* Content */}
-        <div className="p-4 *:text-sm *:text-zinc-400 flex flex-col overflow-y-auto gap-y-8 min-h-full]">
+        <div className="p-4 *:text-sm *:text-zinc-400 flex flex-1 flex-col overflow-y-auto gap-y-8">
           {/* Info Section */}
 
           <PanelSection
-            headerTitle={`Session #${sessionId}`}
-            icon={<Globe size={24} className="text-orange-400" />}
+            className={'align-baseline'}
+            headerTitle={
+              <h1>
+                {`Session ID: `}
+                <a className="text-indigo-400" href={sessionId}>
+                  {sessionId}
+                </a>
+              </h1>
+            }
+            icon={<Globe size={36} className="text-indigo-400" />}
             headerRight={
               <button
                 onClick={handleClose}
                 className="text-zinc-400 bg-zinc-800 p-2 rounded-full hover:text-gray-200 transition-colors"
               >
-                <X size={20} />
+                <X size={18} />
               </button>
             }
           >
-            <p className="text-sm p-1 text-zinc-500">Connected to stream at:</p>
-            <div className="bg-zinc-800 rounded-sm p-2">
-              <a href={url.href} className="text-orange-400 ">
+            <p className="text-sm font-sans p-1 text-zinc-500">
+              Make HTTP requests to the following endpoint to see the data
+              appear here in real-time!
+            </p>
+            <div className="bg-zinc-800 rounded-sm p-2 flex gap-x-2">
+              <span>POST</span>
+              <span>{'@'}</span>
+              <a href={url.href} className="text-orange-400 text-sm]">
                 {url.href}
               </a>
             </div>
@@ -123,34 +136,41 @@ export const InfoPanel = ({ className, url }: InfoPanelProps) => {
             headerTitle={'Code Snippet'}
             icon={<Code size={24} className="text-green-400" />}
           >
-            <div className="rounded flex shrink min-h-0 flex-col gap-y-2 text-xs font-mono overflow-x-auto">
-              <p>{'Example usage (JS/TS):'}</p>
-              <div className="bg-zinc-800">
-                <CodeSnippet className="p-3 flex shrink">
-                  {getCodeSnippet(url.href)}
-                </CodeSnippet>
-              </div>
-              <p>{'Example usage (Bash):'}</p>
-              <div className="bg-zinc-800">
-                <CodeSnippet className="p-3 flex shrink" lang={'bash'}>
-                  {`curl -d "hello world" ${url.href}`}
-                </CodeSnippet>
-              </div>
+            <div className="rounded flex shrink min-h-0 flex-col gap-y-2 text-sm font-mono overflow-x-auto">
+              <p className="font-sans">{'Example usage (JS/TS):'}</p>
+              <CodeSnippet
+                lang={'typescript'}
+                className="p-3 flex shrink rounded-sm bg-zinc-800"
+              >
+                {getCodeSnippet(url.href)}
+              </CodeSnippet>
+              <p className="pt-2">{'Example usage (Bash):'}</p>
+              <CodeSnippet
+                lang="bash"
+                className="p-3 flex shrink bg-zinc-800 rounded-sm"
+              >
+                {`curl -d "hello world" ${url.href}`}
+              </CodeSnippet>
             </div>
           </PanelSection>
 
           <PanelSection headerTitle="Example Usage">
+            <p className="text-sm font-sans pb-2">
+              Click the following examples to see a live preview in the browser!
+            </p>
             <div className="space-y-2">
               {[
                 'dump("Hello, world!")',
                 'dump({ data: 123 })',
                 'dump([1, 2, 3, 4, 5])',
+                'dump("[error] demo:", { message: "Testing!" })',
               ].map((cmd) => (
                 <button
                   key={cmd}
+                  onClick={() => eval(cmd)}
                   className="w-full text-left px-3 py-2 bg-zinc-800 hover:bg-zinc-700 rounded text-sm transition-colors"
                 >
-                  {cmd}
+                  <CodeSnippet lang={'typescript'}>{cmd}</CodeSnippet>
                 </button>
               ))}
             </div>
