@@ -144,7 +144,7 @@ export async function createFileBasedStream(options: { streamId: string }) {
 
   /** Publishes incoming data to file + live subscribers. */
   async function publish(readableStream: ByteStream): Promise<void> {
-    const lock = await mutex.acquireLock()
+    const lock = await mutex.acquireLock({ timeout: 10_000 })
     try {
       await readableStream
         .pipeThrough(sse.getServerSideEventTransformer())

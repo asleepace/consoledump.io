@@ -4,23 +4,43 @@ import { Check, ChevronDown, ChevronRight, Copy } from 'lucide-react'
 import { memo } from 'react'
 import { formatTimestamp } from '@/hooks/useUtils'
 import { Try } from '@asleepace/try'
+import { textParser } from '@/lib/client/parser'
 
 /** Timestamp */
-const LogTimestamp = ({ className, createdAt = new Date() }: { className?: string; createdAt?: Date }) => {
-  return <span className={cn('text-xs text-gray-400/40 font-mono shrink-0 w-16')}>{formatTimestamp(createdAt)}</span>
+const LogTimestamp = ({
+  className,
+  createdAt = new Date(),
+}: {
+  className?: string
+  createdAt?: Date
+}) => {
+  return (
+    <span className={cn('text-xs text-gray-400/40 font-mono shrink-0 w-16')}>
+      {formatTimestamp(createdAt)}
+    </span>
+  )
 }
 
 /** Type Badge */
 const LogBadge = (props: { className?: string; badgeName: string }) => {
   return (
-    <span className={cn('px-1.5 py-0.5 rounded text-xs font-mono font-medium shrink-0', props.className)}>
+    <span
+      className={cn(
+        'px-1.5 py-0.5 rounded text-xs font-mono font-medium shrink-0',
+        props.className
+      )}
+    >
       {props.badgeName}
     </span>
   )
 }
 
 /** Copy to Clipboard Button */
-const BtnCopyToClipboard = (props: { onClick: () => void; isCopied: boolean; className?: string }) => (
+const BtnCopyToClipboard = (props: {
+  onClick: () => void
+  isCopied: boolean
+  className?: string
+}) => (
   <button
     onClick={props.onClick}
     className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 p-1 hover:bg-blue-500/20 rounded"
@@ -28,13 +48,21 @@ const BtnCopyToClipboard = (props: { onClick: () => void; isCopied: boolean; cla
     {props.isCopied ? (
       <Check className="w-3.5 h-3.5 text-emerald-500" />
     ) : (
-      <Copy className={cn('w-3.5 h-3.5 group-hover:text-blue-500', props.className)} />
+      <Copy
+        className={cn('w-3.5 h-3.5 group-hover:text-blue-500', props.className)}
+      />
     )}
   </button>
 )
 
 /** Text Content Preview */
-const getContentPreview = ({ content, maxSize = 80 }: { maxSize?: number; content: string }) => {
+const getContentPreview = ({
+  content,
+  maxSize = 80,
+}: {
+  maxSize?: number
+  content: string
+}) => {
   const isUnderMaxSize = content.length > maxSize
   const preview = content.slice(0, maxSize)
   return isUnderMaxSize ? preview : `${preview}...`
@@ -58,13 +86,27 @@ const ContentCode = ({
 
   return (
     <div className="space-y-1">
-      <button onClick={onClick} className="flex text-pink-500 items-center gap-1.5 w-full text-left">
-        {isExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-        <span className={cn('text-xs', textColor, !isExpanded && 'truncate')}>{contentPreview}</span>
+      <button
+        onClick={onClick}
+        className="flex text-pink-500 items-center gap-1.5 w-full text-left"
+      >
+        {isExpanded ? (
+          <ChevronDown className="w-3.5 h-3.5" />
+        ) : (
+          <ChevronRight className="w-3.5 h-3.5" />
+        )}
+        <span className={cn('text-xs', textColor, !isExpanded && 'truncate')}>
+          {contentPreview}
+        </span>
       </button>
       {isExpanded && (
         <div className="flex shrink">
-          <pre className={cn('p-2 rounded text-xs overflow-x-auto flex text-green-500', className)}>
+          <pre
+            className={cn(
+              'p-2 rounded text-xs overflow-x-auto flex text-green-500',
+              className
+            )}
+          >
             <code>{content}</code>
           </pre>
         </div>
@@ -76,20 +118,28 @@ const ContentCode = ({
 /**
  * Displayed content for text logs.
  */
-const ContentText = (props: { html: string; isExpanded?: boolean; className?: string }) => (
+const ContentText = (props: {
+  html: string
+  isExpanded?: boolean
+  className?: string
+}) => (
   <span
     className={cn('text-xs font-mono break-all py-0.5', props.className)}
     dangerouslySetInnerHTML={{ __html: props.html }}
   />
 )
 
-export function isStreamJson(json: unknown): json is { type: 'json' | 'html' | 'text'; text?: string; html?: string } {
+export function isStreamJson(
+  json: unknown
+): json is { type: 'json' | 'html' | 'text'; text?: string; html?: string } {
   if (!json || typeof json !== 'object') return false
   const data = json as Record<string, string>
   return 'type' in data && ('html' in data || 'text' in data)
 }
 
-export function getCodeBlock(htmlString: string | undefined): string | undefined {
+export function getCodeBlock(
+  htmlString: string | undefined
+): string | undefined {
   if (!htmlString) return undefined
   const parser = new DOMParser()
   const doc = parser.parseFromString(htmlString, 'text/html')
@@ -145,11 +195,13 @@ interface SystemClientClosed {
   }
 }
 
-type SystemEvent =  SystemClientConnected | SystemClientClosed
+type SystemEvent = SystemClientConnected | SystemClientClosed
 
 function getUrlSafe(path: string) {
   if (typeof window === 'undefined') return `/${path}`
-  return Try.catch(() => new URL(path, window.location.origin).href).unwrapOr(`/${path}`)
+  return Try.catch(() => new URL(path, window.location.origin).href).unwrapOr(
+    `/${path}`
+  )
 }
 
 function getSafeJson<T = object>(data: string): T | undefined {
@@ -158,14 +210,15 @@ function getSafeJson<T = object>(data: string): T | undefined {
 
 function getMessageForEvent(ev: MessageEvent) {
   if (ev.type === 'message') {
-
     const json = getSafeJson(ev.data)
 
     if (json && Array.isArray(json)) {
-      return json.map((item) => {
-        if (item && typeof item === 'object') return JSON.stringify(item)
-        return String(item)
-      }).join(" ")
+      return json
+        .map((item) => {
+          if (item && typeof item === 'object') return JSON.stringify(item)
+          return String(item)
+        })
+        .join(' ')
     }
 
     return ev.data
@@ -189,7 +242,6 @@ function getMessageForEvent(ev: MessageEvent) {
   return ev.data
 }
 
-
 /**
  * ## MessageItem
  *
@@ -197,20 +249,28 @@ function getMessageForEvent(ev: MessageEvent) {
  * and provide support for actions like expanding, copying, etc.
  */
 export const MessageItem = memo(({ className, message }: Props) => {
-  const { theme, expandedLogs, copiedId, toggleExpand, copyToClipboard } = useAppContext()
+  const { theme, expandedLogs, copiedId, toggleExpand, copyToClipboard } =
+    useAppContext()
 
   const isCopied = copiedId === message.lastEventId
   const isExpanded = expandedLogs.has(message.lastEventId)
 
-  const badgeName = message.type ?? 'message'
+
+
+  const msg = getMessageForEvent(message)
+  const content = textParser.parseText(msg)
+
+  const htmlContent = content.html
+  const badgeName = content.badgeName
   const style = getStylesFor(badgeName)
 
-  
-  const msg = getMessageForEvent(message)
-  const htmlContent = `<span>${msg}</span>`
+  console.log({ htmlContent })
 
   return (
-    <div className={cn('w-full font-mono', className)}>
+    <div
+      onClick={() => toggleExpand(message.lastEventId)}
+      className={cn('w-full font-mono', className)}
+    >
       <div
         key={message.lastEventId}
         className={cn(
@@ -219,10 +279,18 @@ export const MessageItem = memo(({ className, message }: Props) => {
         )}
       >
         {/* --- log entry --- */}
-        <div className={cn('flex items-start gap-3 px-2 py-0.5', isExpanded ? 'pb-2' : '')}>
+        <div
+          className={cn(
+            'flex items-start gap-3 px-2 py-0.5',
+            isExpanded ? 'pb-2' : ''
+          )}
+        >
           {/* --- metadata --- */}
           <div className={cn('flex flex-row items-center gap-1 pt-0.5')}>
-            <LogTimestamp createdAt={new Date(message.timeStamp)} className={theme.textMuted} />
+            <LogTimestamp
+              createdAt={new Date(message.timeStamp)}
+              className={theme.textMuted}
+            />
             <LogBadge badgeName={badgeName} className={style.badge} />
           </div>
           {/* --- content --- */}
@@ -231,7 +299,12 @@ export const MessageItem = memo(({ className, message }: Props) => {
           </div>
           {/* --- actions --- */}
           <BtnCopyToClipboard
-            onClick={() => copyToClipboard({ content: message.data, id: message.lastEventId })}
+            onClick={() =>
+              copyToClipboard({
+                content: message.data,
+                id: message.lastEventId,
+              })
+            }
             isCopied={isCopied}
             className={cn(isCopied && theme.textMuted)}
           />

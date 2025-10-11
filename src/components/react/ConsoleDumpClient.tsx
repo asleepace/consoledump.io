@@ -44,6 +44,18 @@ export const ConsoleDumpClient = withAppProvider(
       // define dump on the client:
       console.dump = dump
       window.dump = dump
+
+      // define other utils
+      Object.defineProperty(Number.prototype, 'for', {
+        value(this: Number, callback: <T>(i: number) => T[]) {
+          const end = Math.floor(this.valueOf())
+          const res = []
+          for (let i = 0; i < end; i++) {
+            res.push(callback(i))
+          }
+          return res
+        },
+      })
     }, [])
 
     const downloadLogs = () => {

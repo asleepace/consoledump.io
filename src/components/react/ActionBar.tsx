@@ -45,7 +45,9 @@ export function ActionBar(props: ActionBarProps) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [isFocused, setIsFocused] = useState(false)
 
-  const [selectedAction, setSelectedAction] = useState<ActionBarEvent | undefined>()
+  const [selectedAction, setSelectedAction] = useState<
+    ActionBarEvent | undefined
+  >()
 
   const dropdownRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -72,7 +74,9 @@ export function ActionBar(props: ActionBarProps) {
   })
 
   const selectModeType = (modeType: ModeType) => {
-    const selectedMode = actionBarModes.find((actionMode) => modeType === actionMode.type)
+    const selectedMode = actionBarModes.find(
+      (actionMode) => modeType === actionMode.type
+    )
     if (!selectedMode) throw new Error(`Invalid mode: ${modeType}`)
     console.log('[action-bar] selected mode:', `"${modeType}"`)
     setMode({ ...selectedMode })
@@ -89,7 +93,11 @@ export function ActionBar(props: ActionBarProps) {
       inputRef.current.value = ''
     }
 
-    const actionEvent = makeAction({ value: currentValue, type: mode.type, reset })
+    const actionEvent = makeAction({
+      value: currentValue,
+      type: mode.type,
+      reset,
+    })
     historyRef.current.insert(actionEvent)
     props.onSubmit(actionEvent)
     // inputRef.current?.blur()
@@ -114,7 +122,10 @@ export function ActionBar(props: ActionBarProps) {
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setIsDropdownOpen(false)
       }
     }
@@ -125,8 +136,14 @@ export function ActionBar(props: ActionBarProps) {
 
   return (
     <>
-      <AppBackdropLayer hidden={!isDropdownOpen} onClick={() => setIsDropdownOpen} />
-      <div className="relative flex-1 z-10" ref={dropdownRef}>
+      <AppBackdropLayer
+        hidden={!isDropdownOpen}
+        onClick={() => setIsDropdownOpen}
+      />
+      <div
+        className="relative flex-1 z-10 opacity-70 focus-within:opacity-100 transition-opacity"
+        ref={dropdownRef}
+      >
         <div className="relative flex w-full flex-1 bg-zinc-900 text-zinc-300 rounded-lg overflow-hidden">
           <button
             className="left-0 top-0 bottom-0 flex bg-zinc-800/50 hover:bg-zinc-800 px-3 items-center gap-0.5 text-zinc-500 hover:text-blue-500 transition-colors z-10"
@@ -160,7 +177,9 @@ export function ActionBar(props: ActionBarProps) {
                 key={type}
                 className={cn(
                   'w-full text-left px-4 py-2 text-sm border-b-[0.5px] border-b-blue-100/10',
-                  mode.type === type ? 'bg-blue-500 text-blue-100' : 'text-blue-100/80 hover:bg-blue-400/30'
+                  mode.type === type
+                    ? 'bg-blue-500 text-blue-100'
+                    : 'text-blue-100/80 hover:bg-blue-400/30'
                 )}
                 onClick={() => {
                   selectModeType(type)
