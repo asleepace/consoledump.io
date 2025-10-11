@@ -77,11 +77,12 @@ export const MessageItem = memo(({ className, message }: Props) => {
           <div className="flex-1 min-w-0">
             <span
               className={cn(
-                'text-xs font-mono break-all py-0.5',
+                'text-xs font-mono break-all py-0.5 text-zinc-600',
                 msg.getClassName()
               )}
-              dangerouslySetInnerHTML={{ __html: msg.html }}
-            />
+            >
+              {msg.textContent}
+            </span>
           </div>
           {/* --- actions --- */}
           <BtnCopyToClipboard
