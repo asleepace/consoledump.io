@@ -214,10 +214,9 @@ export const MessageItem = memo(({ className, message }: Props) => {
       className={cn('w-full font-mono', className)}
     >
       <div
-        className={cn(
-          'group border-b border-t-transparent hover:border-t-gray-400/10 box-content border-t border-b-gray-400/10',
-          'hover:bg-gray-800/50'
-        )}
+        className={
+          'group border-b border-t-transparent hover:border-t-gray-400/10 box-content border-t border-b-gray-400/10 hover:bg-gray-800/50'
+        }
       >
         {/* --- message content --- */}
         <div
@@ -227,7 +226,7 @@ export const MessageItem = memo(({ className, message }: Props) => {
           )}
         >
           {/* --- metadata --- */}
-          <div className={cn('flex flex-row items-center gap-1 pt-0.5')}>
+          <div className={'flex flex-row items-center gap-1 pt-0.5'}>
             <MessageTimestamp
               timestamp={new Date(message.timeStamp)}
               className={'text-zinc-400'}

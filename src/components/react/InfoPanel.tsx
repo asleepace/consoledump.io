@@ -97,29 +97,33 @@ export const InfoPanel = ({ className, url }: InfoPanelProps) => {
           </button>
         }
       >
-        <p className="text-sm tracking-wide font-sans p-1 pb-2 text-zinc-500">
-          Make HTTP requests to the following endpoint:
-        </p>
-        <div className="bg-zinc-800 font-mono rounded-sm p-2 flex gap-x-2">
-          <span className="font-semibold text-blue-500">POST</span>
-          <span className="text-zinc-600">{'@'}</span>
-          <a href={url.href} className="text-orange-400 font-mono text-sm]">
-            {url.href}
+        <div className="flex flex-col gap-y-2">
+          <p className="text-sm tracking-wide font-sans p-1 pb-2 text-zinc-500">
+            Make HTTP requests to the following endpoint:
+          </p>
+          <div className="bg-zinc-800 font-mono rounded-sm p-2 flex gap-x-2">
+            <span className="font-semibold pl-1 tracking-wide text-zinc-400">
+              POST
+            </span>
+            <span className="text-zinc-600">{'@'}</span>
+            <a href={url.href} className="text-orange-400 font-mono text-sm]">
+              {url.href}
+            </a>
+          </div>
+          <div className="flex flex-col py-4 gap-y-2">
+            <div className="flex flex-row border-[2px] rounded-lg border-zinc-700/30 p-2 items-start gap-y-2 justify-evenly px-1 gap-x-4">
+              <NumberedItem number={1}>Copy code</NumberedItem>
+              <NumberedItem number={2}>Send Logs</NumberedItem>
+              <NumberedItem number={3}>View in real time</NumberedItem>
+            </div>
+          </div>
+          <a
+            href="/docs"
+            className="text-center text-xs text-zinc-700 hover:underline"
+          >
+            Click to view docs
           </a>
         </div>
-        <div className="flex flex-col py-4 gap-y-2">
-          <div className="flex flex-row border-[2px] rounded-lg border-zinc-700/30 p-2 items-start gap-y-2 justify-evenly px-1 gap-x-4">
-            <NumberedItem number={1}>Copy code</NumberedItem>
-            <NumberedItem number={2}>Send Logs</NumberedItem>
-            <NumberedItem number={3}>View in real time</NumberedItem>
-          </div>
-        </div>
-        <a
-          href="/docs"
-          className="text-center text-xs text-zinc-700 hover:underline"
-        >
-          Click to view docs
-        </a>
       </PanelSection>
 
       {/* Code Snippet Section */}
@@ -128,22 +132,28 @@ export const InfoPanel = ({ className, url }: InfoPanelProps) => {
         icon={<Code size={ICON_SIZE} className="text-green-400" />}
       >
         <div className="rounded flex shrink min-h-0 flex-col gap-y-2 text-sm font-mono overflow-x-auto">
-          <p className="font-sans tracking-wide px-1">Example usage (JS/TS):</p>
-          <CodeSnippet
-            lang={'typescript'}
-            className="p-3 flex shrink rounded-sm bg-zinc-800"
-          >
-            {getCodeSnippet(url.href)}
-          </CodeSnippet>
-          <p className="pt-2 px-1 tracking-wide font-sans">
-            Example usage (Bash):
-          </p>
-          <CodeSnippet
-            lang="bash"
-            className="p-3 flex shrink bg-zinc-800 rounded-sm"
-          >
-            {`curl -d "hello world" ${url.href}`}
-          </CodeSnippet>
+          <>
+            <p className="font-sans tracking-wide px-1">
+              Example usage (JS/TS):
+            </p>
+            <CodeSnippet
+              lang={'typescript'}
+              className="p-3 flex shrink rounded-sm bg-zinc-800"
+            >
+              {getCodeSnippet(url.href)}
+            </CodeSnippet>
+          </>
+          <>
+            <p className="pt-4 px-1 tracking-wide font-sans">
+              Example usage (Bash):
+            </p>
+            <CodeSnippet
+              lang="bash"
+              className="p-3 flex shrink bg-zinc-800 rounded-sm"
+            >
+              {`curl -d "hello world" ${url.href}`}
+            </CodeSnippet>
+          </>
         </div>
       </PanelSection>
 
@@ -156,7 +166,7 @@ export const InfoPanel = ({ className, url }: InfoPanelProps) => {
         <p className="text-sm tracking-wide font-sans px-1 pb-2">
           Click the following examples to see a live preview in the browser!
         </p>
-        <div className="space-y-2">
+        <div className="space-y-2 flex flex-col gap-y-2">
           {[
             'dump("Hello, world!")',
             'dump({ data: 123 })',
