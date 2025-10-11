@@ -32,7 +32,6 @@ const matcher = createPatternMatcher([
  * and provide support for actions like expanding, copying, etc.
  */
 export const MessageItem = memo(({ className, message }: Props) => {
-  const [isExpanded, setIsExpanded] = useState(false)
   const [isCopied, setIsCopied] = useState(false)
 
   const msg = matcher.parse(message)
@@ -46,26 +45,18 @@ export const MessageItem = memo(({ className, message }: Props) => {
   }, [])
 
   return (
-    <div
-      onClick={() => setIsExpanded(true)}
-      className={cn('w-full font-mono', className)}
-    >
+    <div className={cn('w-full font-mono', className)}>
       <div
         className={
           'group border-b border-t-transparent hover:border-t-gray-400/10 box-content border-t border-b-gray-400/10 hover:bg-gray-800/50'
         }
       >
         {/* --- message content --- */}
-        <div
-          className={cn(
-            'flex items-start gap-3 px-2 py-0.5',
-            isExpanded ? 'pb-2' : ''
-          )}
-        >
+        <div className={cn('flex items-start gap-3 px-2 py-0.5')}>
           {/* --- metadata --- */}
           <div className={'flex flex-row items-center gap-1 pt-0.5'}>
             <MessageTimestamp
-              timestamp={new Date(message.timeStamp)}
+              timestamp={msg.timestamp}
               className={'text-zinc-400/30'}
             />
             <MessageBadge

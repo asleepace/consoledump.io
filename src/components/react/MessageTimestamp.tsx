@@ -6,7 +6,7 @@ export const MessageTimestamp = ({
   timestamp,
 }: {
   className?: string
-  timestamp: Date
+  timestamp: string
 }) => {
   return (
     <span
@@ -15,7 +15,7 @@ export const MessageTimestamp = ({
         className
       )}
     >
-      {formatTimestamp(timestamp)}
+      {timestamp}
     </span>
   )
 }

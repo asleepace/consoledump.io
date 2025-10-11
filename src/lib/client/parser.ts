@@ -10,6 +10,10 @@ function tryParseJson<T = any>(data: string): T | undefined {
 
 function textEncode(data: object): string {
   try {
+    if (typeof data === 'string') return data
+    if (data instanceof Date)
+      return data.toLocaleDateString('en-US', { dateStyle: 'medium' })
+    if (data instanceof Error) return `${data.name ?? 'Error'}: ${data.message}`
     return JSON.stringify(data)
   } catch (e) {
     return String(data)
@@ -24,7 +28,20 @@ export type ContentChunk = {
 }
 
 export class Message {
+  static defulatBadgeStyles: Record<string, string> = {
+    error: 'badge-red',
+    warn: 'badge-yellow',
+    warning: 'badge-yellow',
+    info: 'badge-blue',
+    debug: 'badge-orange',
+    system: 'badge-emerald',
+    connected: 'badge-emerald',
+    client: 'badge-indigo',
+    message: 'badge-zinc',
+  }
+
   public contentType: ContentType = 'data::string'
+  public createdAt = new Date()
   public classNames = new Set<string>()
 
   public badge = {
@@ -34,6 +51,15 @@ export class Message {
 
   public json?: object
   public raw: string
+
+  public get timestamp() {
+    return this.createdAt.toLocaleTimeString('en-US', {
+      hour12: false,
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    })
+  }
 
   constructor(public event: MessageEvent) {
     let rawText: string
@@ -65,20 +91,7 @@ export class Message {
   public setBadgeName(badgeName?: string) {
     if (!badgeName) return
     this.badge.name = badgeName
-    if (badgeName === 'error') {
-      this.badge.className = 'badge-red'
-    } else if (badgeName === 'warn' || badgeName === 'warning') {
-      this.badge.className = 'badge-yellow'
-    } else if (badgeName === 'info') {
-      this.badge.className = 'badge-blue'
-    } else if (badgeName === 'connected') {
-      this.badge.className = 'badge-emerald'
-    } else if (badgeName === 'client') {
-      this.badge.className = 'badge-indigo'
-    } else {
-      this.badge.className = 'badge-zinc'
-      this.classNames.add('text-zinc-500')
-    }
+    this.badge.className = Message.defulatBadgeStyles[badgeName] ?? 'badge-zinc'
   }
 
   public addClassNames(className?: string) {

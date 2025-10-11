@@ -4,6 +4,14 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
+  --badge-blue: theme(colors.blue.400);
+  --badge-blue-bg: color-mix(in srgb, theme(colors.blue.500) 20%, transparent);
+  --badge-blue-border: color-mix(
+    in srgb,
+    theme(colors.blue.500) 40%,
+    transparent
+  );
+
   --badge-emerald: theme(colors.emerald.400);
   --badge-emerald-bg: color-mix(
     in srgb,
@@ -78,6 +86,12 @@
 }
 
 @layer utilities {
+  .badge-blue {
+    color: var(--badge-blue);
+    background-color: var(--badge-blue-bg);
+    border-color: var(--badge-blue-border);
+  }
+
   .badge-emerald {
     color: var(--badge-emerald);
     background-color: var(--badge-emerald-bg);
@@ -112,6 +126,12 @@
     color: var(--badge-zinc);
     background-color: var(--badge-zinc-bg);
     border-color: var(--badge-zinc-border);
+  }
+
+  .badge-yellow {
+    color: var(--badge-yellow);
+    background-color: var(--badge-yellow-bg);
+    border-color: var(--badge-yellow-border);
   }
 }
 
