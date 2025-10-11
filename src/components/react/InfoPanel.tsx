@@ -134,7 +134,7 @@ export const InfoPanel = ({ className, url }: InfoPanelProps) => {
               Make HTTP requests to the following endpoint:
             </p>
             <div className="bg-zinc-800 font-mono rounded-sm p-2 flex gap-x-2">
-              <span className="font-semibold">POST</span>
+              <span className="font-semibold text-blue-500">POST</span>
               <span className="text-zinc-600">{'@'}</span>
               <a href={url.href} className="text-orange-400 font-mono text-sm]">
                 {url.href}
@@ -147,6 +147,9 @@ export const InfoPanel = ({ className, url }: InfoPanelProps) => {
                 <NumberedItem number={3}>View in real time</NumberedItem>
               </div>
             </div>
+            <a href="/docs" className="text-center text-xs text-zinc-700 hover:underline">
+              Click to view docs
+            </a>
           </PanelSection>
 
           {/* Code Snippet Section */}
