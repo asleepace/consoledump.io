@@ -1,6 +1,7 @@
 ---
 import { IconPlus, IconWaveSine } from '@tabler/icons-react'
 import Button from '@/components/astro/button.astro'
+import { BookOpen, FileText } from 'lucide-react'
 
 const className = Astro.props.class
 ---
@@ -9,7 +10,7 @@ const className = Astro.props.class
   class:list={[
     'ps-4 pe-2 min-h-12 bg-neutral-900/10 border-b-1 border-b-neutral-800',
     'flex flex-row items-center justify-between',
-    'absolute left-0 right-0 top-0 backdrop-blur-2xl',
+    'absolute w-full left-0 right-0 top-0 backdrop-blur-2xl',
     className,
   ]}
 >
@@ -17,10 +18,12 @@ const className = Astro.props.class
   <div class="flex px-4">
     <a href="/" class="flex gap-x-4 flex-row items-center justify-between">
       <div class="w-6 aspect-square">
-        <IconWaveSine size={24} color="white" />
+        <FileText size={24} className='text-zinc-700' />
       </div>
 
-      <p class="text-neutral-200 text-sm font-semibold uppercase tracking-wider">
+      <p
+        class="text-neutral-200 text-sm font-semibold uppercase tracking-wider"
+      >
         console <span class="text-orange-400">dump</span>
       </p>
     </a>

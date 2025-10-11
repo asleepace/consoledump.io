@@ -41,7 +41,6 @@ export const ConsoleDumpClient = withAppProvider(
     const utils = useUtils()
 
     useEffect(() => {
-      console.log('[initial-url]', props.initialUrl.href)
       // define dump on the client:
       console.dump = dump
       window.dump = dump
