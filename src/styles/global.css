@@ -56,6 +56,18 @@
     transparent
   );
 
+  --badge-yellow: theme(colors.yellow.400);
+  --badge-yellow-bg: color-mix(
+    in srgb,
+    theme(colors.yellow.500) 20%,
+    transparent
+  );
+  --badge-yellow-border: color-mix(
+    in srgb,
+    theme(colors.yellow.500) 40%,
+    transparent
+  );
+
   --badge-zinc: theme(colors.zinc.400);
   --badge-zinc-bg: color-mix(in srgb, theme(colors.zinc.500) 20%, transparent);
   --badge-zinc-border: color-mix(
