@@ -111,8 +111,9 @@ export const ConsoleDumpClient = withAppProvider(
     }, [])
 
     useEffect(() => {
+      if (!ctx.app.settings.autoScroll) return
       autoScroll()
-    }, [ctx.stream?.events.length])
+    }, [ctx.stream?.events.length, ctx.app.settings.autoScroll])
 
     const onSubmitAction = useCallback((action: ActionBarEvent) => {
       switch (action.type) {
