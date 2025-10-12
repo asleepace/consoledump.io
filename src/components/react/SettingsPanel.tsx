@@ -96,7 +96,7 @@ const PatternMatcher = (props: {
         className={cn(
           'bg-zinc-900 text-zinc-200 flex justify-between items-center',
           'font-bold tracking-wider text-xs uppercase p-3',
-          'hover:bg-indigo-500 transition-colors'
+          'hover:bg-indigo-500 hover:*:text-indigo-50 transition-colors'
         )}
       >
         <span className={cn('px-1', props.initialPattern?.className)}>
@@ -201,6 +201,7 @@ export const SettingsPanel = ({}: Props) => {
   const [autoScroll, setAutoScroll] = useState(true)
   const [showDividers, setShowDividers] = useState(true)
   const [saveLocally, setSaveLocally] = useState(true)
+  const [enableHtml, setEnableHtml] = useState(true)
 
   const [patterns, setPatterns] = useState(() =>
     messageParser.getPatterns().filter((p) => p.match instanceof RegExp)
@@ -248,6 +249,12 @@ export const SettingsPanel = ({}: Props) => {
         <PanelSection hideHeader>
           <div className="grid grid-cols-2 grid-rows-3 gap-4 p-2 border-zinc-700">
             <LabeledCheckbox
+              label="HTML Content"
+              className="flex-row-reverse items-start flex justify-end"
+              checked={enableHtml}
+              onChange={() => setEnableHtml(!enableHtml)}
+            />
+            <LabeledCheckbox
               label="Show timestamps"
               className="flex-row-reverse items-start flex justify-end"
               checked={showTimestamp}
@@ -281,7 +288,11 @@ export const SettingsPanel = ({}: Props) => {
         </PanelSection>
 
         {/* Customize Themes */}
-        <PanelSection headerTitle="Customize" icon={<WandSparkles size={26} />}>
+        <PanelSection
+          className="px-1"
+          headerTitle="Customize Theme"
+          icon={<WandSparkles className="mr-1" size={26} />}
+        >
           <p className="text-xs text-zinc-500 mb-4">
             Create custom patterns to highlight and style specific log messages.
           </p>
