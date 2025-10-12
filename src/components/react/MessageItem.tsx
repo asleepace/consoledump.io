@@ -11,12 +11,31 @@ interface Props {
   className?: string
 }
 
+/**
+ * Customize how content is displayed.
+ */
 const matcher = createPatternMatcher([
-  { match: /(error:)/gi, badgeName: 'error', className: 'text-red-500' },
-  { match: /(warn:)/gi, badgeName: 'warn', className: 'text-yellow-400' },
-  { match: /(info:)/gi, badgeName: 'info', className: 'text-blue-400' },
-  { match: /(debug:)/gi, badgeName: 'debug', className: 'text-orange-400' },
-  { match: /(log:)/gi, badgeName: 'log', className: 'text-zinc-400' },
+  {
+    match: /(error:|\[error\])/gi,
+    badgeName: 'error',
+    className: 'text-red-500',
+  },
+  {
+    match: /(warn:|\[warn\])/gi,
+    badgeName: 'warn',
+    className: 'text-yellow-400',
+  },
+  {
+    match: /(info:|\[info\])/gi,
+    badgeName: 'info',
+    className: 'text-blue-400',
+  },
+  {
+    match: /(debug:|\[debug\])/gi,
+    badgeName: 'debug',
+    className: 'text-orange-400',
+  },
+  { match: /(log:|\[log\])/gi, badgeName: 'log', className: 'text-zinc-400' },
   {
     match: (msg) => msg.event.type === 'client',
     className: 'text-indigo-400',

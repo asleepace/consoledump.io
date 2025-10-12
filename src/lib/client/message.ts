@@ -165,6 +165,10 @@ export class MessageRenderer {
 // ============================================================================
 
 export class Message {
+  static defaultConfig = {
+    enableTimestampMs: false,
+  }
+
   static defaultBadgeStyles: Record<string, string> = {
     error: 'badge-red',
     warn: 'badge-yellow',
@@ -233,8 +237,13 @@ export class Message {
     const hours = this.createdAt.getHours().toString().padStart(2, '0')
     const minutes = this.createdAt.getMinutes().toString().padStart(2, '0')
     const seconds = this.createdAt.getSeconds().toString().padStart(2, '0')
-    const ms = this.createdAt.getMilliseconds().toString().padStart(3, '0')
-    return `${hours}:${minutes}:${seconds}`
+
+    if (Message.defaultConfig.enableTimestampMs) {
+      const ms = this.createdAt.getMilliseconds().toString().padStart(3, '0')
+      return `${hours}:${minutes}:${seconds}:${ms}`
+    } else {
+      return `${hours}:${minutes}:${seconds}`
+    }
   }
 
   public get className(): string {
