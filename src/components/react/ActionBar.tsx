@@ -138,13 +138,13 @@ export function ActionBar(props: ActionBarProps) {
     <>
       <AppBackdropLayer
         hidden={!isDropdownOpen}
-        onClick={() => setIsDropdownOpen}
+        onClick={() => setIsDropdownOpen(false)}
       />
       <div
-        className="relative flex-1 z-10 opacity-70 focus-within:opacity-100 transition-opacity"
+        className="relative flex-1 z-50 opacity-70 focus-within:opacity-100 transition-opacity"
         ref={dropdownRef}
       >
-        <div className="relative flex w-full flex-1 bg-zinc-900 text-zinc-300 rounded-lg overflow-hidden">
+        <div className="relative z-50 flex w-full flex-1 bg-zinc-900 text-zinc-300 rounded-lg overflow-hidden">
           <button
             className="left-0 top-0 bottom-0 flex bg-zinc-800/50 hover:bg-zinc-800 px-3 items-center gap-0.5 text-zinc-500 hover:text-blue-500 transition-colors z-10"
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -171,7 +171,7 @@ export function ActionBar(props: ActionBarProps) {
         </div>
 
         {isDropdownOpen && (
-          <div className="absolute top-full left-0 mt-1 shrink bg-zinc-800 border-zinc-700 rounded-lg shadow-lg overflow-hidden z-20">
+          <div className="absolute top-full left-0 mt-1 shrink bg-zinc-800 border-zinc-700 rounded-lg shadow-lg overflow-hidden z-50">
             {actionBarModes.map(({ type, icon: ActionIcon, label }) => (
               <button
                 key={type}

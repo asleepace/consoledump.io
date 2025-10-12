@@ -1,5 +1,6 @@
 import { cn } from '@/lib/utils'
 import { useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 
 type Props = {
   hidden?: boolean
@@ -19,7 +20,11 @@ type Props = {
  *  @param {boolean} props.className defaults to `'backdrop-blur-xs'`.
  *  @param {Function} props.onClick (optional) called when clicked or escape key is pressed.
  */
-export function AppBackdropLayer({ hidden, onClick, className = 'backdrop-blur-[1px]' }: Props) {
+export function AppBackdropLayer({
+  hidden,
+  onClick,
+  className = 'backdrop-blur-[1px]',
+}: Props) {
   const didForceClose = useRef(false)
 
   useEffect(() => {
@@ -36,14 +41,21 @@ export function AppBackdropLayer({ hidden, onClick, className = 'backdrop-blur-[
 
     return () => {
       window.removeEventListener('keydown', onEscapeKey)
+      didForceClose.current = false // Reset the ref on cleanup
     }
-  }, [hidden])
+  }, [hidden, onClick])
 
-  return hidden ? null : (
+  if (hidden) return null
+
+  return createPortal(
     <div
       id="backdrop-layer"
       onClick={onClick}
-      className={cn('fixed z-10 inset-0 bg-black/30 animate-in transition-colors duration-200', className)}
-    />
+      className={cn(
+        'fixed inset-0 z-10 bg-black/30 transition-colors duration-200',
+        className
+      )}
+    />,
+    document.body
   )
 }
