@@ -1,6 +1,7 @@
 import { memo, useCallback, useMemo, useRef, useState, type Ref } from 'react'
 import { CloseButton, Panel, PanelSection } from './Panel'
 import { LabeledCheckbox } from './LabeledCheckbox'
+import { LabeledInput } from './LabeledInput'
 
 import {
   ArrowBigDown,
@@ -10,6 +11,8 @@ import {
   Plus,
   PlusCircle,
   Settings,
+  Settings2,
+  WandSparkles,
 } from 'lucide-react'
 import { useAppContext } from '@/hooks/useAppContext'
 import { cn } from '@/lib/utils'
@@ -18,144 +21,166 @@ import type { PatternMatcher } from '@/lib/client/message'
 import { messageParser } from '@/lib/client/message'
 import { Try } from '@asleepace/try'
 
-interface Props {}
-
-const LabeledInput = (props: {
-  ref: Ref<HTMLInputElement>
-  label: string
-  className?: string
-  placeholder?: string
-  defaultValue?: string
-  onChange?: (text: string) => void
-}) => {
-  return (
-    <div className={'flex w-full flex-col shrink'}>
-      <label className="px-1">{props.label}</label>
-      <input
-        defaultValue={props.defaultValue}
-        onChange={(ev) => {
-          props.onChange?.(ev.target.value)
-        }}
-        placeholder={props.placeholder}
-        className={cn(
-          'w-full h-8 bg-zinc-700 p-2 text-zinc-100 font-mono tracking-wider rounded mb-2 focus:ring-0',
-          props.className
-        )}
-        type="text"
-        ref={props.ref}
-      ></input>
-    </div>
-  )
-}
-
 const PatternMatcher = (props: {
   initialPattern?: PatternMatcher
   onRegisterPattern: (pattern: PatternMatcher) => void
+  onDelete?: (pattern: PatternMatcher) => void // Add delete handler
 }) => {
   const inputRegexRef = useRef<HTMLInputElement>(null)
   const inputBadgeRef = useRef<HTMLInputElement>(null)
   const inputClassnameRef = useRef<HTMLInputElement>(null)
+
   const [isValidRegex, setIsValid] = useState(true)
-  const [isEnabled, setIsEnabled] = useState(true)
+  const [isEnabled, setIsEnabled] = useState(!props.initialPattern?.disabled)
+  const [isCaseInsensitive, setIsCaseInsensitive] = useState(
+    // Extract 'i' flag from regex
+    props.initialPattern?.match instanceof RegExp
+      ? props.initialPattern.match.flags.includes('i')
+      : false
+  )
   const [isCollapsed, setIsCollapsed] = useState(!!props.initialPattern)
 
   const onTestRegex = useCallback((value: string) => {
+    if (!value) {
+      setIsValid(true)
+      return
+    }
     const res = Try.catch(() => new RegExp(value))
     setIsValid(res.ok)
   }, [])
 
-  const onClick = useCallback(() => {
+  const onSave = useCallback(() => {
     const classNames = inputClassnameRef.current?.value
     const matcher = inputRegexRef.current?.value
-    if (!classNames || !matcher) return
+    const badgeName = inputBadgeRef.current?.value
+
+    if (!classNames || !matcher) {
+      // Show error toast or validation
+      return
+    }
+
+    if (!isValidRegex) {
+      // Show error for invalid regex
+      return
+    }
+
+    const flags = isCaseInsensitive ? 'gi' : 'g'
+
     props.onRegisterPattern({
       className: classNames,
-      match: new RegExp(matcher),
+      badgeName: badgeName || undefined,
+      match: new RegExp(matcher, flags),
+      disabled: !isEnabled,
     })
-  }, [])
+  }, [isValidRegex, isCaseInsensitive, isEnabled])
+
+  const onDelete = useCallback(() => {
+    if (props.initialPattern && props.onDelete) {
+      props.onDelete(props.initialPattern)
+    }
+  }, [props.initialPattern, props.onDelete])
 
   const initialRegex = useMemo(() => {
     const pattern = props.initialPattern?.match
-
     if (pattern instanceof RegExp) {
       return pattern.source
-    } else {
-      return undefined
     }
+    return undefined
   }, [props.initialPattern?.match])
 
   return (
-    <div className="flex flex-col rounded-lg overflow-hidden *:transition-all">
+    <div className="flex flex-col rounded-lg overflow-hidden border border-zinc-700">
+      {/* Header */}
       <button
         onClick={() => setIsCollapsed(!isCollapsed)}
-        className="bg-zinc-950 text-zinc-200 flex justify-between flex-row font-bold tracking-wider text-xs uppercase p-3"
+        className={cn(
+          'bg-zinc-900 text-zinc-200 flex justify-between items-center',
+          'font-bold tracking-wider text-xs uppercase p-3',
+          'hover:bg-indigo-500 transition-colors'
+        )}
       >
         <span className={cn('px-1', props.initialPattern?.className)}>
-          {props.initialPattern?.badgeName ?? 'Custom'}
+          {props.initialPattern?.badgeName ?? 'New Pattern'}
         </span>
-        {isCollapsed ? (
-          <ChevronRight className="" size={16} />
-        ) : (
-          <ChevronDown className="right-0" size={16} />
-        )}
+        {isCollapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
       </button>
+
+      {/* Content */}
       <div
         className={cn(
-          'flex flex-col w-full text-zinc-400 p-2 font-mono *:focus:ring-0 **:*:outline-none bg-zinc-800',
-          isCollapsed ? 'h-0 py-0' : 'h-auto'
+          'flex flex-col w-full text-zinc-400 bg-zinc-800 transition-all overflow-hidden',
+          isCollapsed ? 'h-0' : 'h-auto p-3'
         )}
       >
+        {/* Inputs */}
         <div className="flex gap-x-2">
           <LabeledInput
             ref={inputRegexRef}
-            label={'Regex'}
+            label="Regex Pattern"
             defaultValue={initialRegex}
-            placeholder="(custom:)"
+            placeholder="(error:|warn:)"
             onChange={onTestRegex}
-            className={
-              isValidRegex || !inputBadgeRef.current?.value
-                ? ''
-                : 'border-red-500 border-2'
-            }
+            className={cn(!isValidRegex && 'border-2 border-red-500')}
           />
           <LabeledInput
             ref={inputBadgeRef}
-            label={'Name'}
+            label="Badge Name"
             defaultValue={props.initialPattern?.badgeName}
+            placeholder="error"
           />
         </div>
+
+        {!isValidRegex && (
+          <p className="text-red-400 text-xs px-1 -mt-1 mb-2">
+            Invalid regex pattern
+          </p>
+        )}
+
         <LabeledInput
-          defaultValue={props.initialPattern?.className}
           ref={inputClassnameRef}
-          label="Class"
-          placeholder="text-blue-500 font-mono"
+          label="CSS Classes"
+          defaultValue={props.initialPattern?.className}
+          placeholder="text-red-500 font-bold"
         />
-        <div className="flex items-center justify-between pt-2.5">
-          <div className="flex gap-x-2">
+
+        {/* Options */}
+        <div className="flex items-center justify-between pt-2">
+          <div className="flex gap-x-3">
             <LabeledCheckbox
               label="Enabled"
               checked={isEnabled}
-              onChange={() => setIsEnabled((prev) => !prev)}
+              onChange={setIsEnabled}
             />
             <LabeledCheckbox
               label="Case Insensitive"
-              checked={isEnabled}
-              onChange={() => {}}
+              checked={isCaseInsensitive}
+              onChange={setIsCaseInsensitive}
             />
           </div>
 
-          <div className="flex shrink gap-x-2">
+          {/* Actions */}
+          <div className="flex gap-x-2">
+            {props.initialPattern && (
+              <button
+                onClick={onDelete}
+                className={cn(
+                  'bg-zinc-700 hover:bg-red-600 text-red-100',
+                  'rounded px-4 py-1.5 text-sm font-medium transition-colors'
+                )}
+              >
+                Delete
+              </button>
+            )}
             <button
-              onClick={onClick}
-              className="bg-zinc-700 hover:bg-red-500 text-red-100 rounded px-4 py-1"
+              onClick={onSave}
+              disabled={!isValidRegex}
+              className={cn(
+                'bg-indigo-600 hover:bg-indigo-500 text-white',
+                'rounded px-4 py-1.5 text-sm font-medium transition-colors',
+                'disabled:opacity-50 disabled:cursor-not-allowed'
+              )}
             >
-              Delete
-            </button>
-            <button
-              onClick={onClick}
-              className="bg-zinc-700 hover:bg-blue-400 text-blue-100 rounded px-4 py-1"
-            >
-              Save
+              {props.initialPattern ? 'Update' : 'Add'}
             </button>
           </div>
         </div>
@@ -164,24 +189,39 @@ const PatternMatcher = (props: {
   )
 }
 
+interface Props {}
+
 export const SettingsPanel = ({}: Props) => {
-  const { isSettingsOpen, setIsSettingsOpen, ...app } = useAppContext()
+  const { isSettingsOpen, setIsSettingsOpen } = useAppContext()
   const handleClose = () => setIsSettingsOpen(false)
   const handleOpen = () => setIsSettingsOpen(true)
 
-  const [renderCount, setRenderCount] = useState(0)
+  const [showTimestamp, setShowTimestamp] = useState(true)
+  const [showBagdes, setShowBadges] = useState(true)
+  const [autoScroll, setAutoScroll] = useState(true)
+  const [showDividers, setShowDividers] = useState(true)
+  const [saveLocally, setSaveLocally] = useState(true)
+
+  const [patterns, setPatterns] = useState(() =>
+    messageParser.getPatterns().filter((p) => p.match instanceof RegExp)
+  )
+  const [showNewPattern, setShowNewPattern] = useState(false)
 
   const onRegisterPattern = useCallback((pattern: PatternMatcher) => {
-    console.log(pattern)
     messageParser.register(pattern)
-    setRenderCount((prev) => prev + 1)
+    setPatterns(
+      messageParser.getPatterns().filter((p) => p.match instanceof RegExp)
+    )
+    setShowNewPattern(false)
   }, [])
 
-  const basicPatterns = useMemo(() => {
-    return messageParser
-      .getPatterns()
-      .filter((pattern) => pattern.match instanceof RegExp)
-  }, [renderCount])
+  const onDeletePattern = useCallback((pattern: PatternMatcher) => {
+    // Add delete method to messageParser
+    messageParser.unregister(pattern)
+    setPatterns(
+      messageParser.getPatterns().filter((p) => p.match instanceof RegExp)
+    )
+  }, [])
 
   return (
     <Panel
@@ -189,34 +229,100 @@ export const SettingsPanel = ({}: Props) => {
       handleClose={handleClose}
       handleOpen={handleOpen}
     >
-      <PanelSection
-        icon={<Settings size={32} className="text-orange-400 mr-1" />}
-        headerTitle={<p className="text-2xl font-semibold">Settings</p>}
-        headerRight={<CloseButton handleClose={handleClose} />}
-        className="sticky left-0 right-0 top-0"
-      >
-        <p>Configure various settings and configurations here.</p>
-        <div className="h-[1px] w-full mx-auto my-4 bg-zinc-800"></div>
-      </PanelSection>
+      <div className="sticky left-0 right-0 w-full top-0 bg-zinc-900 z-10">
+        <PanelSection
+          icon={<Settings size={32} className="text-zinc-500 mr-1" />}
+          headerTitle={<p className="text-2xl font-semibold">Settings</p>}
+          headerRight={<CloseButton handleClose={handleClose} />}
+          className="bg-zinc-900"
+        >
+          <p className="text-sm text-zinc-400">
+            Configure message patterns and display settings.
+          </p>
+          <div className="h-[1px] w-full mx-auto mt-4 bg-zinc-800 drop-shadow-2xl" />
+        </PanelSection>
+      </div>
 
-      {/* Message Renders Here */}
-      <PanelSection headerTitle={'Pattern Matching'}>
-        <div className="flex flex-col gap-y-4 rounded">
-          {basicPatterns.map((pattern) => {
-            return (
+      <div className="flex flex-col gap-y-8">
+        {/* General settings */}
+        <PanelSection hideHeader>
+          <div className="grid grid-cols-2 grid-rows-3 gap-4 p-2 border-zinc-700">
+            <LabeledCheckbox
+              label="Show timestamps"
+              className="flex-row-reverse items-start flex justify-end"
+              checked={showTimestamp}
+              onChange={() => setShowTimestamp(!showTimestamp)}
+            />
+            <LabeledCheckbox
+              label="Show badges"
+              className="flex-row-reverse items-start flex justify-end"
+              checked={showBagdes}
+              onChange={() => setShowBadges(!showBagdes)}
+            />
+            <LabeledCheckbox
+              label="Show divider"
+              className="flex-row-reverse items-start flex justify-end"
+              checked={showDividers}
+              onChange={() => setShowDividers(!showDividers)}
+            />
+            <LabeledCheckbox
+              label="Autoscroll"
+              className="flex-row-reverse items-start flex justify-end"
+              checked={autoScroll}
+              onChange={() => setAutoScroll(!autoScroll)}
+            />
+            <LabeledCheckbox
+              label="Save locally"
+              className="flex-row-reverse items-start flex justify-end"
+              checked={saveLocally}
+              onChange={() => setSaveLocally(!saveLocally)}
+            />
+          </div>
+        </PanelSection>
+
+        {/* Customize Themes */}
+        <PanelSection headerTitle="Customize" icon={<WandSparkles size={26} />}>
+          <p className="text-xs text-zinc-500 mb-4">
+            Create custom patterns to highlight and style specific log messages.
+          </p>
+
+          <div className="flex flex-col gap-y-3">
+            {/* Existing patterns */}
+            {patterns.map((pattern, index) => (
               <PatternMatcher
+                key={`${pattern.badgeName}-${index}`}
                 initialPattern={pattern}
                 onRegisterPattern={onRegisterPattern}
-                key={pattern.badgeName}
+                onDelete={onDeletePattern}
               />
-            )
-          })}
-          <PatternMatcher onRegisterPattern={onRegisterPattern} />
-          <button className="flex w-full bg-zinc-800 hover:bg-zinc-700 rounded-lg p-3 items-center justify-center">
-            <Plus className="font-black" size={16} />
-          </button>
-        </div>
-      </PanelSection>
+            ))}
+
+            {/* New pattern form */}
+            {showNewPattern && (
+              <PatternMatcher
+                onRegisterPattern={onRegisterPattern}
+                onDelete={() => setShowNewPattern(false)}
+              />
+            )}
+
+            {/* Add button */}
+            {!showNewPattern && (
+              <button
+                onClick={() => setShowNewPattern(true)}
+                className={cn(
+                  'flex w-full bg-zinc-800 hover:bg-zinc-700',
+                  'rounded-lg p-3 items-center justify-center gap-2',
+                  'text-zinc-400 hover:text-zinc-200 transition-colors',
+                  'border border-dashed border-zinc-700 hover:border-zinc-600'
+                )}
+              >
+                <Plus size={16} />
+                <span className="text-sm font-medium">Add Pattern</span>
+              </button>
+            )}
+          </div>
+        </PanelSection>
+      </div>
     </Panel>
   )
 }

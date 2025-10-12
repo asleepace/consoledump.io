@@ -5,8 +5,9 @@ import type { JSX } from 'react'
 export type PanelSectionProps = {
   className?: string
   icon?: JSX.Element
-  headerTitle: string | JSX.Element
+  headerTitle?: string | JSX.Element
   headerRight?: JSX.Element
+  hideHeader?: boolean
 }
 
 export const CloseButton = (props: { handleClose: () => void }) => {
@@ -25,7 +26,13 @@ export const PanelSection = (
 ) => {
   return (
     <div>
-      <div className={cn('flex items-center gap-2 mb-4', props.className)}>
+      <div
+        className={cn(
+          'flex items-center gap-2 mb-4',
+          props.className,
+          props.hideHeader && 'hidden'
+        )}
+      >
         {props.icon}
         <div className="text-lg text-zinc-200 font-semibold tracking-wide flex-1">
           {props.headerTitle}

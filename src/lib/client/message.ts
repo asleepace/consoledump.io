@@ -18,6 +18,7 @@ export type PatternMatcher = {
   badgeName?: string
   className?: string
   renderer?: ItemRenderer
+  disabled?: boolean
   only?: boolean
 }
 
@@ -283,8 +284,8 @@ export function createPatternMatcher(
   patterns: PatternMatcher[],
   customRenderers: ItemRenderer[] = []
 ) {
-  const globalPatterns = Array.from(patterns)
-  const globalRenderer = new MessageRenderer(customRenderers)
+  let globalPatterns = Array.from(patterns)
+  let globalRenderer = new MessageRenderer(customRenderers)
 
   function isMatch(pattern: PatternMatcher, message: Message): boolean {
     if (pattern.match instanceof RegExp) {
@@ -304,6 +305,9 @@ export function createPatternMatcher(
     },
     getPatterns() {
       return globalPatterns
+    },
+    unregister(pattern: PatternMatcher) {
+      globalPatterns = globalPatterns.filter((current) => current !== pattern)
     },
     parse(event: MessageEvent): Message {
       const msg = new Message(event, globalRenderer)
