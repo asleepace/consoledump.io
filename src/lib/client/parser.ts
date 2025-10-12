@@ -10,6 +10,7 @@ function tryParseJson<T = any>(data: string): T | undefined {
 
 function textEncode(data: object): string {
   try {
+    console.log(data)
     if (typeof data === 'string') return data
     if (data instanceof Date)
       return data.toLocaleDateString('en-US', { dateStyle: 'medium' })
@@ -43,12 +44,10 @@ export class Message {
   public contentType: ContentType = 'data::string'
   public createdAt = new Date()
   public classNames = new Set<string>()
-
   public badge = {
     name: 'message',
     className: 'badge-zinc',
   }
-
   public json?: object
   public raw: string
 
@@ -62,30 +61,25 @@ export class Message {
   }
 
   constructor(public event: MessageEvent) {
-    let rawText: string
     if (typeof event.data === 'string') {
-      rawText = event.data
+      this.raw = event.data
+      this.json = tryParseJson(event.data)
+      switch (true) {
+        case Boolean(this.json && Array.isArray(this.json)): {
+          this.contentType = 'json::arrary'
+          break
+        }
+        case Boolean(this.json): {
+          this.contentType = 'json::object'
+          break
+        }
+      }
     } else {
-      rawText = textEncode(event.data)
+      this.raw = textEncode(event.data)
+      this.json = event.data
     }
 
     this.setBadgeName(event.type)
-    this.raw = rawText
-
-    const jsonData = tryParseJson(event.data)
-
-    switch (true) {
-      case Boolean(jsonData && Array.isArray(jsonData)): {
-        this.contentType = 'json::arrary'
-        this.json = jsonData
-        break
-      }
-      case Boolean(jsonData): {
-        this.contentType = 'json::object'
-        this.json
-        break
-      }
-    }
   }
 
   public setBadgeName(badgeName?: string) {
@@ -103,30 +97,34 @@ export class Message {
     return new Array(...this.classNames).join(' ')
   }
 
-  public get textContent() {
+  public setToString(toHtmlString: (this: Message) => string) {
+    this.toHtml = toHtmlString.bind(this)
+  }
+
+  public toHtml = () => {
     if (this.contentType === 'data::string') return this.raw
     if (this.contentType === 'json::object') {
       return JSON.stringify(this.raw)
     }
     if (this.contentType === 'json::arrary') {
-      return (this.json as any[])
-        .map((item) => {
-          return textEncode(item)
-        })
-        .join(', ')
+      return (this.json as any[]).map((item) => textEncode(item)).join(', ')
     }
     return String(this.raw)
   }
 
+  public get textContent() {
+    return this.toHtml.call(this)
+  }
+
   public get html() {
-    return `<span data-name="${
-      this.badge.className
-    }" class="${this.getClassName()}">${this.textContent}</span>`
+    console.log(this.contentType, this.toHtml())
+    return `<span data-name="${this.badge.name}">${this.textContent}</span>`
   }
 }
 
 export type PatternMatcher = {
-  match: RegExp | ((msg: Message) => boolean)
+  match: RegExp | ((msg: Message) => boolean | void)
+  toHtml?: () => string
   className?: string
   badgeName?: string
   only?: boolean
@@ -137,7 +135,7 @@ export function createPatternMatcher(patternMatchers: PatternMatcher[]) {
     if (pattern.match instanceof RegExp) {
       return pattern.match.test(message.raw)
     } else {
-      return pattern.match(message)
+      return Boolean(pattern.match(message))
     }
   }
 
@@ -147,6 +145,7 @@ export function createPatternMatcher(patternMatchers: PatternMatcher[]) {
       for (const pattern of patternMatchers) {
         // check if pattern is matched
         if (isMatch(pattern, msg)) {
+          if (pattern.toHtml) msg.toHtml = pattern.toHtml
           msg.addClassNames(pattern.className)
           msg.setBadgeName(pattern.badgeName)
           if (pattern.only) break

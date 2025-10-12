@@ -1,7 +1,6 @@
 import { cn } from '@/lib/utils'
 import { memo, useCallback, useState } from 'react'
 import { copyToClipboard } from '@/lib/client/clipboard'
-import { safe } from '@/lib/shared/safe-utils'
 import { MessageTimestamp } from '@/components/react/MessageTimestamp'
 import { MessageBadge } from './MessageBadge'
 import { BtnCopyToClipboard } from './Buttons'
@@ -18,7 +17,13 @@ const matcher = createPatternMatcher([
   { match: /(info:)/gi, badgeName: 'info', className: 'text-blue-400' },
   { match: /(debug:)/gi, badgeName: 'debug', className: 'text-orange-400' },
   { match: /(log:)/gi, badgeName: 'log', className: 'text-zinc-400' },
-  { match: (msg) => msg.badge.name === 'client', className: 'text-indigo-400' },
+  {
+    match: (msg) => msg.event.type === 'client',
+    className: 'text-indigo-400',
+    toHtml() {
+      return `connected to stream <a class="text-orange-400" href="${window.location.pathname}">${window.location.href}</a>`
+    },
+  },
   {
     match: (msg) => msg.badge.name === 'connected',
     className: 'text-emerald-400',
@@ -71,9 +76,8 @@ export const MessageItem = memo(({ className, message }: Props) => {
                 'text-xs font-mono break-all py-0.5 text-zinc-600',
                 msg.getClassName()
               )}
-            >
-              {msg.textContent}
-            </span>
+              dangerouslySetInnerHTML={{ __html: msg.html }}
+            ></span>
           </div>
           {/* --- actions --- */}
           <BtnCopyToClipboard
