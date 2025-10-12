@@ -8,6 +8,7 @@ import { Try } from '@asleepace/try'
 import { useUtils } from '@/hooks/useUtils'
 import { MessageItem } from './MessageItem'
 import { InfoPanel } from './InfoPanel'
+import { SettingsPanel } from './SettingsPanel'
 
 export type ConsoleDumpClientProps = {
   initialUrl: URL
@@ -47,16 +48,18 @@ export const ConsoleDumpClient = withAppProvider(
       window.dump = dump
 
       // define other utils
-      Object.defineProperty(Number.prototype, 'for', {
-        value(this: Number, callback: <T>(i: number) => T[]) {
-          const end = Math.floor(this.valueOf())
-          const res = []
-          for (let i = 0; i < end; i++) {
-            res.push(callback(i))
-          }
-          return res
-        },
-      })
+      if (!('for' in Number.prototype)) {
+        Object.defineProperty(Number.prototype, 'for', {
+          value(this: Number, callback: <T>(i: number) => T[]) {
+            const end = Math.floor(this.valueOf())
+            const res = []
+            for (let i = 0; i < end; i++) {
+              res.push(callback(i))
+            }
+            return res
+          },
+        })
+      }
     }, [])
 
     const downloadLogs = () => {
@@ -79,6 +82,10 @@ export const ConsoleDumpClient = withAppProvider(
         top: scrollContainerRef.current.scrollHeight,
         behavior: 'instant',
       })
+    }
+
+    const toggleSettings = () => {
+      ctx.setIsSettingsOpen((prev) => !prev)
     }
 
     const toggleInfoPanel = () => {
@@ -150,6 +157,7 @@ export const ConsoleDumpClient = withAppProvider(
         {/* --- site navigation --- */}
         <AppNavigationBar
           isConnected={ctx.stream?.isConnected}
+          onOpenSettings={toggleSettings}
           onOpenInfoPanel={toggleInfoPanel}
           scrollToBottom={scrollToBottom}
           onSubmitAction={onSubmitAction}
@@ -160,6 +168,7 @@ export const ConsoleDumpClient = withAppProvider(
         {/* --- main context --- */}
         <main className="w-full max-w-full flex-1 flex flex-col overflow-hidden">
           <InfoPanel url={props.initialUrl} />
+          <SettingsPanel />
 
           <div ref={scrollContainerRef} className="flex-1 overflow-y-auto pb-4">
             {msgs}

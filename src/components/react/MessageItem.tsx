@@ -5,6 +5,7 @@ import { MessageTimestamp } from '@/components/react/MessageTimestamp'
 import { MessageBadge } from './MessageBadge'
 import { BtnCopyToClipboard } from './Buttons'
 import { createPatternMatcher } from '@/lib/client/message'
+import { messageParser } from '@/lib/client/message'
 
 interface Props {
   message: MessageEvent<string>
@@ -15,27 +16,6 @@ interface Props {
  * Customize how content is displayed.
  */
 const matcher = createPatternMatcher([
-  {
-    match: /(error:|\[error\])/gi,
-    badgeName: 'error',
-    className: 'text-red-500',
-  },
-  {
-    match: /(warn:|\[warn\])/gi,
-    badgeName: 'warn',
-    className: 'text-yellow-400',
-  },
-  {
-    match: /(info:|\[info\])/gi,
-    badgeName: 'info',
-    className: 'text-blue-400',
-  },
-  {
-    match: /(debug:|\[debug\])/gi,
-    badgeName: 'debug',
-    className: 'text-orange-400',
-  },
-  { match: /(log:|\[log\])/gi, badgeName: 'log', className: 'text-zinc-400' },
   {
     match: (msg) => msg.event.type === 'client',
     className: 'text-indigo-400',
@@ -49,6 +29,19 @@ const matcher = createPatternMatcher([
   },
 ])
 
+messageParser.register({
+  match: (msg) => msg.event.type === 'client',
+  className: 'text-indigo-400',
+  renderer() {
+    return `connected to stream <a class="text-orange-400" href="${window.location.pathname}">${window.location.href}</a>`
+  },
+})
+
+messageParser.register({
+  match: (msg) => msg.badge.name === 'connected',
+  className: 'text-emerald-400',
+})
+
 /**
  * ## MessageItem
  *
@@ -58,7 +51,7 @@ const matcher = createPatternMatcher([
 export const MessageItem = memo(({ className, message }: Props) => {
   const [isCopied, setIsCopied] = useState(false)
 
-  const msg = matcher.parse(message)
+  const msg = messageParser.parse(message)
   if (Array.isArray(msg.content.data)) {
     console.log(...msg.content.data)
   } else {

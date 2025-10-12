@@ -54,6 +54,7 @@ export type AppCtx = {
   sessionId: string | undefined
   isConnected: boolean
   isInfoPanelOpen: boolean
+  isSettingsOpen: boolean
   isDark: boolean
   url: URL
   expandedLogs: Set<string>
@@ -64,6 +65,7 @@ export type AppCtx = {
   setIsConnected: SetState<boolean>
   setExpandedLogs: SetState<Set<string>>
   setIsInfoPanelOpen: SetState<boolean>
+  setIsSettingsOpen: SetState<boolean>
 
   /** helpers */
   toggleExpand(id: string): void
@@ -79,7 +81,8 @@ export const AppContext = createContext<AppCtx>({
   isConnected: false,
   isDark: false,
   expandedLogs: new Set(),
-  isInfoPanelOpen: true,
+  isInfoPanelOpen: false,
+  isSettingsOpen: false,
   url: new URL(import.meta.env.SITE),
   sessionId: undefined,
   stream: undefined,
@@ -91,6 +94,7 @@ export const AppContext = createContext<AppCtx>({
   toggleExpand() {},
   copyToClipboard() {},
   setIsInfoPanelOpen() {},
+  setIsSettingsOpen() {},
 })
 
 // --- app context provider ---
@@ -103,7 +107,8 @@ export function AppContextProvider(
   const [searchTerm, setSearchTerm] = useState<string | undefined>()
   const [isConnected, setIsConnected] = useState<boolean>(false)
   const [expandedLogs, setExpandedLogs] = useState<Set<string>>(new Set())
-  const [isInfoPanelOpen, setIsInfoPanelOpen] = useState(true)
+  const [isInfoPanelOpen, setIsInfoPanelOpen] = useState(false)
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
 
   const client = useClient()
   const currentUrl = useCurrentUrl()
@@ -124,6 +129,7 @@ export function AppContextProvider(
         isDark,
         url: currentUrl,
         isInfoPanelOpen,
+        isSettingsOpen,
         expandedLogs,
         setTheme: (mode) => setTheme(AppThemes[mode]),
         setIsInfoPanelOpen,
@@ -131,6 +137,7 @@ export function AppContextProvider(
         setSearchTerm,
         setIsConnected,
         setExpandedLogs,
+        setIsSettingsOpen,
         toggleExpand: (id: string) => {
           const next = new Set(expandedLogs)
           if (next.has(id)) {

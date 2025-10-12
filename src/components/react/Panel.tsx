@@ -1,5 +1,41 @@
 import { cn } from '@/lib/utils'
-import { ChevronLeft } from 'lucide-react'
+import { ChevronLeft, X } from 'lucide-react'
+import type { JSX } from 'react'
+
+export type PanelSectionProps = {
+  className?: string
+  icon?: JSX.Element
+  headerTitle: string | JSX.Element
+  headerRight?: JSX.Element
+}
+
+export const CloseButton = (props: { handleClose: () => void }) => {
+  return (
+    <button
+      onClick={props.handleClose}
+      className="text-zinc-400 bg-zinc-800 hover:bg-zinc-700 p-2 rounded-full hover:text-gray-200 transition-colors"
+    >
+      <X size={18} />
+    </button>
+  )
+}
+
+export const PanelSection = (
+  props: React.PropsWithChildren<PanelSectionProps>
+) => {
+  return (
+    <div>
+      <div className={cn('flex items-center gap-2 mb-4', props.className)}>
+        {props.icon}
+        <div className="text-lg text-zinc-200 font-semibold tracking-wide flex-1">
+          {props.headerTitle}
+        </div>
+        {props.headerRight}
+      </div>
+      <div className="flex flex-col shrink">{props.children}</div>
+    </div>
+  )
+}
 
 export interface Props {
   className?: string

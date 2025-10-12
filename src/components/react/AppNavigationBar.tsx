@@ -1,4 +1,14 @@
-import { ChevronsDown, Download, Info, Settings, Terminal, Trash, Wifi, WifiOff } from 'lucide-react'
+import {
+  ChevronsDown,
+  Download,
+  Info,
+  Plus,
+  Settings,
+  Terminal,
+  Trash,
+  Wifi,
+  WifiOff,
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { PropsWithChildren } from 'react'
 import { ActionBar, type ActionBarEvent } from './ActionBar'
@@ -41,7 +51,9 @@ export function OnlineIndicator({ isConnected }: { isConnected: boolean }) {
   return (
     <div
       className={`flex items-center gap-2 px-2.5 py-1 rounded-full text-xs ${
-        isConnected ? 'bg-emerald-500/20 text-emerald-500' : 'bg-red-500/20 text-red-500'
+        isConnected
+          ? 'bg-emerald-500/20 text-emerald-500'
+          : 'bg-red-500/20 text-red-500'
       }`}
     >
       {isConnected ? (
@@ -61,6 +73,7 @@ export function OnlineIndicator({ isConnected }: { isConnected: boolean }) {
 
 export type AppNavigationBarProps = {
   onSubmitAction: (ev: ActionBarEvent) => void
+  onOpenSettings: () => void
   onOpenInfoPanel: () => void
   scrollToBottom: () => void
   downloadLogs: () => void
@@ -74,7 +87,12 @@ export type AppNavigationBarProps = {
  */
 export function AppNavigationBar(props: AppNavigationBarProps) {
   return (
-    <nav className={cn('sticky flex top-0 w-full bg-black p-4 items-center gap-x-4', props.className)}>
+    <nav
+      className={cn(
+        'sticky flex top-0 w-full bg-black p-4 items-center gap-x-4',
+        props.className
+      )}
+    >
       <div className="flex flex-1 w-full">
         <div className="flex items-center gap-2">
           <Terminal className="text-blue-400" size={16} />
@@ -121,9 +139,18 @@ export function AppNavigationBar(props: AppNavigationBarProps) {
           <div className="h-6 w-[0.2px] bg-white/20 mx-1" />
           {/* Settings button */}
           <IconButton
+            label="New Session"
+            className="text-gray-500/90 bg-gray-500/20 hover:bg-gray-500/50"
+            onClick={() => {
+              window.location.href = '/'
+            }}
+          >
+            <Plus size={16} />
+          </IconButton>
+          <IconButton
             label="Settings"
             className="text-gray-500/90 bg-gray-500/20 hover:bg-gray-500/50"
-            onClick={() => {}}
+            onClick={props.onOpenSettings}
           >
             <Settings size={16} />
           </IconButton>

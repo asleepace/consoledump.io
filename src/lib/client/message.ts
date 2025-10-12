@@ -302,6 +302,9 @@ export function createPatternMatcher(
     register(patternMatcher: PatternMatcher) {
       globalPatterns.push(patternMatcher)
     },
+    getPatterns() {
+      return globalPatterns
+    },
     parse(event: MessageEvent): Message {
       const msg = new Message(event, globalRenderer)
 
@@ -327,3 +330,31 @@ export function createPatternMatcher(
     },
   }
 }
+
+// ============================================================================
+// Shared Message Parser
+// ============================================================================
+
+export const messageParser = createPatternMatcher([
+  {
+    match: /(error:|\[error\])/gi,
+    badgeName: 'error',
+    className: 'text-red-500',
+  },
+  {
+    match: /(warn:|\[warn\])/gi,
+    badgeName: 'warn',
+    className: 'text-yellow-400',
+  },
+  {
+    match: /(info:|\[info\])/gi,
+    badgeName: 'info',
+    className: 'text-blue-400',
+  },
+  {
+    match: /(debug:|\[debug\])/gi,
+    badgeName: 'debug',
+    className: 'text-orange-400',
+  },
+  { match: /(log:|\[log\])/gi, badgeName: 'log', className: 'text-zinc-400' },
+])
