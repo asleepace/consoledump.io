@@ -20,12 +20,15 @@ import type { PatternMatcher } from '@/lib/client/message'
 
 import { messageParser } from '@/lib/client/message'
 import { Try } from '@asleepace/try'
+import { useSettings, type AppSettings } from '@/hooks/useSettings'
 
 const PatternMatcher = (props: {
   initialPattern?: PatternMatcher
   onRegisterPattern: (pattern: PatternMatcher) => void
   onDelete?: (pattern: PatternMatcher) => void // Add delete handler
 }) => {
+  'use client'
+
   const inputRegexRef = useRef<HTMLInputElement>(null)
   const inputBadgeRef = useRef<HTMLInputElement>(null)
   const inputClassnameRef = useRef<HTMLInputElement>(null)
@@ -189,19 +192,14 @@ const PatternMatcher = (props: {
   )
 }
 
-interface Props {}
+interface Props {
+  app: AppSettings
+}
 
-export const SettingsPanel = ({}: Props) => {
+export const SettingsPanel = ({ app }: Props) => {
   const { isSettingsOpen, setIsSettingsOpen } = useAppContext()
   const handleClose = () => setIsSettingsOpen(false)
   const handleOpen = () => setIsSettingsOpen(true)
-
-  const [showTimestamp, setShowTimestamp] = useState(true)
-  const [showBagdes, setShowBadges] = useState(true)
-  const [autoScroll, setAutoScroll] = useState(true)
-  const [showDividers, setShowDividers] = useState(true)
-  const [saveLocally, setSaveLocally] = useState(true)
-  const [enableHtml, setEnableHtml] = useState(true)
 
   const [patterns, setPatterns] = useState(() =>
     messageParser.getPatterns().filter((p) => p.match instanceof RegExp)
@@ -251,38 +249,38 @@ export const SettingsPanel = ({}: Props) => {
             <LabeledCheckbox
               label="HTML Content"
               className="flex-row-reverse items-start flex justify-end"
-              checked={enableHtml}
-              onChange={() => setEnableHtml(!enableHtml)}
+              checked={app.settings.enableHtml}
+              onChange={() => app.toggleEnableHtml()}
             />
             <LabeledCheckbox
               label="Show timestamps"
               className="flex-row-reverse items-start flex justify-end"
-              checked={showTimestamp}
-              onChange={() => setShowTimestamp(!showTimestamp)}
+              checked={app.settings.showTimestamp}
+              onChange={() => app.toggleTimestamp()}
             />
             <LabeledCheckbox
               label="Show badges"
               className="flex-row-reverse items-start flex justify-end"
-              checked={showBagdes}
-              onChange={() => setShowBadges(!showBagdes)}
+              checked={app.settings.showBadges}
+              onChange={() => app.toggleBadges()}
             />
             <LabeledCheckbox
               label="Show divider"
               className="flex-row-reverse items-start flex justify-end"
-              checked={showDividers}
-              onChange={() => setShowDividers(!showDividers)}
+              checked={app.settings.showDividers}
+              onChange={() => app.toggleDividers()}
             />
             <LabeledCheckbox
               label="Autoscroll"
               className="flex-row-reverse items-start flex justify-end"
-              checked={autoScroll}
-              onChange={() => setAutoScroll(!autoScroll)}
+              checked={app.settings.autoScroll}
+              onChange={() => app.toggleAutoScroll()}
             />
             <LabeledCheckbox
               label="Save locally"
               className="flex-row-reverse items-start flex justify-end"
-              checked={saveLocally}
-              onChange={() => setSaveLocally(!saveLocally)}
+              checked={app.settings.saveLocally}
+              onChange={() => app.toggleSaveLocally()}
             />
           </div>
         </PanelSection>

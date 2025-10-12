@@ -1,14 +1,15 @@
-import { withAppProvider } from './AppContext'
-import { AppNavigationBar } from './AppNavigationBar'
+import { withAppProvider } from './react/AppContext'
+import { AppNavigationBar } from './react/AppNavigationBar'
 import { useAppContext } from '@/hooks/useAppContext'
 import { cn } from '@/lib/utils'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { ActionBarEvent } from './ActionBar'
+import type { ActionBarEvent } from './react/ActionBar'
 import { Try } from '@asleepace/try'
 import { useUtils } from '@/hooks/useUtils'
-import { MessageItem } from './MessageItem'
-import { InfoPanel } from './InfoPanel'
-import { SettingsPanel } from './SettingsPanel'
+import { MessageItem } from './react/MessageItem'
+import { InfoPanel } from './react/InfoPanel'
+import { SettingsPanel } from './react/SettingsPanel'
+import { useSettings } from '@/hooks/useSettings'
 
 export type ConsoleDumpClientProps = {
   initialUrl: URL
@@ -142,10 +143,10 @@ export const ConsoleDumpClient = withAppProvider(
       return (
         ctx.stream?.events.map((msg, i) => {
           const msgKey = `${msg.type}-${msg.lastEventId}-${i}`
-          return <MessageItem message={msg} key={msgKey} />
+          return <MessageItem app={ctx.app} message={msg} key={msgKey} />
         }) ?? []
       )
-    }, [ctx.stream?.events])
+    }, [ctx.stream?.events, ctx.app.settings])
 
     return (
       <div
@@ -168,9 +169,13 @@ export const ConsoleDumpClient = withAppProvider(
         {/* --- main context --- */}
         <main className="w-full max-w-full flex-1 flex flex-col overflow-hidden">
           <InfoPanel url={props.initialUrl} />
-          <SettingsPanel />
+          <SettingsPanel app={ctx.app} />
 
-          <div ref={scrollContainerRef} className="flex-1 overflow-y-auto pb-4">
+          <div
+            ref={scrollContainerRef}
+            className="flex-1 overflow-y-auto pb-4"
+            key={`msgs-${ctx.app.settings.renderKey}`}
+          >
             {msgs}
           </div>
         </main>

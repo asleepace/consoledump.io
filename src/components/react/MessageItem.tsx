@@ -6,8 +6,10 @@ import { MessageBadge } from './MessageBadge'
 import { BtnCopyToClipboard } from './Buttons'
 import { createPatternMatcher } from '@/lib/client/message'
 import { messageParser } from '@/lib/client/message'
+import type { AppSettings } from '@/hooks/useSettings'
 
 interface Props {
+  app: AppSettings
   message: MessageEvent<string>
   className?: string
 }
@@ -48,7 +50,7 @@ messageParser.register({
  * This is the container for console messages which appear in the browser as part of a list,
  * and provide support for actions like expanding, copying, etc.
  */
-export const MessageItem = memo(({ className, message }: Props) => {
+export const MessageItem = memo(({ className, message, app }: Props) => {
   const [isCopied, setIsCopied] = useState(false)
 
   const msg = messageParser.parse(message)
@@ -67,21 +69,34 @@ export const MessageItem = memo(({ className, message }: Props) => {
   return (
     <div className={cn('w-full font-mono', className)}>
       <div
-        className={
-          'group border-b border-t-transparent hover:border-t-gray-400/10 box-content border-t border-b-gray-400/10 hover:bg-gray-800/50'
-        }
+        className={cn(
+          app.settings.showDividers &&
+            'group border-b border-t-transparent hover:border-t-gray-400/10 box-content border-t border-b-gray-400/10 hover:bg-gray-800/50'
+        )}
       >
         {/* --- message content --- */}
         <div className={cn('flex items-start gap-3 px-2 py-0.5')}>
           {/* --- metadata --- */}
-          <div className={'flex flex-row items-center gap-1 pt-0.5'}>
+          <div
+            className={cn(
+              'flex flex-row items-center',
+              app.settings.showBadges && 'gap-1 pt-0.5'
+            )}
+          >
             <MessageTimestamp
               timestamp={msg.timestamp}
-              className={'text-zinc-400/30'}
+              className={cn(
+                'text-zinc-400/30',
+                !app.settings.showTimestamp && 'hidden'
+              )}
             />
             <MessageBadge
               badgeName={msg.badge.name}
-              className={msg.badge.className}
+              className={cn(
+                'text-zinc-400/30',
+                msg.badge.className,
+                !app.settings.showBadges && 'hidden'
+              )}
             />
           </div>
           {/* --- content --- */}

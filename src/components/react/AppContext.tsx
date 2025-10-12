@@ -2,6 +2,7 @@ import React, { createContext, useState, type PropsWithChildren } from 'react'
 import { useEventStream, type ClientStream } from '@/hooks/useEventStream'
 import { useClient } from '@/hooks/useClient'
 import { useCurrentUrl } from '@/hooks/useCurrentUrl'
+import { useSettings, type AppSettings } from '@/hooks/useSettings'
 
 export type AppTheme = {
   mode: 'light' | 'dark'
@@ -56,6 +57,7 @@ export type AppCtx = {
   isInfoPanelOpen: boolean
   isSettingsOpen: boolean
   isDark: boolean
+  app: AppSettings
   url: URL
   expandedLogs: Set<string>
   stream: ClientStream | undefined
@@ -86,6 +88,7 @@ export const AppContext = createContext<AppCtx>({
   url: new URL(import.meta.env.SITE),
   sessionId: undefined,
   stream: undefined,
+  app: {} as any,
   setTheme() {},
   setCopiedId() {},
   setSearchTerm() {},
@@ -117,9 +120,12 @@ export function AppContextProvider(
   // NOTE: Parse incoming messages here...
   const stream = useEventStream()
 
+  const app = useSettings()
+
   return (
     <AppContext.Provider
       value={{
+        app,
         stream,
         theme,
         copiedId,
