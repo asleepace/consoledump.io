@@ -129,7 +129,7 @@ export const ConsoleDumpClient = withAppProvider(
           return
         // execute code in the browser.
         case 'execute':
-          const res = Try.catch(() => eval(action.value) ?? '')
+          const res = Try.catch(() => eval(action.value ?? '') ?? '')
           if (res.ok) return dump(res.value).then(scrollToBottom)
           dump(res.error?.name ?? 'an unknown error occurred.').then(
             scrollToBottom

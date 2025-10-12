@@ -10,7 +10,7 @@ type ActionIcon = typeof SendHorizonal | typeof Code | typeof Search
 
 export type ActionBarEvent = {
   type: ModeType
-  value: string
+  value: string | undefined
   reset: () => void
 }
 
