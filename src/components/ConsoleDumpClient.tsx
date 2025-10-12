@@ -119,6 +119,7 @@ export const ConsoleDumpClient = withAppProvider(
       switch (action.type) {
         // filter out current chat logs.
         case 'search':
+          console.log('[app] setting search term:', action.value)
           ctx.setSearchTerm(action.value)
           return
         // send a chat like message to the current stream.
@@ -141,13 +142,24 @@ export const ConsoleDumpClient = withAppProvider(
     }, [])
 
     const msgs = useMemo(() => {
+      let events = ctx.stream?.events ?? []
+      const searchTerm = ctx.searchTerm
+
+      if (searchTerm != null) {
+        events = events.filter((ev) =>
+          typeof ev.data === 'string'
+            ? ev.data.includes(searchTerm)
+            : JSON.stringify(ev.data).includes(searchTerm)
+        )
+      }
+
       return (
-        ctx.stream?.events.map((msg, i) => {
+        events.map((msg, i) => {
           const msgKey = `${msg.type}-${msg.lastEventId}-${i}`
           return <MessageItem app={ctx.app} message={msg} key={msgKey} />
         }) ?? []
       )
-    }, [ctx.stream?.events, ctx.app.settings])
+    }, [ctx.stream?.events, ctx.app.settings, ctx.searchTerm])
 
     return (
       <div

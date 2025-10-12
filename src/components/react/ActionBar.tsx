@@ -85,7 +85,7 @@ export function ActionBar(props: ActionBarProps) {
 
   const onSubmitInput = useCallback(() => {
     const currentValue = inputRef.current?.value
-    if (!currentValue) return
+    if (!currentValue && mode.type !== 'search') return
 
     const reset = () => {
       if (!inputRef.current) return
@@ -164,6 +164,10 @@ export function ActionBar(props: ActionBarProps) {
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
             onSubmit={onSubmitInput}
+            onChange={(ev) => {
+              if (mode.type !== 'search') return
+              onSubmitInput()
+            }}
           />
           <button className="right-0 top-0 bottom-0 px-3 flex items-center justify-center text-zinc-500 hover:bg-zinc-800">
             <ChevronRight size={16} />
