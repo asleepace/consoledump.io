@@ -4,7 +4,7 @@ import { copyToClipboard } from '@/lib/client/clipboard'
 import { MessageTimestamp } from '@/components/react/MessageTimestamp'
 import { MessageBadge } from './MessageBadge'
 import { BtnCopyToClipboard } from './Buttons'
-import { createPatternMatcher } from '@/lib/client/parser'
+import { createPatternMatcher } from '@/lib/client/mesage-parser'
 
 interface Props {
   message: MessageEvent<string>
@@ -40,8 +40,15 @@ export const MessageItem = memo(({ className, message }: Props) => {
   const [isCopied, setIsCopied] = useState(false)
 
   const msg = matcher.parse(message)
-
-  console.log({ msg })
+  if (msg.json) {
+    if (Array.isArray(msg.json)) {
+      console.log(...msg.json)
+    } else {
+      console.log(msg.json)
+    }
+  } else {
+    console.log(msg.raw)
+  }
 
   const onCopied = useCallback(() => {
     setIsCopied(true)
@@ -74,7 +81,7 @@ export const MessageItem = memo(({ className, message }: Props) => {
             <span
               className={cn(
                 'text-xs font-mono break-all py-0.5 text-zinc-600',
-                msg.getClassName()
+                msg.className
               )}
               dangerouslySetInnerHTML={{ __html: msg.html }}
             ></span>

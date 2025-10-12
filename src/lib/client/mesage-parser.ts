@@ -10,7 +10,6 @@ function tryParseJson<T = any>(data: string): T | undefined {
 
 function textEncode(data: object): string {
   try {
-    console.log(data)
     if (typeof data === 'string') return data
     if (data instanceof Date)
       return data.toLocaleDateString('en-US', { dateStyle: 'medium' })
@@ -29,7 +28,7 @@ export type ContentChunk = {
 }
 
 export class Message {
-  static defulatBadgeStyles: Record<string, string> = {
+  static defaultBadgeStyles: Record<string, string> = {
     error: 'badge-red',
     warn: 'badge-yellow',
     warning: 'badge-yellow',
@@ -64,37 +63,31 @@ export class Message {
     if (typeof event.data === 'string') {
       this.raw = event.data
       this.json = tryParseJson(event.data)
-      switch (true) {
-        case Boolean(this.json && Array.isArray(this.json)): {
-          this.contentType = 'json::arrary'
-          break
-        }
-        case Boolean(this.json): {
-          this.contentType = 'json::object'
-          break
-        }
+      if (this.json && Array.isArray(this.json)) {
+        this.contentType = 'json::arrary'
+      } else if (this.json) {
+        this.contentType = 'json::object'
       }
     } else {
       this.raw = textEncode(event.data)
       this.json = event.data
     }
-
     this.setBadgeName(event.type)
   }
 
   public setBadgeName(badgeName?: string) {
     if (!badgeName) return
     this.badge.name = badgeName
-    this.badge.className = Message.defulatBadgeStyles[badgeName] ?? 'badge-zinc'
+    this.badge.className = Message.defaultBadgeStyles[badgeName] ?? 'badge-zinc'
   }
 
-  public addClassNames(className?: string) {
+  public addClassName(className?: string) {
     if (!className) return
     this.classNames.add(className)
   }
 
-  public getClassName() {
-    return new Array(...this.classNames).join(' ')
+  public get className(): string {
+    return Array.from(this.classNames).join(' ')
   }
 
   public setToString(toHtmlString: (this: Message) => string) {
@@ -117,7 +110,6 @@ export class Message {
   }
 
   public get html() {
-    console.log(this.contentType, this.toHtml())
     return `<span data-name="${this.badge.name}">${this.textContent}</span>`
   }
 }
@@ -146,7 +138,7 @@ export function createPatternMatcher(patternMatchers: PatternMatcher[]) {
         // check if pattern is matched
         if (isMatch(pattern, msg)) {
           if (pattern.toHtml) msg.toHtml = pattern.toHtml
-          msg.addClassNames(pattern.className)
+          msg.addClassName(pattern.className)
           msg.setBadgeName(pattern.badgeName)
           if (pattern.only) break
         }

@@ -1,4 +1,4 @@
-import { createPatternMatcher } from '../src/lib/client/parser'
+import { createPatternMatcher } from '../src/lib/client/mesage-parser'
 import { describe, expect, it } from 'bun:test'
 
 /**

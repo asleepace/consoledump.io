@@ -133,9 +133,9 @@ export const ConsoleDumpClient = withAppProvider(
 
     const msgs = useMemo(() => {
       return (
-        ctx.stream?.events.map((msg) => {
-          console.log(msg.lastEventId)
-          return <MessageItem message={msg} key={msg.lastEventId} />
+        ctx.stream?.events.map((msg, i) => {
+          const msgKey = `${msg.type}-${msg.lastEventId}-${i}`
+          return <MessageItem message={msg} key={msgKey} />
         }) ?? []
       )
     }, [ctx.stream?.events])
