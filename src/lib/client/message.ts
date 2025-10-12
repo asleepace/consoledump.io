@@ -1,115 +1,320 @@
-export type ContentType = 'data::string' | 'json::object' | 'json::arrary'
+// ============================================================================
+// Types
+// ============================================================================
+
+export type MessageContent =
+  | { type: 'array'; data: any[] }
+  | { type: 'object'; data: object }
+
+export type RenderContext = {
+  renderers: ItemRenderer[]
+  renderItem: (item: any) => string
+}
+
+export type ItemRenderer = (item: any, ctx: RenderContext) => string | null
+
+export type PatternMatcher = {
+  match: RegExp | ((msg: Message) => boolean)
+  badgeName?: string
+  className?: string
+  renderer?: ItemRenderer
+  only?: boolean
+}
+
+// ============================================================================
+// Utilities
+// ============================================================================
+
+function escapeHtml(text: string): string {
+  const div = document.createElement('div')
+  div.textContent = text
+  return div.innerHTML
+}
+
+// ============================================================================
+// Default Renderers
+// ============================================================================
+
+const stringRenderer: ItemRenderer = (item) => {
+  if (typeof item === 'string') {
+    return `<span class="console-string">${escapeHtml(item)}</span>`
+  }
+  return null
+}
+
+const numberRenderer: ItemRenderer = (item) => {
+  if (typeof item === 'number') {
+    return `<span class="console-number">${item}</span>`
+  }
+  return null
+}
+
+const booleanRenderer: ItemRenderer = (item) => {
+  if (typeof item === 'boolean') {
+    return `<span class="console-boolean">${item}</span>`
+  }
+  return null
+}
+
+const nullRenderer: ItemRenderer = (item) => {
+  if (item === null) {
+    return `<span class="console-null">null</span>`
+  }
+  if (item === undefined) {
+    return `<span class="console-undefined">undefined</span>`
+  }
+  return null
+}
+
+const errorRenderer: ItemRenderer = (item) => {
+  if (item instanceof Error) {
+    return `<span class="console-error">${escapeHtml(
+      `${item.name}: ${item.message}`
+    )}</span>`
+  }
+  return null
+}
+
+const dateRenderer: ItemRenderer = (item) => {
+  if (item instanceof Date) {
+    return `<span class="console-date">${escapeHtml(item.toISOString())}</span>`
+  }
+  return null
+}
+
+const arrayRenderer: ItemRenderer = (item, ctx) => {
+  if (Array.isArray(item)) {
+    const items = item.map((i) => ctx.renderItem(i)).join(', ')
+    return `<span class="console-array">[${items}]</span>`
+  }
+  return null
+}
+
+const objectRenderer: ItemRenderer = (item) => {
+  if (typeof item === 'object' && item !== null && !Array.isArray(item)) {
+    // Check if it's a plain object or has a constructor
+    const isPlainObject =
+      item.constructor === Object || item.constructor === undefined
+
+    if (isPlainObject) {
+      return `<span class="console-object">${escapeHtml(
+        JSON.stringify(item, null, 2)
+      )}</span>`
+    }
+
+    // For class instances, show constructor name
+    const className = item.constructor?.name || 'Object'
+    return `<span class="console-instance">${className} ${escapeHtml(
+      JSON.stringify(item, null, 2)
+    )}</span>`
+  }
+  return null
+}
+
+const defaultRenderers: ItemRenderer[] = [
+  stringRenderer,
+  numberRenderer,
+  booleanRenderer,
+  nullRenderer,
+  errorRenderer,
+  dateRenderer,
+  arrayRenderer,
+  objectRenderer,
+]
+
+// ============================================================================
+// Message Renderer
+// ============================================================================
+
+export class MessageRenderer {
+  private renderers: ItemRenderer[]
+
+  constructor(customRenderers: ItemRenderer[] = []) {
+    this.renderers = [...customRenderers, ...defaultRenderers]
+  }
+
+  public addRenderer(renderer: ItemRenderer): void {
+    this.renderers.unshift(renderer)
+  }
+
+  public renderItem = (item: any): string => {
+    const ctx: RenderContext = {
+      renderers: this.renderers,
+      renderItem: this.renderItem,
+    }
+
+    for (const renderer of this.renderers) {
+      const result = renderer(item, ctx)
+      if (result !== null) return result
+    }
+
+    // Fallback
+    return `<span class="console-unknown">${escapeHtml(String(item))}</span>`
+  }
+
+  public render(content: MessageContent): string {
+    if (content.type === 'array') {
+      return content.data.map(this.renderItem).join(' ')
+    }
+    return this.renderItem(content.data)
+  }
+}
+
+// ============================================================================
+// Message Class
+// ============================================================================
 
 export class Message {
-  static textEncode(data: object): string {
-    try {
-      if (typeof data === 'string') return data
-      if (data instanceof Date)
-        return data.toLocaleDateString('en-US', { dateStyle: 'medium' })
-      if (data instanceof Error)
-        return `${data.name ?? 'Error'}: ${data.message}`
-      return JSON.stringify(data)
-    } catch (e) {
-      return String(data)
-    }
-  }
-
-  static encodeJson(object: object | object[], seperator = ',') {
-    if (Array.isArray(object)) {
-      return object.map((item) => Message.textEncode(item)).join(seperator)
-    } else {
-      return Message.textEncode(object)
-    }
-  }
-
-  static decodeJson<T>(jsonString: string): T | undefined {
-    try {
-      return JSON.parse(jsonString)
-    } catch (e) {
-      return undefined
-    }
-  }
-
   static defaultBadgeStyles: Record<string, string> = {
     error: 'badge-red',
     warn: 'badge-yellow',
     warning: 'badge-yellow',
     info: 'badge-blue',
     debug: 'badge-orange',
+    log: 'badge-zinc',
     system: 'badge-emerald',
     connected: 'badge-emerald',
     client: 'badge-indigo',
     message: 'badge-zinc',
   }
 
-  public contentType: ContentType = 'data::string'
-  public createdAt = new Date()
-  public classNames = new Set<string>()
+  public readonly createdAt = new Date()
+  public readonly id: string | undefined
+  public readonly content: MessageContent
+  public readonly classNames = new Set<string>()
   public badge = {
     name: 'message',
     className: 'badge-zinc',
   }
-  public json?: object
-  public text: string
 
-  public get timestamp() {
-    return this.createdAt.toLocaleTimeString('en-US', {
-      hour12: false,
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-    })
-  }
+  private renderer: MessageRenderer
 
-  constructor(public event: MessageEvent) {
-    if (typeof event.data === 'string') {
-      this.text = event.data
-      this.json = Message.decodeJson(event.data)
-      if (this.json && Array.isArray(this.json)) {
-        this.contentType = 'json::arrary'
-      } else if (this.json) {
-        this.contentType = 'json::object'
-      }
-    } else {
-      this.text = Message.textEncode(event.data)
-      this.json = event.data
-    }
+  constructor(public event: MessageEvent, renderer?: MessageRenderer) {
+    this.id = event.lastEventId
+    this.content = Message.parse(event.data)
+    this.renderer = renderer || new MessageRenderer()
     this.setBadgeName(event.type)
   }
 
-  public setBadgeName(badgeName?: string) {
-    if (!badgeName) return
-    this.badge.name = badgeName
-    this.badge.className = Message.defaultBadgeStyles[badgeName] ?? 'badge-zinc'
+  static parse(data: any): MessageContent {
+    // If already an object/array
+    if (typeof data === 'object' && data !== null) {
+      return {
+        type: Array.isArray(data) ? 'array' : 'object',
+        data,
+      }
+    }
+
+    // If string, try to parse
+    if (typeof data === 'string') {
+      try {
+        const parsed = JSON.parse(data)
+        return {
+          type: Array.isArray(parsed) ? 'array' : 'object',
+          data: parsed,
+        }
+      } catch {
+        // Plain string becomes single-item array
+        return {
+          type: 'array',
+          data: [data],
+        }
+      }
+    }
+
+    // Primitives become single-item array
+    return {
+      type: 'array',
+      data: [data],
+    }
   }
 
-  public addClassName(className?: string) {
-    if (!className) return
-    this.classNames.add(className)
+  public get timestamp(): string {
+    const hours = this.createdAt.getHours().toString().padStart(2, '0')
+    const minutes = this.createdAt.getMinutes().toString().padStart(2, '0')
+    const seconds = this.createdAt.getSeconds().toString().padStart(2, '0')
+    const ms = this.createdAt.getMilliseconds().toString().padStart(3, '0')
+    return `${hours}:${minutes}:${seconds}`
   }
 
   public get className(): string {
     return Array.from(this.classNames).join(' ')
   }
 
-  public setToString(toHtmlString: (this: Message) => string) {
-    this.toHtml = toHtmlString.bind(this)
+  public setBadgeName(badgeName?: string): void {
+    if (!badgeName) return
+    this.badge.name = badgeName
+    this.badge.className = Message.defaultBadgeStyles[badgeName] ?? 'badge-zinc'
   }
 
-  public toHtml = () => {
-    if (this.contentType === 'data::string') return this.text
-    if (this.contentType === 'json::object')
-      return Message.textEncode(this.json as any)
-    if (this.contentType === 'json::arrary')
-      return Message.encodeJson(this.json as any)
-    return this.text
+  public addClassNames(...classNames: (string | undefined)[]): void {
+    classNames.forEach((className) => {
+      if (className) this.classNames.add(className)
+    })
   }
 
-  public get textContent() {
-    return this.toHtml.call(this)
+  public setRenderer(renderer: MessageRenderer): void {
+    this.renderer = renderer
   }
 
-  public get html() {
-    return `<span data-name="${this.badge.name}">${this.textContent}</span>`
+  public toHtml(): string {
+    return this.renderer.render(this.content)
+  }
+
+  public get html(): string {
+    return `<span data-name="${this.badge.name}">${this.toHtml()}</span>`
+  }
+}
+
+// ============================================================================
+// Pattern Matcher
+// ============================================================================
+
+export function createPatternMatcher(
+  patterns: PatternMatcher[],
+  customRenderers: ItemRenderer[] = []
+) {
+  const globalPatterns = Array.from(patterns)
+  const globalRenderer = new MessageRenderer(customRenderers)
+
+  function isMatch(pattern: PatternMatcher, message: Message): boolean {
+    if (pattern.match instanceof RegExp) {
+      // Test against the raw event data as string
+      const rawData =
+        typeof message.event.data === 'string'
+          ? message.event.data
+          : JSON.stringify(message.event.data)
+      return pattern.match.test(rawData)
+    }
+    return pattern.match(message)
+  }
+
+  return {
+    register(patternMatcher: PatternMatcher) {
+      globalPatterns.push(patternMatcher)
+    },
+    parse(event: MessageEvent): Message {
+      const msg = new Message(event, globalRenderer)
+
+      for (const pattern of globalPatterns) {
+        if (isMatch(pattern, msg)) {
+          // Apply custom renderer if provided
+          if (pattern.renderer) {
+            const patternRenderer = new MessageRenderer([
+              pattern.renderer,
+              ...customRenderers,
+            ])
+            msg.setRenderer(patternRenderer)
+          }
+
+          msg.addClassNames(pattern.className)
+          msg.setBadgeName(pattern.badgeName)
+
+          if (pattern.only) break
+        }
+      }
+
+      return msg
+    },
   }
 }

@@ -4,7 +4,7 @@ import { copyToClipboard } from '@/lib/client/clipboard'
 import { MessageTimestamp } from '@/components/react/MessageTimestamp'
 import { MessageBadge } from './MessageBadge'
 import { BtnCopyToClipboard } from './Buttons'
-import { createPatternMatcher } from '@/lib/client/mesage-parser'
+import { createPatternMatcher } from '@/lib/client/message'
 
 interface Props {
   message: MessageEvent<string>
@@ -20,7 +20,7 @@ const matcher = createPatternMatcher([
   {
     match: (msg) => msg.event.type === 'client',
     className: 'text-indigo-400',
-    toHtml() {
+    renderer() {
       return `connected to stream <a class="text-orange-400" href="${window.location.pathname}">${window.location.href}</a>`
     },
   },
@@ -40,14 +40,10 @@ export const MessageItem = memo(({ className, message }: Props) => {
   const [isCopied, setIsCopied] = useState(false)
 
   const msg = matcher.parse(message)
-  if (msg.json) {
-    if (Array.isArray(msg.json)) {
-      console.log(...msg.json)
-    } else {
-      console.log(msg.json)
-    }
+  if (Array.isArray(msg.content.data)) {
+    console.log(...msg.content.data)
   } else {
-    console.log(msg.raw)
+    console.log(msg.content.data)
   }
 
   const onCopied = useCallback(() => {
