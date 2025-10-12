@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { Search, SendHorizonal, Code, ChevronRight } from 'lucide-react'
+import { Search, SendHorizonal, Code, ChevronRight, Mail } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { AppBackdropLayer } from './AppBackdropLayer'
 import { useKeydown } from '@/hooks/useKeydown'
@@ -29,7 +29,7 @@ export type ActionBarMode = {
 const actionBarModes: ActionBarMode[] = [
   { icon: Search, type: 'search', label: 'Search and filter messages.' },
   {
-    icon: SendHorizonal,
+    icon: Mail,
     type: 'message',
     label: 'Send a text message to the stream.',
   },
@@ -171,15 +171,15 @@ export function ActionBar(props: ActionBarProps) {
         </div>
 
         {isDropdownOpen && (
-          <div className="absolute top-full left-0 mt-1 shrink bg-gray-800 border-gray-700 rounded-lg shadow-lg overflow-hidden z-20">
+          <div className="absolute top-full left-0 mt-1 shrink bg-zinc-800 border-zinc-700 rounded-lg shadow-lg overflow-hidden z-20">
             {actionBarModes.map(({ type, icon: ActionIcon, label }) => (
               <button
                 key={type}
                 className={cn(
-                  'w-full text-left px-4 py-2 text-sm border-b-[0.5px] border-b-blue-100/10',
+                  'w-full text-left px-4 py-2 text-sm border-b-[0.5px] border-b-zinc-100/10',
                   mode.type === type
-                    ? 'bg-blue-500 text-blue-100'
-                    : 'text-blue-100/80 hover:bg-blue-400/30'
+                    ? 'bg-blue-500 text-zinc-100'
+                    : 'text-zinc-100/80 hover:bg-zinc-400/30'
                 )}
                 onClick={() => {
                   selectModeType(type)

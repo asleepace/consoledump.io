@@ -155,17 +155,6 @@ export const ConsoleDumpClient = withAppProvider(
           props.className
         )}
       >
-        {/* --- site navigation --- */}
-        <AppNavigationBar
-          isConnected={ctx.stream?.isConnected}
-          onOpenSettings={toggleSettings}
-          onOpenInfoPanel={toggleInfoPanel}
-          scrollToBottom={scrollToBottom}
-          onSubmitAction={onSubmitAction}
-          downloadLogs={downloadLogs}
-          clearLogs={clearLogs}
-        />
-
         {/* --- main context --- */}
         <main className="w-full max-w-full flex-1 flex flex-col overflow-hidden">
           <InfoPanel url={props.initialUrl} />
@@ -176,6 +165,17 @@ export const ConsoleDumpClient = withAppProvider(
             className="flex-1 overflow-y-auto pb-4"
             key={`msgs-${ctx.app.settings.renderKey}`}
           >
+            {/* --- site navigation --- */}
+            <AppNavigationBar
+              isConnected={ctx.stream?.isConnected}
+              onOpenSettings={toggleSettings}
+              onOpenInfoPanel={toggleInfoPanel}
+              scrollToBottom={scrollToBottom}
+              onSubmitAction={onSubmitAction}
+              downloadLogs={downloadLogs}
+              clearLogs={clearLogs}
+            />
+
             {msgs}
           </div>
         </main>

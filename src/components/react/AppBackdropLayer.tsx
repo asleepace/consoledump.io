@@ -43,7 +43,7 @@ export function AppBackdropLayer({ hidden, onClick, className = 'backdrop-blur-[
     <div
       id="backdrop-layer"
       onClick={onClick}
-      className={cn('fixed inset-0 bg-black/30 animate-in transition-colors duration-200', className)}
+      className={cn('fixed z-10 inset-0 bg-black/30 animate-in transition-colors duration-200', className)}
     />
   )
 }

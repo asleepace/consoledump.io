@@ -77,12 +77,7 @@ export const MessageItem = memo(({ className, message, app }: Props) => {
         {/* --- message content --- */}
         <div className={cn('flex items-start gap-3 px-2 py-0.5')}>
           {/* --- metadata --- */}
-          <div
-            className={cn(
-              'flex flex-row items-center',
-              app.settings.showBadges && 'gap-1 pt-0.5'
-            )}
-          >
+          <div className={'flex flex-row items-center gap-1 pt-0.5'}>
             <MessageTimestamp
               timestamp={msg.timestamp}
               className={cn(

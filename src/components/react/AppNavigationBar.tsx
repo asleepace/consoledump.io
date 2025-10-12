@@ -89,7 +89,7 @@ export function AppNavigationBar(props: AppNavigationBarProps) {
   return (
     <nav
       className={cn(
-        'sticky flex top-0 w-full bg-black p-4 items-center gap-x-4',
+        'sticky flex top-0 left-0 right-0 w-full bg-black/50 backdrop-blur p-4 items-center gap-x-4 border-b-zinc-800/50 border-b-[1px]',
         props.className
       )}
     >
