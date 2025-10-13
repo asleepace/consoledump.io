@@ -2,14 +2,13 @@ import { withAppProvider } from './react/AppContext'
 import { AppNavigationBar } from './react/AppNavigationBar'
 import { useAppContext } from '@/hooks/useAppContext'
 import { cn } from '@/lib/utils'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import type { ActionBarEvent } from './react/ActionBar'
 import { Try } from '@asleepace/try'
 import { useUtils } from '@/hooks/useUtils'
 import { MessageItem } from './react/MessageItem'
 import { InfoPanel } from './react/InfoPanel'
 import { SettingsPanel } from './react/SettingsPanel'
-import { useSettings } from '@/hooks/useSettings'
 import { WelcomeMessage } from './react/WelcomeMessage'
 
 export type ConsoleDumpClientProps = {
@@ -184,7 +183,7 @@ export const ConsoleDumpClient = withAppProvider(
           <InfoPanel url={props.initialUrl} />
           <SettingsPanel app={ctx.app} />
           {msgs.length === 0 ? (
-            <WelcomeMessage url={ctx.url.href} />
+            <WelcomeMessage url={props.initialUrl.href} />
           ) : (
             <div
               ref={scrollContainerRef}

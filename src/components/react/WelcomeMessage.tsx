@@ -1,34 +1,46 @@
 import { Zap, Copy, CheckCheck } from 'lucide-react'
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import { CodeSnippet } from './CodeSnippet'
+import { cn } from '@/lib/utils'
 
-// function CodeSnippet({
-//   children,
-//   className = '',
-// }: React.PropsWithChildren<{ className?: string }>) {
+interface Props {
+  url: URL | string
+}
 
-//     return (
-//         <CodeSnippet >{children}</CodeSnippet>
-//     )
-
-//   return (
-//     <pre className={className}>
-//       <code className="text-sm text-zinc-300">{children}</code>
-//     </pre>
-//   )
-// }
-
-export function WelcomeMessage({
-  url = 'https://dump.example.com/stream/abc123',
-}) {
-  const [copied, setCopied] = useState(false)
-
-  const codeMessage = `function dump(...args) {
+const snippetJs = (url: URL | string) =>
+  `function dump(...args) {
   return fetch('${url}', {
     method: 'POST',
     body: JSON.stringify(args)
   })
-}`
+}`.trim()
+
+const snippetTs = (url: URL | string) =>
+  `function dump(...args: any[]): Promise<Response> {
+    return fetch('${url}', {
+      method: 'POST',
+      body: JSON.stringify(args)
+    })
+  }`.trim()
+
+const snippetBash = (url: URL | string) => `curl -d "hello world" ${url}`
+
+export function WelcomeMessage({ url }: Props) {
+  const [copied, setCopied] = useState(false)
+  const [lang, setLang] = useState('javascript')
+
+  const supportedLanguages = ['Javascript', 'Typescript', 'Bash']
+
+  const codeMessage = useMemo(() => {
+    switch (lang) {
+      case 'bash':
+        return snippetBash(url)
+      case 'typescript':
+        return snippetTs(url)
+      default:
+        return snippetJs(url)
+    }
+  }, [url, lang])
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(codeMessage)
@@ -37,7 +49,7 @@ export function WelcomeMessage({
   }
 
   return (
-    <div className="w-full min-h-screen flex items-center justify-center bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 p-8">
+    <div className="w-full min-h-screen flex items-center justify-center bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 pb-32">
       <div className="max-w-6xl w-full">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           {/* Left side - Content */}
@@ -86,7 +98,13 @@ export function WelcomeMessage({
             <div className="relative bg-zinc-900 border border-zinc-700 rounded-lg overflow-hidden">
               <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800 bg-zinc-800/50">
                 <span className="text-sm font-medium text-zinc-400">
-                  index.js
+                  {lang === 'typescript'
+                    ? 'index.ts'
+                    : lang === 'javascript'
+                    ? 'index.js'
+                    : lang === 'bash'
+                    ? 'index.sh'
+                    : 'example'}
                 </span>
                 <button
                   onClick={copyToClipboard}
@@ -105,9 +123,25 @@ export function WelcomeMessage({
                   )}
                 </button>
               </div>
-              <CodeSnippet lang={'typescript'} className="p-6 overflow-x-auto">
+              <CodeSnippet lang={lang} className="p-6 overflow-x-auto">
                 {codeMessage}
               </CodeSnippet>
+              <div className="bg-zinc-950 border-t border-t-zinc-600 flex gap-x-2 p-4">
+                {supportedLanguages.map((language) => {
+                  return (
+                    <button
+                      className={cn(
+                        'px-3 py-1 text-xs rounded-full tracking-wide font-semibold bg-zinc-800 text-zinc-500',
+                        lang === language.toLowerCase() &&
+                          'bg-yellow-500 text-zinc-950s'
+                      )}
+                      onClick={() => setLang(language.toLowerCase())}
+                    >
+                      {language}
+                    </button>
+                  )
+                })}
+              </div>
             </div>
           </div>
         </div>

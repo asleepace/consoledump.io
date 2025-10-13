@@ -103,7 +103,7 @@ export const AppContext = createContext<AppCtx>({
 // --- app context provider ---
 
 export function AppContextProvider(
-  props: PropsWithChildren<{ sessionId?: string }>
+  props: PropsWithChildren<{ initialUrl: URL }>
 ) {
   const [theme, setTheme] = useState(AppThemes.dark)
   const [copiedId, setCopiedId] = useState<string | undefined>()
@@ -167,11 +167,11 @@ export function AppContextProvider(
 
 // --- hoc wrapper ---
 
-export function withAppProvider<T extends {}>(
+export function withAppProvider<T extends { initialUrl: URL }>(
   Elem: (props: T) => React.ReactElement<T>
 ) {
   return (props: T) => (
-    <AppContextProvider>
+    <AppContextProvider initialUrl={props.initialUrl}>
       <Elem {...props} />
     </AppContextProvider>
   )
