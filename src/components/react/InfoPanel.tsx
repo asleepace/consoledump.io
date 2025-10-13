@@ -13,7 +13,7 @@ export interface InfoPanelProps {
 
 const getCodeSnippet = (href: string) =>
   `
-const dump = (...args) => {
+function dump(...args) {
   return fetch('${href}', {
     method: 'POST',
     body: JSON.stringify(args)

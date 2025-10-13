@@ -87,7 +87,6 @@ export function useEventStream(): ClientStream {
         const metaEvent = new MessageEvent('client', {
           data: JSON.parse(ev.data),
         })
-        setEvents((prev) => [metaEvent])
         setMeta(metaEvent)
       } else {
         setEvents((prev) => [...prev, ev])

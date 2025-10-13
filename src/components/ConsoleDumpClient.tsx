@@ -10,6 +10,7 @@ import { MessageItem } from './react/MessageItem'
 import { InfoPanel } from './react/InfoPanel'
 import { SettingsPanel } from './react/SettingsPanel'
 import { useSettings } from '@/hooks/useSettings'
+import { WelcomeMessage } from './react/WelcomeMessage'
 
 export type ConsoleDumpClientProps = {
   initialUrl: URL
@@ -168,29 +169,31 @@ export const ConsoleDumpClient = withAppProvider(
           props.className
         )}
       >
+        {/* --- site navigation --- */}
+        <AppNavigationBar
+          isConnected={ctx.stream?.isConnected}
+          onOpenSettings={toggleSettings}
+          onOpenInfoPanel={toggleInfoPanel}
+          scrollToBottom={scrollToBottom}
+          onSubmitAction={onSubmitAction}
+          downloadLogs={downloadLogs}
+          clearLogs={clearLogs}
+        />
         {/* --- main context --- */}
-        <main className="w-full max-w-full flex-1 flex flex-col overflow-hidden">
+        <main className="w-full max-w-full h-full flex-1 flex flex-col overflow-hidden">
           <InfoPanel url={props.initialUrl} />
           <SettingsPanel app={ctx.app} />
-
-          <div
-            ref={scrollContainerRef}
-            className="flex-1 overflow-y-auto pb-4"
-            key={`msgs-${ctx.app.settings.renderKey}`}
-          >
-            {/* --- site navigation --- */}
-            <AppNavigationBar
-              isConnected={ctx.stream?.isConnected}
-              onOpenSettings={toggleSettings}
-              onOpenInfoPanel={toggleInfoPanel}
-              scrollToBottom={scrollToBottom}
-              onSubmitAction={onSubmitAction}
-              downloadLogs={downloadLogs}
-              clearLogs={clearLogs}
-            />
-
-            {msgs}
-          </div>
+          {msgs.length === 0 ? (
+            <WelcomeMessage url={ctx.url.href} />
+          ) : (
+            <div
+              ref={scrollContainerRef}
+              className="flex-1 overflow-y-auto pb-4"
+              key={`msgs-${ctx.app.settings.renderKey}`}
+            >
+              {msgs}
+            </div>
+          )}
         </main>
       </div>
     )
