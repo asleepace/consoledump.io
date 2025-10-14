@@ -182,6 +182,7 @@ export function WelcomeMessage({ url }: Props) {
                           : 'bg-zinc-800 hover:bg-zinc-700'
                       )}
                       onClick={() => setLang(language.toLowerCase())}
+                      key={language}
                     >
                       {language}
                     </button>
