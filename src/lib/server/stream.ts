@@ -4,6 +4,7 @@ import { ServerSideEventEncoder } from './sse-encoder'
 import { BufferedFile } from './buffered-file'
 import { ids } from '@/lib/shared/ids'
 import { gc } from './garbage-collector'
+import { trackEvent } from '../shared/posthog'
 
 // --- constants ---
 
@@ -285,6 +286,9 @@ export async function createFileBasedStream(options: { streamId: string }) {
     async subscribe(): Promise<Response> {
       const streamBody = await createSubscription()
       console.log(`[stream] created subscription (total=${activeStreams.size})`)
+      trackEvent('session_created', {
+        sessionId: options.streamId,
+      })
       return new Response(streamBody, {
         headers: {
           'content-type': 'text/event-stream',

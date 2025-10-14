@@ -34,6 +34,14 @@ export const siteConfig = {
     maxAgeHours: 24,
     maxSizeInMb: 5,
   },
+  /**
+   * PostHog Public Write Key
+   * This is ok to use in production.
+   */
+  posthog: {
+    apiKey: 'phc_yROpnxZ7jqveRG8io2VihfnvmYvfRwZk7I96VZreckp',
+    projectId: 233987,
+  },
 } as const
 
 /**
