@@ -3,12 +3,12 @@ import { ConsoleDumpClient } from '@/components/ConsoleDumpClient'
 import Layout from '@/layouts/Layout.astro'
 import { sessions } from '@/lib/server/'
 import { urlStore } from '@/lib/shared/url-store'
+import { siteConfig } from '@/consts'
 
 urlStore.setUrl(Astro.url)
 
 // NOTE: do not server-side render!
 export const prerender = false
-
 const { slug: streamId } = Astro.params
 const { method } = Astro.request
 
@@ -36,8 +36,10 @@ if (method === 'POST') {
   stream.publish(Astro.request.body)
   return Response.json({ ok: true })
 }
+
+const realUrl = new URL(streamId, siteConfig.url)
 ---
 
 <Layout>
-  <ConsoleDumpClient initialUrl={Astro.url} client:load />
+  <ConsoleDumpClient initialUrl={realUrl} client:load />
 </Layout>

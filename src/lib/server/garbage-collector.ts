@@ -92,6 +92,12 @@ export async function runGarbageCollection({ force = false } = {}) {
   if (!force && gc.lastRanInMinutes <= 10 && !gc.hasMemoryWarning) return
 
   console.log('[gc] running...')
+
+  let skipGcForDebug = true
+  if (skipGcForDebug) {
+    return console.warn('[gc] skipping...')
+  }
+
   gc.shouldRunCleanup = false
   gc.lastRanAt = Date.now()
   gc.totalBytesOnDisk = 0

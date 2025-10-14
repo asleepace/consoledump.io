@@ -15,6 +15,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
     context.locals.sessionId = sessionId
     return await next()
   } catch (e) {
+    console.warn('[middleware] error:', e)
     return ApiError.from(e).toResponse()
   }
 })
