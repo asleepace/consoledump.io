@@ -2,7 +2,6 @@ import { Mutex } from '@asleepace/mutex'
 import { Try } from '@asleepace/try'
 import { ServerSideEventEncoder } from './sse-encoder'
 import { BufferedFile } from './buffered-file'
-import { urlStore } from '@/lib/shared/url-store'
 import { ids } from '@/lib/shared/ids'
 import { gc } from './garbage-collector'
 
@@ -201,8 +200,6 @@ export async function createFileBasedStream(options: { streamId: string }) {
    */
   async function createSubscription() {
     let subscriber: StreamSubscriber | undefined
-
-    urlStore.setCurrentHref(options.streamId as SessionId) // used via getServerSnapshot()
 
     return new ReadableStream({
       type: 'bytes',
