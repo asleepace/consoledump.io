@@ -1,0 +1,132 @@
+---
+import Layout from '@/layouts/Layout.astro'
+
+export const prerender = false
+---
+
+<Layout class:list="min-h-screen bg-black font-mono w-full flex flex-col p-2 overscroll-y-contain">
+  <div class="overflow-y-scroll min-h-screen overscroll-y-auto mt-14 pb-14">
+    <div class:list="flex flex-1 flex-col gap-2 min-h-full pb-16" id="container"></div>
+  </div>
+</Layout>
+
+<template id="message">
+  <div class="item flex flex-row gap-x-2 py-0.5 px-4 flex-nowrap font-mono font-thin text-sm">
+    <p class="item-time text-neutral-800 text-sm font-semibold"></p>
+    <p class="item-type px-2 font-bold"></p>
+    <p class="item-data text-neutral-400 text-nowrap"></p>
+  </div>
+</template>
+
+<style is:global>
+  .item:nth-child(odd) {
+    background-color: rgba(255, 255, 255, 0.03);
+  }
+
+  code {
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  code:hover {
+    background-color: rgba(59, 130, 246, 0.1);
+  }
+  code.copied {
+    background-color: #10b981;
+    color: white;
+  }
+</style>
+
+<script>
+  import { Try } from '@asleepace/try'
+
+  let abortController = new AbortController()
+
+  window.addEventListener('beforeunload', () => {
+    console.log('[client] beforeunload:', abortController.abort())
+  })
+
+  const container = document.getElementById('container')!
+  const template = document.getElementById('message') as HTMLTemplateElement
+
+  function autoScroll() {
+    if (!container) return
+    const AUTO_SCROLL_THRESHOLD = 50
+    const containerOffset = container.scrollHeight - container.scrollTop
+    const isNearBottom = containerOffset <= container.clientHeight + AUTO_SCROLL_THRESHOLD // 50px threshold
+    if (!isNearBottom) return
+    const scrollableParent = container?.parentElement
+    if (scrollableParent) {
+      scrollableParent.scrollTo({ top: scrollableParent.scrollHeight, behavior: 'instant' })
+    }
+  }
+
+  function dateToTime(date: Date): string {
+    return [date.getHours(), date.getMinutes(), date.getSeconds()].map((n) => n.toString().padStart(2, '0')).join(':')
+  }
+
+  function parseMessageEvent(ev: MessageEvent) {
+    return { text: ev.data, time: new Date(), id: ev.lastEventId }
+  }
+
+  const messages: ReturnType<typeof parseMessageEvent>[] = []
+
+  function addItem(ev: MessageEvent) {
+    const msg = parseMessageEvent(ev)
+    messages.push(msg)
+    const item = template.content.cloneNode(true) as DocumentFragment
+    const time = item.querySelector('.item-time')!
+    const type = item.querySelector('.item-type')!
+    const data = item.querySelector('.item-data')!
+    type.classList.add('text-emerald-700')
+    time.textContent = dateToTime(msg.time)
+    type.textContent = `[message]`
+    data.textContent = msg.text
+    container?.appendChild(item)
+    requestAnimationFrame(() => autoScroll())
+  }
+
+  const dump = (...args: any[]) =>
+    fetch('/api/v3?id=abc123', {
+      signal: abortController.signal,
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify(args),
+    })
+
+  const eventSource = new EventSource('/api/v3?id=abc123')
+  eventSource.onopen = () => {
+    console.log('event source opened!')
+    dump({ client: 'connected' })
+  }
+
+  eventSource.onerror = (ev) => {
+    console.warn('event source error:', ev)
+    eventSource.close()
+  }
+
+  eventSource.onmessage = (ev) => {
+    console.log(ev.data)
+    addItem(ev)
+  }
+
+  if (import.meta.hot) {
+    import.meta.hot.on('vite:beforeUpdate', () => {
+      console.log('[client] HMR update')
+      abortController.abort()
+      eventSource.close()
+    })
+
+    import.meta.hot.on('vite:afterUpdate', () => {
+      console.log('[client] HMR complete')
+      abortController = new AbortController()
+    })
+  }
+
+  // @ts-ignore
+  console.dump = dump
+
+  // @ts-ignore
+  window.dump = dump
+</script>

@@ -1,6 +1,6 @@
 ---
 import '@/styles/global.css'
-import Navigation from '@/components/Navigation.astro'
+import Navigation from '@/components/astro/Navigation.astro'
 import type { CollectionEntry } from 'astro:content'
 
 type Props = CollectionEntry<'docs'>['data'] & {
@@ -9,7 +9,7 @@ type Props = CollectionEntry<'docs'>['data'] & {
 
 const className = Astro.props.class
 
-import SiteHead from '@/components/SiteHead.astro'
+import SiteHead from '@/components/astro/SiteHead.astro'
 ---
 
 <!doctype html>
@@ -19,7 +19,7 @@ import SiteHead from '@/components/SiteHead.astro'
   </head>
   <body
     class:list={[
-      'flex flex-col flex-1 max-h-screen bg-black font-mono overflow-x-hidden',
+      'flex flex-col flex-1 w-full max-h-screen bg-black font-mono overflow-x-hidden',
       className,
     ]}
   >

@@ -1,30 +1,8 @@
 import type { APIRoute } from 'astro'
-import { Stream2 } from '@/lib/server/stream'
+import { ApiError } from '@/lib/shared/api-error'
+import { sessions } from '@/lib/server'
 
 export const prerender = false
-
-/**
- * Detect when a request closes and call garbage collection on the stream,
- * and/or stream store.
- */
-const registry = new FinalizationRegistry((childId: string) => {
-  console.warn('[!] cleanup called on:', childId)
-  const [streamId] = childId.split('-')
-  const stream = Stream2.store.get(streamId)
-  if (!stream) return Stream2.cleanup()
-  stream.onChildClosed(childId)
-  Stream2.cleanup()
-})
-
-const HEADERS = (stream: Stream2, headersInit: HeadersInit = {}) => ({
-  ...headersInit,
-  'access-control-allow-origin': '*',
-  'access-control-allow-methods': 'HEAD, GET, POST, PUT, DELETE, OPTIONS',
-  'content-type': 'text/event-stream',
-  'transfer-encoding': 'chunked',
-  'x-accel-buffering': 'no',
-  'x-stream-id': stream.id,
-})
 
 /**
  * HEAD /api/see
@@ -32,11 +10,19 @@ const HEADERS = (stream: Stream2, headersInit: HeadersInit = {}) => ({
  * Creats a new stream and returns the stream id in the request headers,
  * this stream can later be accessed with this id.
  */
-export const HEAD: APIRoute = () => {
-  const stream = Stream2.new()
+export const HEAD: APIRoute = async ({ url }) => {
+  const id = url.searchParams.get('id')
+
+  if (!id)
+    return new ApiError('Missing required param :id', { id }).toResponse()
+
+  await sessions.getOrCreate(id)
 
   return new Response(null, {
-    headers: HEADERS(stream),
+    status: 200,
+    headers: {
+      'x-stream-id': String(id),
+    },
   })
 }
 
@@ -46,28 +32,15 @@ export const HEAD: APIRoute = () => {
  * This route returns the current stream with the specified `id`
  * as a text/event-event stream.
  */
-export const GET: APIRoute = ({ url, ...ctx }) => {
+export const GET: APIRoute = async ({ url, request }) => {
   const id = url.searchParams.get('id')
 
-  if (!id) {
-    return new Response(null, {
-      status: 500,
-      statusText: 'Missing or invalid stream id:' + id,
-    })
-  }
+  if (!id)
+    return new ApiError('Missing required param :id', { id }).toResponse()
 
-  const stream = Stream2.get(id) ?? Stream2.use(id)
+  const stream = await sessions.getOrCreate(id)
 
-  if (!stream || stream.isClosed) {
-    return new Response(null, {
-      status: 500,
-      statusText: `Failed to find stream with id: ${id}`,
-    })
-  }
-
-  const childStream = stream.pull()
-  registry.register(ctx.request, childStream.tagName)
-  return childStream.toResponse()
+  return stream.subscribe()
 }
 
 /**
@@ -77,45 +50,29 @@ export const GET: APIRoute = ({ url, ...ctx }) => {
  * and the data will be piped to the event stream returned by the GET.
  */
 export const POST: APIRoute = async ({ url, request }) => {
-  Stream2.cleanup()
-
   const id = url.searchParams.get('id')
-  const stream = Stream2.get(id)
-
-  if (!request.body || request.bodyUsed) {
-    return new Response(null, {
-      status: 500,
-      statusText: `Invalid request request body`,
-    })
+  if (!id) {
+    return new ApiError('Missing required param :id', { id }).toResponse()
   }
-
-  if (!stream || stream.isClosed) {
-    return new Response(null, {
-      status: 500,
-      statusText: `Failed to find stream with id: ${id}`,
-    })
+  if (!request.body) {
+    return new ApiError('Missing request body!').toResponse()
   }
-
-  stream.push(request.body).catch((error) => {
-    console.warn('[sse] stream push error:', error)
-  })
-
-  return new Response(null, {
-    status: 200,
-    statusText: 'Ok',
-    headers: HEADERS(stream),
-  })
+  if (request.bodyUsed) {
+    return new ApiError('Body already consumed!').toResponse()
+  }
+  const stream = await sessions.getOrCreate(id)
+  stream.publish(request.body)
+  return Response.json({ ok: true })
 }
 
 export const DELETE: APIRoute = async ({ url }) => {
-  const childId = url.searchParams.get('id')
-  console.log('[sse] DELETE:', childId)
-  if (!childId) {
-    return new Response(null)
+  const id = url.searchParams.get('id')
+  if (!id) {
+    return new ApiError('Missing required param :id', { id }).toResponse()
   }
-  const [streamId] = childId?.split('-')
-  const stream = Stream2.get(streamId)
-  stream?.onChildClosed(childId)
-  Stream2.cleanup()
-  return new Response(null)
+
+  const stream = await sessions.getOrCreate(id)
+  await stream.delete()
+
+  return Response.json({ ok: true })
 }

@@ -4,5 +4,13 @@
   "prettier.semi": false,
   "prettier.tabWidth": 2,
   "prettier.enable": true,
-  "prettier.singleQuote": true
+  "prettier.singleQuote": true,
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[astro]": {
+    "editor.defaultFormatter": "astro-build.astro-vscode"
+  }
 }

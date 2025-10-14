@@ -5,12 +5,15 @@ import node from '@astrojs/node'
 import react from '@astrojs/react'
 import mdx from '@astrojs/mdx'
 
-const SITE_ORIGIN =
-  process.env.NODE_ENV === 'development'
-    ? 'http://127.0.0.1:8082'
-    : 'https://consoledump.io'
+export const SITE_ORIGIN = process.env.NODE_ENV === 'development' ? 'http://127.0.0.1:8082' : 'https://consoledump.io'
 
-// https://astro.build/config
+console.log({ SITE_ORIGIN })
+
+/**
+ * Astro Configuration
+ *
+ * @see https://astro.build/config
+ */
 export default defineConfig({
   site: SITE_ORIGIN,
   trailingSlash: 'never',
@@ -46,21 +49,14 @@ export default defineConfig({
   build: {
     inlineStylesheets: 'never',
   },
-  // Reduce HTML size in production builds
+  /** Reduce HTML size in production builds */
   compressHTML: true,
-  // Slightly reduces dev overhead
   devToolbar: { enabled: false },
   vite: {
     plugins: [tailwindcss()],
     optimizeDeps: {
       // Prebundle common and heavy deps to speed up dev server startup & HMR
-      include: [
-        'react',
-        'react-dom',
-        'lucide-react',
-        '@tabler/icons-react',
-        '@asleepace/try',
-      ],
+      include: ['react', 'react-dom', 'lucide-react', '@tabler/icons-react', '@asleepace/try'],
       exclude: ['bun:sqlite'],
       force: true,
       esbuildOptions: {
@@ -85,11 +81,7 @@ export default defineConfig({
       target: 'es2020',
       rollupOptions: {
         // ignore these files when bundling...
-        external: [
-          /highlight\.js\/styles\/.+\.css$/,
-          /typescript\.js/,
-          /@\/db\/.*/,
-        ],
+        external: [/highlight\.js\/styles\/.+\.css$/, /typescript\.js/, /@\/db\/.*/],
       },
     },
   },

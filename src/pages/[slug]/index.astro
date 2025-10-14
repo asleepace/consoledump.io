@@ -1,179 +1,43 @@
 ---
+import { ConsoleDumpClient } from '@/components/ConsoleDumpClient'
 import Layout from '@/layouts/Layout.astro'
-import { Stream2 } from '@/lib/server/stream'
+import { sessions } from '@/lib/server/'
+import { urlStore } from '@/lib/shared/url-store'
 
+urlStore.setUrl(Astro.url)
+
+// NOTE: do not server-side render!
 export const prerender = false
 
-const HEADERS_WITH_CORS: HeadersInit = {
-  'access-control-allow-origin': '*',
-  'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
+const { slug: streamId } = Astro.params
+const { method } = Astro.request
+
+// handle CORS requests
+if (method === 'OPTIONS') {
+  return new Response(null, {
+    headers: {
+      'access-control-allow-origin': '*',
+      'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    },
+  })
 }
 
-const { slug: streamId } = Astro.params
+if (!streamId) {
+  return Response.json({ error: 'Missing streamId.' }, { status: 500 })
+}
 
-const stream = Stream2.get(streamId) ?? Stream2.use(streamId)
+// get or create a stream session
+const stream = await sessions.getOrCreate(streamId)
 
-if (Astro.request.method === 'POST') {
-  if (!stream) {
-    return new Response(null, {
-      status: 404,
-      statusText: 'Stream not found',
-      headers: HEADERS_WITH_CORS,
-    })
-  }
-
-  if (stream.isClosed) {
-    return new Response(null, {
-      status: 500,
-      statusText: 'Stream is closed',
-      headers: HEADERS_WITH_CORS,
-    })
-  }
-
-  if (!Astro.request.body) {
-    return new Response(null, {
-      status: 500,
-      statusText: 'Invalid body sent',
-      headers: HEADERS_WITH_CORS,
-    })
-  }
-
-  try {
-    await stream?.push(Astro.request.body)
-
-    return new Response(null, {
-      status: 200,
-      headers: HEADERS_WITH_CORS,
-    })
-  } catch (e) {
-    console.warn('[slug] error:', e)
-    return new Response(null, {
-      status: 500,
-      headers: HEADERS_WITH_CORS,
-    })
-  }
+// handle posting data to stream
+if (method === 'POST') {
+  if (!Astro.request.body)
+    return Response.json({ error: 'Missing POST body!' }, { status: 500 })
+  stream.publish(Astro.request.body)
+  return Response.json({ ok: true })
 }
 ---
 
-<Layout class:list="min-h-screen bg-black font-mono w-full flex flex-col p-2 overscroll-y-contain">
-  <div class="overflow-y-scroll min-h-screen overscroll-y-auto mt-14 pb-14">
-    <div class:list="flex flex-1 flex-col gap-2 min-h-full pb-16" id="container"></div>
-  </div>
-  <div
-    class="hidden sm:flex absolute *:text-sm top-14 border-[0.5px] border-neutral-700 bg-black rounded right-2 gap-x-1 items-center justify-center *:opacity-50 *:hover:opacity-100 *:text-orange-400 op *:bg-transparent *:px-2 *:py-1"
-  >
-    <button id="btn-download" class="border-r-[0.5px] border-neutral-700">Download</button>
-    <button id="btn-clear" class="border-r-[0.5px] border-neutral-700">Clear</button>
-    <button id="btn-scroll-bottom">Scroll to bottom</button>
-  </div>
+<Layout>
+  <ConsoleDumpClient initialUrl={Astro.url} client:load />
 </Layout>
-
-<template id="message">
-  <div class="item flex flex-row gap-x-2 py-0.5 px-4 flex-nowrap font-mono font-thin text-sm">
-    <p class="item-time text-neutral-800 text-sm font-semibold"></p>
-    <p class="item-type px-2 font-bold"></p>
-    <p class="item-data text-neutral-400 text-nowrap"></p>
-  </div>
-</template>
-
-<style is:global>
-  .item:nth-child(odd) {
-    background-color: rgba(255, 255, 255, 0.03);
-  }
-
-  code {
-    cursor: pointer;
-    transition: background-color 0.2s;
-  }
-  code:hover {
-    background-color: rgba(59, 130, 246, 0.1);
-  }
-  code.copied {
-    background-color: #10b981;
-    color: white;
-  }
-</style>
-
-<script>
-  import { StreamClient, StreamMessage } from '@/lib/client/stream-client'
-
-  document.addEventListener('click', async (event) => {
-    const target = event.target as HTMLElement
-    if (target.tagName === 'CODE') {
-      try {
-        await navigator.clipboard.writeText(target.textContent || '')
-        target.classList.add('copied')
-        setTimeout(() => target.classList.remove('copied'), 1000)
-      } catch (err) {
-        console.warn('Copy failed:', err)
-      }
-    }
-  })
-
-  function dateToTime(date: Date): string {
-    return [date.getHours(), date.getMinutes(), date.getSeconds()].map((n) => n.toString().padStart(2, '0')).join(':')
-  }
-
-  const streamId = window.location.pathname.replace('/', '')
-  const container = document.getElementById('container')!
-  const template = document.getElementById('message') as HTMLTemplateElement
-
-  const client = new StreamClient(streamId)
-  const messages: StreamMessage[] = []
-
-  function downloadData() {
-    const data = messages.map((msg) => msg.export()).filter(Boolean)
-    const json = JSON.stringify(data, null, 2)
-    const blob = new Blob([json], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `stream-${streamId}-${+new Date()}.json`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
-  }
-
-  function autoScroll() {
-    if (!container) return
-    const AUTO_SCROLL_THRESHOLD = 50
-    const containerOffset = container.scrollHeight - container.scrollTop
-    const isNearBottom = containerOffset <= container.clientHeight + AUTO_SCROLL_THRESHOLD // 50px threshold
-    if (!isNearBottom) return
-    const scrollableParent = container?.parentElement
-    if (scrollableParent) {
-      scrollableParent.scrollTo({ top: scrollableParent.scrollHeight, behavior: 'instant' })
-    }
-  }
-
-  function addItem(message: StreamMessage) {
-    messages.push(message)
-    const item = template.content.cloneNode(true) as DocumentFragment
-    const time = item.querySelector('.item-time')!
-    const type = item.querySelector('.item-type')!
-    const data = item.querySelector('.item-data')!
-    type.classList.add(message.getTypeColor())
-    time.textContent = dateToTime(message.time)
-    type.textContent = `[${message.type}]`
-    data.innerHTML = message.format()
-    container?.appendChild(item)
-    requestAnimationFrame(() => autoScroll())
-  }
-
-  document.getElementById('btn-download')?.addEventListener('click', downloadData)
-  document.getElementById('btn-scroll-bottom')?.addEventListener('click', () => {
-    const scrollableParent = container?.parentElement
-    if (scrollableParent) {
-      scrollableParent.scrollTo({ top: scrollableParent.scrollHeight, behavior: 'instant' })
-    }
-  })
-  document.getElementById('btn-clear')?.addEventListener('click', () => {
-    messages.length = 0
-    container.innerHTML = ''
-  })
-
-  client.on((message) => {
-    addItem(message)
-  })
-</script>

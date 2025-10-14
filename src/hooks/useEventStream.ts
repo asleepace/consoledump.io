@@ -1,147 +1,123 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { Try } from "@asleepace/try"
+import { Try } from '@asleepace/try'
+import { useEffect, useMemo, useState } from 'react'
+import { useClient } from './useClient'
 
-type EventStreamStatus = "open" | "closed" | "error" | "message"
-
-export interface EventStreamConfig {
-  sessionId: string
-  tabId: string
+async function createStreamSession() {
+  const resp = await fetch('/api/sse', { method: 'HEAD' })
+  const streamId = resp.headers.get('x-stream-id')
+  if (!streamId) throw new Error('Invalid stream id header:' + streamId)
+  return { streamId }
 }
 
-export interface EventStreamOptions extends EventStreamConfig {
-  on?(type: EventStreamStatus, ev: Event): void
-  onMessageHook?(message: string): string
+export interface ClientStream {
+  sessionId: string | undefined
+  childId: string | undefined
+  isConnected: boolean
+  isError: boolean
+  events: MessageEvent<string>[]
+  meta: Record<string, any>
+  clear: () => void
+  start: () => Promise<any>
+  close: () => void
 }
 
-export const getUrl = ({ sessionId, tabId }: EventStreamConfig) => {
-  const endpoint = new URL(`/api/${sessionId}`, window.location.origin)
-  endpoint.searchParams.set("tabId", tabId)
-  return endpoint
-}
+export function useEventStream(): ClientStream {
+  const [isInitializing, setIsInitializing] = useState(false)
+  const [isConnected, setIsConnected] = useState(true) // start as true
+  const [isError, setIsError] = useState(false)
+  const [childId, setChildId] = useState<string | undefined>()
 
-export const getEventSource = ({ sessionId, tabId }: EventStreamConfig) => {
-  return Try.catch(() => {
-    return new EventSource(getUrl({ sessionId, tabId }), {
-      withCredentials: true,
-    })
-  })
-}
+  const [events, setEvents] = useState<MessageEvent<string>[]>([])
+  const [meta, setMeta] = useState<Record<string, any>>({})
 
-export function isMessageEvent(ev: Event): ev is MessageEvent {
-  return "data" in ev && ev.data != null
-}
+  /** extracts the sessionId from current url. */
+  const client = useClient()
 
-export function safeEncode(data: unknown): string {
-  try {
-    if (!data) return String(data)
-    if (typeof data === "number") return String(data)
-    if (typeof data === "boolean") return String(data ? "true" : "false")
-    if (typeof data === "function") return String(`[Function ${data.name}]`)
-    if (Array.isArray(data)) {
-      return JSON.stringify(data.map(safeEncode), null, 2)
-    } else if (typeof data === "object") {
-      const [json, err1] = Try.catch(() => JSON.stringify(data, null, 2))
-      if (json) return json
+  /** a method for creating a new sessionId and reseting state. */
+  const initializeStream = async () => {
+    if (isInitializing) return
+    console.log('[useEventStream] initializing...')
+    setIsInitializing(true)
+    setIsConnected(false)
+    setIsError(false)
+    const result = await Try.catch(createStreamSession)
+    setIsInitializing(false)
+    if (result.isOk()) {
+      client.redirectTo(`/${result.value.streamId}`)
     }
-    if (typeof data === "object" && "toString" in data) return data.toString()
-    return String(data)
-  } catch (e) {
-    if (typeof data === "function") return `[Function unknown]`
-    if (Array.isArray(data)) {
-      return `[${data.join(",")}]`
-    }
-    return String(data)
+    return result
   }
-}
-
-const mapToStream = (...args: any[]): string => {
-  const [msg1, err1] = Try.catch(() => {
-    return JSON.stringify(args, null, 2)
-  })
-  if (!err1) return msg1
-  const [msg2, err2] = Try.catch(() => safeEncode(args))
-  return msg2 ?? String(err2 || err1)
-}
-
-/**
- * # useEventStream({ sessionId, tabId, on? })
- *
- * Estaslishes a connection to the specified data stream and allows for two-way
- * communication via the publish method. Returns an object with messages, status
- * and several lifecycle methods.
- */
-export function useEventStream({ sessionId, tabId, on }: EventStreamOptions) {
-  const [resetKey, setResetKey] = useState(0)
-  const [createdAt, setCreatedAt] = useState(new Date())
-  const [updatedAt, setUpdatedAt] = useState(new Date())
-  const [status, setStatus] = useState<EventStreamStatus>("closed")
-  const [messages, setMessages] = useState<string[]>([])
-  const [eventSource, eventError] = useMemo(
-    () => getEventSource({ sessionId, tabId }),
-    [sessionId, tabId]
-  )
-
-  const publishHref = useMemo(
-    () => getUrl({ sessionId, tabId }),
-    [sessionId, tabId]
-  )
-  const callbackRef = useRef(on)
-
-  const resetStream = useCallback(() => {
-    setStatus("closed")
-    setCreatedAt(new Date())
-    setUpdatedAt(new Date())
-    setMessages([])
-    setResetKey((prev) => prev + 1)
-    eventSource?.close()
-  }, [eventSource])
-
-  const publish = useCallback(
-    (...args: any[]) => {
-      return fetch(publishHref, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Encoding": "json[]",
-        },
-        body: JSON.stringify([safeEncode(args)]),
-      })
-    },
-    [publishHref]
-  )
-
-  const onEventCallback = useCallback(
-    (status: EventStreamStatus, ev: Event) => {
-      Try.catch(() => {
-        setUpdatedAt(new Date())
-        setStatus(status)
-        if (status === "message" && isMessageEvent(ev)) {
-          setMessages((prev) => [...prev, ev.data])
-          callbackRef.current?.(status, ev)
-        } else {
-          callbackRef.current?.(status, ev)
-        }
-      })
-    },
-    []
-  )
 
   useEffect(() => {
-    if (!eventSource) return
-    eventSource.onopen = (ev) => onEventCallback("open", ev)
-    eventSource.onerror = (ev) => onEventCallback("error", ev)
-    eventSource.onmessage = (ev) => onEventCallback("message", ev)
-  }, [eventSource, onEventCallback])
+    if (events.length === 0) return
+    if (Object.keys(meta).length !== 0) return
+    const maybeMeta = Try.catch(() => JSON.parse(events[0].data))
+    if (!maybeMeta.ok) return
+    console.log('[meta] stream:', maybeMeta.value)
+    setMeta(maybeMeta.value)
+  }, [events, meta])
 
-  return useMemo(
-    () => ({
-      messages,
-      updatedAt,
-      createdAt,
-      resetStream,
-      publish,
-      status,
-    }),
-    [messages]
-  )
+  /** whenever the sessionId changes we need to reset state and reconnect. */
+  const stream = useMemo(() => {
+    if (!client.sessionId) return undefined
+
+    const eventSource = new EventSource(`/api/sse?id=${client.sessionId}`, {
+      withCredentials: true,
+    })
+
+    /**
+     * subscribe to custom "system" events send by backend.
+     * @see ServerSideEventEncoder
+     */
+    eventSource.addEventListener('system', (ev) => {
+      console.log('[console-dump] system:', ev.data)
+      setEvents((prev) => [...prev, ev])
+    })
+
+    eventSource.onopen = () => {
+      setIsConnected(true)
+    }
+
+    let currentId = 0
+
+    eventSource.onmessage = (ev) => {
+      // NOTE: important the firs message should contain metadata
+      // about the stream and client.
+      if (currentId++ === 0) {
+        const metaEvent = new MessageEvent('client', {
+          data: JSON.parse(ev.data),
+        })
+        setMeta(metaEvent)
+      } else {
+        setEvents((prev) => [...prev, ev])
+      }
+    }
+
+    eventSource.onerror = (ev) => {
+      console.warn(`[event-stream] error:`, ev)
+      setIsConnected(false)
+      setIsError(true)
+    }
+
+    return eventSource
+  }, [client.sessionId])
+
+  return {
+    sessionId: client.sessionId,
+    childId,
+    isConnected,
+    isError,
+    events,
+    meta,
+    clear: () => {
+      setEvents([])
+    },
+    start: async () => await initializeStream(),
+    close: () => {
+      stream?.close()
+      setIsError(false)
+      setIsConnected(false)
+      setEvents([])
+    },
+  }
 }

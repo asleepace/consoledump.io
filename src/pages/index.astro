@@ -1,14 +1,12 @@
 ---
-import { Stream2 } from '@/lib/server/stream'
 import Layout from '@/layouts/Layout.astro'
+import { sessions } from '@/lib/server'
 
 export const prerender = false
 
-const stream = Stream2.new()
+const stream = await sessions.createSession(crypto.randomUUID().slice(0, 6))
 
 if (!stream.id) throw new Error('Invalid stream id')
-
-console.log('[route:index] created stream:', stream.id)
 
 Astro.rewrite(`/${stream.id}`)
 ---
