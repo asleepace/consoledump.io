@@ -19,7 +19,6 @@ const MAX_AGE_24_HOURS = 24 * 60 * 60 * 1000
 export type ByteChunk = Uint8Array<ArrayBuffer>
 export type ByteStream = ReadableStream<ByteChunk>
 
-
 // --- stream subscriber ---
 
 class StreamSubscriber {
@@ -27,7 +26,7 @@ class StreamSubscriber {
   public readonly createdAt = new Date()
   public updatedAt = new Date()
   public isAlive = true
- 
+
   public get lastAliveInMs() {
     return Date.now() - +this.updatedAt
   }
@@ -74,22 +73,29 @@ class StreamSubscriberStore extends Set<StreamSubscriber> {
   }
 
   public runGarbageCollector(): string[] {
-    const closed: StreamSubscriber[] = this.filter((subsciber) => subsciber.canBeRemoved())
+    const closed: StreamSubscriber[] = this.filter((subsciber) =>
+      subsciber.canBeRemoved()
+    )
     closed.forEach((sub) => sub.close())
     return closed.map((sub) => sub.id)
   }
 
-  public filter(callback: (subscriber: StreamSubscriber, index?: number) => boolean) {
+  public filter(
+    callback: (subscriber: StreamSubscriber, index?: number) => boolean
+  ) {
     return Array.from(this).filter(callback)
   }
 
-  public map<T>(callbackFn: (subscriber: StreamSubscriber, index?: number) => T): T[] {
+  public map<T>(
+    callbackFn: (subscriber: StreamSubscriber, index?: number) => T
+  ): T[] {
     return Array.from(this).map(callbackFn)
   }
 
-  public getPublisher = () => new WritableStream({
-    write: (chunk) => this.publish(chunk)
-  })
+  public getPublisher = () =>
+    new WritableStream({
+      write: (chunk) => this.publish(chunk),
+    })
 
   public publish(chunk: ByteChunk) {
     for (const subscriber of this) {
@@ -124,13 +130,15 @@ export async function createFileBasedStream(options: { streamId: string }) {
 
   /** Hydrate in-memory buffer with persisted data. */
   await bufferedFile.hydrateBuffer()
-  await bufferedFile.getInfo()
+  // await bufferedFile.getInfo()
 
   /** Set of all active client text/even-streams and helpers. */
   const activeStreams = new StreamSubscriberStore()
 
   /** NOTE: the callback is trigger when calling .broadcast() */
-  const sse = new ServerSideEventEncoder((chunk) => activeStreams.publish(chunk))
+  const sse = new ServerSideEventEncoder((chunk) =>
+    activeStreams.publish(chunk)
+  )
 
   /** Metadata for session. */
   const meta = {
@@ -163,13 +171,16 @@ export async function createFileBasedStream(options: { streamId: string }) {
 
     // 2. Broadcast system message of closed streams.
     closedStreamIds.forEach((childId) => {
-      sse.broadcastEvent({ name: 'client:closed', data: { childId }})
+      sse.broadcastEvent({ name: 'client:closed', data: { childId } })
     })
 
     // 3. Close session if no more streams.
     if (!activeStreams.isEmpty) return
     console.log('[stream] garbage collection called!')
-    sse.broadcastEvent('system', { name: 'stream:closed', data: { closedAt: new Date() }})
+    sse.broadcastEvent('system', {
+      name: 'stream:closed',
+      data: { closedAt: new Date() },
+    })
     await bufferedFile.close()
   }
 
@@ -215,7 +226,9 @@ export async function createFileBasedStream(options: { streamId: string }) {
   }
 
   return {
-    get id() { return options.streamId },
+    get id() {
+      return options.streamId
+    },
     /** publishes data to all streams and persists to file. */
     publish,
     /** broadcast an event to all streams & file. */
