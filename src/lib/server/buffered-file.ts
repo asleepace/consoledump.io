@@ -31,7 +31,7 @@ export class BufferedFile {
   private readonly buffer: Uint8Array
   private readonly file: BunFile
   private readonly fileWriter: ReturnType<BunFile['writer']>
-  private readonly filePath: string
+  readonly filePath: string
 
   private isInMemory = false
   private isHydrated = false
@@ -46,26 +46,36 @@ export class BufferedFile {
     }
   ) {
     const filePath = `${BufferedFile.outDir}/${options.fileName}`
+    console.log('[buffered-file] filePath:', filePath)
     this.buffer = new Uint8Array(options.bufferSize)
-    this.file = Bun.file(filePath)
-    this.fileWriter = this.file.writer()
     this.filePath = filePath
+    try {
+      this.file = Bun.file(filePath)
+      this.fileWriter = this.file.writer()
+    } catch (e) {
+      console.warn('[buffered-file] error:', e)
+      throw e
+    }
   }
 
   public async getInfo() {
-    const fileStat = await this.file.stat()
+    const file = Bun.file(this.filePath)
+    const fileStat = await file.stat()
     const fileInfo = {
       filePath: this.filePath,
-      fileSize: this.file.size,
-      exists: await this.file.exists(),
+      fileSize: file.size,
+      exists: await file.exists(),
       isInMemory: this.isInMemory,
       isHydrated: this.isHydrated,
       bufferSize: this.options.bufferSize,
       maxFileSize: this.options.maxFileSize,
-      createdAt: fileStat.birthtime.toLocaleDateString('en-US', { dateStyle: 'medium' }),
-      updatedAt: fileStat.atime.toLocaleDateString('en-US', { dateStyle: 'medium' }),
+      createdAt: fileStat.birthtime.toLocaleDateString('en-US', {
+        dateStyle: 'medium',
+      }),
+      updatedAt: fileStat.atime.toLocaleDateString('en-US', {
+        dateStyle: 'medium',
+      }),
     } as const
-    console.log(fileInfo)
     return fileInfo
   }
 
