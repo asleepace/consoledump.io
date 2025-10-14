@@ -182,7 +182,7 @@ export const ConsoleDumpClient = withAppProvider(
         <main className="w-full max-w-full h-full flex-1 flex flex-col overflow-hidden">
           <InfoPanel url={props.initialUrl} />
           <SettingsPanel app={ctx.app} />
-          {msgs.length === 0 ? (
+          {msgs.length === 0 && ctx.isConnected ? (
             <WelcomeMessage url={props.initialUrl.href} />
           ) : (
             <div
