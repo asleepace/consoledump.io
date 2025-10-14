@@ -47,7 +47,7 @@ export default defineConfig({
   server: {
     cors: true,
     port: 8082,
-    host: SITE_ORIGIN,
+    host: true,
   },
   build: {
     inlineStylesheets: 'never',
