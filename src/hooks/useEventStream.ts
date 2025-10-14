@@ -1,6 +1,7 @@
 import { Try } from '@asleepace/try'
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useClient } from './useClient'
+import { z } from 'astro/zod'
 
 async function createStreamSession() {
   const resp = await fetch('/api/sse', { method: 'HEAD' })
@@ -9,13 +10,29 @@ async function createStreamSession() {
   return { streamId }
 }
 
+const SessionMetaSchema = z
+  .object({
+    clientId: z.string(),
+    streamId: z.string(),
+    createdAt: z.coerce.date(),
+    updatedAt: z.coerce.date(),
+    clients: z.number(),
+  })
+  .passthrough()
+
+const parseSessionMetadata = z.string().transform((str) => {
+  const json = JSON.parse(str)
+  return SessionMetaSchema.parse(json)
+})
+
+export type SessionMeta = z.infer<typeof SessionMetaSchema>
+
 export interface ClientStream {
   sessionId: string | undefined
-  childId: string | undefined
   isConnected: boolean
   isError: boolean
   events: MessageEvent<string>[]
-  meta: Record<string, any>
+  meta: SessionMeta | undefined
   clear: () => void
   start: () => Promise<any>
   close: () => void
@@ -25,10 +42,9 @@ export function useEventStream(): ClientStream {
   const [isInitializing, setIsInitializing] = useState(false)
   const [isConnected, setIsConnected] = useState(true) // start as true
   const [isError, setIsError] = useState(false)
-  const [childId, setChildId] = useState<string | undefined>()
 
   const [events, setEvents] = useState<MessageEvent<string>[]>([])
-  const [meta, setMeta] = useState<Record<string, any>>({})
+  const [meta, setMeta] = useState<SessionMeta | undefined>()
 
   /** extracts the sessionId from current url. */
   const client = useClient()
@@ -49,13 +65,18 @@ export function useEventStream(): ClientStream {
   }
 
   useEffect(() => {
-    if (events.length === 0) return
-    if (Object.keys(meta).length !== 0) return
-    const maybeMeta = Try.catch(() => JSON.parse(events[0].data))
-    if (!maybeMeta.ok) return
-    console.log('[meta] stream:', maybeMeta.value)
-    setMeta(maybeMeta.value)
-  }, [events, meta])
+    if (!meta) return
+    window.addEventListener('beforeunload', () => {
+      const cleanupCallbackUrl = new URL('/api/sse', window.location.origin)
+      cleanupCallbackUrl.searchParams.set('id', meta.streamId)
+      cleanupCallbackUrl.searchParams.set('client', meta.clientId)
+      console.log('[session] cleanup called:', cleanupCallbackUrl.href)
+
+      fetch(cleanupCallbackUrl, { method: 'DELETE' })
+        .then(() => '[cleanup] called!')
+        .catch((e) => console.warn('[cleanup] err:', e))
+    })
+  }, [meta])
 
   /** whenever the sessionId changes we need to reset state and reconnect. */
   const stream = useMemo(() => {
@@ -80,20 +101,27 @@ export function useEventStream(): ClientStream {
 
     let currentId = 0
 
+    function parseSessionMeta(ev: MessageEvent<string>) {
+      try {
+        const json = JSON.parse(ev.data)
+        const data = SessionMetaSchema.parse(json)
+        setMeta(data)
+      } catch (e) {
+        console.warn('[session] failed to parse metadata:', e)
+      }
+    }
+
     eventSource.onmessage = (ev) => {
       // NOTE: important the firs message should contain metadata
       // about the stream and client.
       if (currentId++ === 0) {
-        const metaEvent = new MessageEvent('client', {
-          data: JSON.parse(ev.data),
-        })
-        setMeta(metaEvent)
+        parseSessionMeta(ev)
       } else {
         setEvents((prev) => [...prev, ev])
       }
     }
 
-    eventSource.onerror = (ev) => {
+    eventSource.onerror = (ev: any) => {
       console.warn(`[event-stream] error:`, ev)
       setIsConnected(false)
       setIsError(true)
@@ -104,20 +132,19 @@ export function useEventStream(): ClientStream {
 
   return {
     sessionId: client.sessionId,
-    childId,
     isConnected,
     isError,
     events,
     meta,
-    clear: () => {
+    clear: useCallback(() => {
       setEvents([])
-    },
+    }, []),
     start: async () => await initializeStream(),
-    close: () => {
+    close: useCallback(() => {
       stream?.close()
       setIsError(false)
       setIsConnected(false)
       setEvents([])
-    },
+    }, []),
   }
 }

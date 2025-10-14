@@ -35,9 +35,10 @@ if (method === 'POST') {
   return Response.json({ ok: true })
 }
 
-const realUrl = new URL(streamId, siteConfig.url)
+// construct url to pass as initial props
+const url = new URL(streamId, siteConfig.url)
 ---
 
 <Layout>
-  <ConsoleDumpClient initialUrl={realUrl} client:load />
+  <ConsoleDumpClient initialUrl={url} client:load />
 </Layout>
