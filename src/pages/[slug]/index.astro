@@ -9,11 +9,8 @@ urlStore.setUrl(Astro.url)
 
 // NOTE: do not server-side render!
 export const prerender = false
-
 const { slug: streamId } = Astro.params
 const { method } = Astro.request
-
-console.log(Astro.request)
 
 // handle CORS requests
 if (method === 'OPTIONS') {
