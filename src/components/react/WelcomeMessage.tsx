@@ -16,12 +16,13 @@ const snippetJs = (url: URL | string) =>
 }`.trim()
 
 const snippetTs = (url: URL | string) =>
-  `function dump(...args: any[]): Promise<Response> {
-    return fetch('${url}', {
-      method: 'POST',
-      body: JSON.stringify(args)
-    })
-  }`.trim()
+  `
+function dump(...args: any[]): Promise<Response> {
+  return fetch('${url}', {
+    method: 'POST',
+    body: JSON.stringify(args)
+  })
+}`.trim()
 
 const snippetBash = (url: URL | string) => `curl -d "hello world" ${url}`
 
@@ -53,7 +54,7 @@ export function WelcomeMessage({ url }: Props) {
       <div className="max-w-6xl w-full">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           {/* Left side - Content */}
-          <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-6 -mt-24">
             <div className="inline-flex items-center gap-2 bg-zinc-800/50 border border-zinc-700 rounded-full px-4 py-2 w-fit">
               <Zap className="w-4 h-4 text-yellow-400" />
               <span className="text-sm text-zinc-300 font-medium">
@@ -108,7 +109,7 @@ export function WelcomeMessage({ url }: Props) {
                 </span>
                 <button
                   onClick={copyToClipboard}
-                  className="flex items-center gap-2 px-3 py-1.5 text-sm bg-zinc-700 hover:bg-zinc-600 text-zinc-200 rounded transition-colors"
+                  className="flex items-center gap-2 px-3 py-1.5 text-sm bg-zinc-700 hover:bg-zinc-600 text-zinc-200 rounded-lg transition-colors"
                 >
                   {copied ? (
                     <>
@@ -123,10 +124,13 @@ export function WelcomeMessage({ url }: Props) {
                   )}
                 </button>
               </div>
-              <CodeSnippet lang={lang} className="p-6 overflow-x-auto">
+              <CodeSnippet
+                lang={lang}
+                className="p-6 overflow-x-auto aspect-[5/2]"
+              >
                 {codeMessage}
               </CodeSnippet>
-              <div className="bg-zinc-950 border-t border-t-zinc-600 flex gap-x-2 p-4">
+              <div className="bg-zinc-950/50 border-t border-t-zinc-600 flex gap-x-2 p-4">
                 {supportedLanguages.map((language) => {
                   return (
                     <button
