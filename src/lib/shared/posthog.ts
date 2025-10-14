@@ -18,5 +18,5 @@ posthog.init(siteConfig.posthog.apiKey, {
  * ```
  */
 export function trackEvent(eventName: string, options: Properties) {
-  posthog.capture(eventName, options)
+  const result = posthog.capture(eventName, options)
 }
