@@ -1,7 +1,7 @@
 {
   "name": "consoledump",
   "type": "module",
-  "version": "0.2.0",
+  "version": "4.1.1",
   "scripts": {
     "dev": "bunx --bun astro dev",
     "build": "bunx --bun astro build",
