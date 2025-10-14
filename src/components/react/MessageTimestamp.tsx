@@ -11,7 +11,7 @@ export const MessageTimestamp = ({
   return (
     <span
       className={cn(
-        'text-xs text-zinc-400/20 font-mono h-6 pt-1 shrink-0 w-16 align-baseline mt-0.5',
+        'text-xs text-zinc-400/20 font-mono shrink-0 w-16 align-baseline',
         className
       )}
     >

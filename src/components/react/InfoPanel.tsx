@@ -76,6 +76,7 @@ export const InfoPanel = ({ className, url }: InfoPanelProps) => {
       handleOpen={handleOpen}
       handleClose={handleClose}
       isOpen={isInfoPanelOpen}
+      showTab={true}
     >
       <PanelSection
         className={'align-baseline'}

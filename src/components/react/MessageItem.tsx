@@ -14,22 +14,7 @@ interface Props {
   className?: string
 }
 
-/**
- * Customize how content is displayed.
- */
-const matcher = createPatternMatcher([
-  {
-    match: (msg) => msg.event.type === 'client',
-    className: 'text-indigo-400',
-    renderer() {
-      return `connected to stream <a class="text-orange-400" href="${window.location.pathname}">${window.location.href}</a>`
-    },
-  },
-  {
-    match: (msg) => msg.badge.name === 'connected',
-    className: 'text-emerald-400',
-  },
-])
+// --- Default Custom Parsers ---
 
 messageParser.register({
   match: (msg) => msg.event.type === 'client',
@@ -77,7 +62,7 @@ export const MessageItem = memo(({ className, message, app }: Props) => {
         {/* --- message content --- */}
         <div className={cn('flex items-start gap-3 px-2 py-0.5')}>
           {/* --- metadata --- */}
-          <div className={'flex flex-row items-center gap-1 pt-0.5'}>
+          <div className={'flex flex-row items-center gap-1 h-6'}>
             <MessageTimestamp
               timestamp={msg.timestamp}
               className={cn(
@@ -95,10 +80,10 @@ export const MessageItem = memo(({ className, message, app }: Props) => {
             />
           </div>
           {/* --- content --- */}
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 min-h-6">
             <span
               className={cn(
-                'text-xs font-mono break-all py-0.5 text-zinc-600',
+                'text-xs font-mono break-all text-zinc-600',
                 msg.className
               )}
               dangerouslySetInnerHTML={{ __html: msg.html }}

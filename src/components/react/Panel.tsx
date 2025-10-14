@@ -47,12 +47,14 @@ export const PanelSection = (
 export interface Props {
   className?: string
   isOpen: boolean
+  showTab?: boolean
   handleOpen: () => void
   handleClose: () => void
 }
 
 export function Panel({
   isOpen,
+  showTab,
   children,
   className,
   handleOpen,
@@ -61,7 +63,7 @@ export function Panel({
   return (
     <>
       {/* Toggle button when closed */}
-      {!isOpen && (
+      {!isOpen && showTab && (
         <button
           onClick={handleOpen}
           className="fixed right-0 top-1/2 -translate-y-1/2 bg-zinc-800 text-gray-300 p-2 rounded-l-md hover:bg-zinc-700 transition-colors z-40"
