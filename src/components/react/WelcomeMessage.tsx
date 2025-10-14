@@ -24,16 +24,49 @@ function dump(...args: any[]): Promise<Response> {
   })
 }`.trim()
 
+const snippetPython = (url: URL | string) =>
+  `import requests, json
+
+def dump(*args):
+  return requests.post(
+    '${url}', 
+    data=json.dumps(args)
+  )
+`.trim()
+
+const snippetRuby = (url: URL | string) =>
+  `require 'net/http'
+require 'json'
+
+def dump(*args)
+  Net::HTTP.post(
+    URI('${url}'), 
+    args.to_json, 
+    'Content-Type' => 'application/json'
+  )
+end
+`.trim()
+
 const snippetBash = (url: URL | string) => `curl -d "hello world" ${url}`
 
 export function WelcomeMessage({ url }: Props) {
   const [copied, setCopied] = useState(false)
   const [lang, setLang] = useState('javascript')
 
-  const supportedLanguages = ['Javascript', 'Typescript', 'Bash']
+  const supportedLanguages = [
+    'Javascript',
+    'Typescript',
+    'Python',
+    'Ruby',
+    'Bash',
+  ]
 
   const codeMessage = useMemo(() => {
     switch (lang) {
+      case 'ruby':
+        return snippetRuby(url)
+      case 'python':
+        return snippetPython(url)
       case 'bash':
         return snippetBash(url)
       case 'typescript':
@@ -109,6 +142,10 @@ export function WelcomeMessage({ url }: Props) {
                     ? 'index.js'
                     : lang === 'bash'
                     ? 'index.sh'
+                    : lang === 'ruby'
+                    ? 'index.rb'
+                    : lang === 'python'
+                    ? 'index.py'
                     : 'example'}
                 </span>
                 <button
