@@ -132,7 +132,7 @@ export function WelcomeMessage({ url }: Props) {
 
           {/* Right side - Code snippet */}
           <div className="relative">
-            <div className="absolute -inset-1 bg-gradient-to-r from-zinc-600 to-zinc-700 rounded-lg blur opacity-25"></div>
+            <div className="absolute -inset-1 bg-gradient-to-r from-zinc-600 to-zinc-700 rounded-xl blur opacity-25"></div>
             <div className="relative bg-zinc-900 border border-zinc-700 rounded-lg overflow-hidden">
               <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800 bg-zinc-800/50">
                 <span className="text-sm font-medium text-zinc-400">
