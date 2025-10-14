@@ -2,6 +2,7 @@ import { Try } from '@asleepace/try'
 import { BufferedFile } from '../server/buffered-file'
 
 function encodeObjectForErrors(obj: unknown): string {
+  console.log('[err] obj:', obj)
   if (typeof obj !== 'object') return String(obj)
   if (obj instanceof BufferedFile) {
     return `BufferedFile: path ${obj.filePath}`
