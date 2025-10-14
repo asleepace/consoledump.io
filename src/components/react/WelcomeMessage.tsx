@@ -54,7 +54,7 @@ export function WelcomeMessage({ url }: Props) {
       <div className="max-w-6xl w-full">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           {/* Left side - Content */}
-          <div className="flex flex-col gap-6 -mt-24">
+          <div className="flex flex-col gap-6 -mt-20">
             <div className="inline-flex items-center gap-2 bg-zinc-800/50 border border-zinc-700 rounded-full px-4 py-2 w-fit">
               <Zap className="w-4 h-4 text-yellow-400" />
               <span className="text-sm text-zinc-300 font-medium">
@@ -71,7 +71,7 @@ export function WelcomeMessage({ url }: Props) {
               in your code, and watch your data flow in real-time.
             </p>
 
-            <div className="flex flex-col gap-3 mt-4">
+            <div className="flex flex-col gap-3 my-4">
               <div className="flex items-start gap-3">
                 <div className="w-6 h-6 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-xs text-zinc-400 shrink-0 mt-0.5">
                   1
@@ -91,6 +91,10 @@ export function WelcomeMessage({ url }: Props) {
                 <p className="text-zinc-300">Start sending logs</p>
               </div>
             </div>
+
+            <a className="text-zinc-500 hover:underline" href="/docs">
+              Read documentation
+            </a>
           </div>
 
           {/* Right side - Code snippet */}
@@ -130,14 +134,15 @@ export function WelcomeMessage({ url }: Props) {
               >
                 {codeMessage}
               </CodeSnippet>
-              <div className="bg-zinc-950/50 border-t border-t-zinc-600 flex gap-x-2 p-4">
+              <div className="bg-zinc-950/50 border-t border-t-zinc-800/50 flex gap-x-2 p-4">
                 {supportedLanguages.map((language) => {
                   return (
                     <button
                       className={cn(
-                        'px-3 py-1 text-xs rounded-full tracking-wide font-semibold bg-zinc-800 text-zinc-500',
-                        lang === language.toLowerCase() &&
-                          'bg-yellow-500 text-zinc-950s'
+                        'px-3 py-1 text-xs rounded-full tracking-wide font-semibold text-zinc-500 border border-zinc-700',
+                        lang === language.toLowerCase()
+                          ? 'bg-yellow-500 text-zinc-950s'
+                          : 'bg-zinc-800 hover:bg-zinc-700'
                       )}
                       onClick={() => setLang(language.toLowerCase())}
                     >
