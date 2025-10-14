@@ -2,9 +2,9 @@ import { Mutex } from '@asleepace/mutex'
 import { Try } from '@asleepace/try'
 import { ServerSideEventEncoder } from './sse-encoder'
 import { BufferedFile } from './buffered-file'
-import { urlStore } from '@/lib/shared/url-store'
 import { ids } from '@/lib/shared/ids'
 import { gc } from './garbage-collector'
+import { trackEvent } from '../shared/posthog'
 
 // --- constants ---
 
@@ -90,6 +90,12 @@ class StreamSubscriberStore extends Set<StreamSubscriber> {
     )
     closed.forEach((sub) => sub.close())
     return closed.map((sub) => sub.id)
+  }
+
+  public getClientId(id: string): StreamSubscriber | undefined {
+    for (const sub of this) {
+      if (sub.id === id) return sub
+    }
   }
 
   public filter(
@@ -202,8 +208,6 @@ export async function createFileBasedStream(options: { streamId: string }) {
   async function createSubscription() {
     let subscriber: StreamSubscriber | undefined
 
-    urlStore.setCurrentHref(options.streamId as SessionId) // used via getServerSnapshot()
-
     return new ReadableStream({
       type: 'bytes',
       async start(controller) {
@@ -265,9 +269,26 @@ export async function createFileBasedStream(options: { streamId: string }) {
       await bufferedFile.deleteFile()
       await gc.runGarbageCollection({ force: true })
     },
+    /** calls to unsubscribe a specific stream subscriber. */
+    async unsubscribe(params: { clientId: string }) {
+      const clientStream = activeStreams.getClientId(params.clientId)
+      if (!clientStream) {
+        console.warn('[stream] failed to find client:', params.clientId)
+        return
+      }
+      clientStream.close()
+      activeStreams.delete(clientStream)
+      // TODO: maybe add this?
+      // await handleGarbageCollection()
+    },
+
     /** returns a new text/event-stream subscribed to the session. */
     async subscribe(): Promise<Response> {
       const streamBody = await createSubscription()
+      console.log(`[stream] created subscription (total=${activeStreams.size})`)
+      trackEvent('session_created', {
+        sessionId: options.streamId,
+      })
       return new Response(streamBody, {
         headers: {
           'content-type': 'text/event-stream',

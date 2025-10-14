@@ -1,7 +1,6 @@
 import React, { createContext, useState, type PropsWithChildren } from 'react'
 import { useEventStream, type ClientStream } from '@/hooks/useEventStream'
 import { useClient } from '@/hooks/useClient'
-import { useCurrentUrl } from '@/hooks/useCurrentUrl'
 import { useSettings, type AppSettings } from '@/hooks/useSettings'
 
 export type AppTheme = {
@@ -114,7 +113,6 @@ export function AppContextProvider(
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
 
   const client = useClient()
-  const currentUrl = useCurrentUrl()
   const isDark = theme.mode === 'dark'
 
   // NOTE: Parse incoming messages here...
@@ -133,7 +131,7 @@ export function AppContextProvider(
         isConnected,
         sessionId: client.sessionId,
         isDark,
-        url: currentUrl,
+        url: props.initialUrl,
         isInfoPanelOpen,
         isSettingsOpen,
         expandedLogs,

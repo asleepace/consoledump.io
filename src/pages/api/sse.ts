@@ -13,8 +13,9 @@ export const prerender = false
 export const HEAD: APIRoute = async ({ url }) => {
   const id = url.searchParams.get('id')
 
-  if (!id)
+  if (!id) {
     return new ApiError('Missing required param :id', { id }).toResponse()
+  }
 
   await sessions.getOrCreate(id)
 
@@ -35,8 +36,9 @@ export const HEAD: APIRoute = async ({ url }) => {
 export const GET: APIRoute = async ({ url, request }) => {
   const id = url.searchParams.get('id')
 
-  if (!id)
+  if (!id) {
     return new ApiError('Missing required param :id', { id }).toResponse()
+  }
 
   const stream = await sessions.getOrCreate(id)
 
@@ -44,7 +46,7 @@ export const GET: APIRoute = async ({ url, request }) => {
 }
 
 /**
- * POST /api/sse?streamId="<string_id>"
+ * POST /api/sse?id="<string_id>"
  *
  * This route enables posting data to the MultiplexStream with streamID
  * and the data will be piped to the event stream returned by the GET.
@@ -65,14 +67,32 @@ export const POST: APIRoute = async ({ url, request }) => {
   return Response.json({ ok: true })
 }
 
+/**
+ * DELETE /api/see?id=<stream_id>&client=<client_id?>
+ *
+ * Call this endpoint to close a session and/or client of the session,
+ * if no more clients are left, then the stream should automatically
+ * close as well.
+ */
 export const DELETE: APIRoute = async ({ url }) => {
   const id = url.searchParams.get('id')
+  const clientId = url.searchParams.get('client')
   if (!id) {
     return new ApiError('Missing required param :id', { id }).toResponse()
   }
+  const stream = sessions.getSession(id)
 
-  const stream = await sessions.getOrCreate(id)
-  await stream.delete()
+  console.log('[sse] delete called on stream ', id, 'for client:', clientId)
+
+  if (!stream)
+    return Response.json({ error: 'Stream not found' }, { status: 404 })
+
+  if (clientId) {
+    console.log('[sse] closing client:', clientId)
+    await stream.unsubscribe({ clientId })
+  } else {
+    await stream.delete()
+  }
 
   return Response.json({ ok: true })
 }

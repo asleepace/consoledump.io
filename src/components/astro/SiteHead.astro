@@ -2,6 +2,7 @@
 import '@/styles/global.css'
 
 import { siteConfig, type SiteConfig } from '@/consts'
+import PostHog from '@/components/astro/posthog.astro'
 
 interface Props extends Partial<SiteConfig> {}
 
@@ -62,3 +63,6 @@ const json = JSON.stringify({
 
 <!-- Structured Data (JSON-LD) -->
 <script type="application/ld+json" set:html={json} />
+
+<!-- PostHog Analytics -->
+<PostHog />
