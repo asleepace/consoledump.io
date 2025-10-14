@@ -142,7 +142,7 @@ export async function createFileBasedStream(options: { streamId: string }) {
 
   /** Hydrate in-memory buffer with persisted data. */
   await bufferedFile.hydrateBuffer()
-  await bufferedFile.getInfo()
+  // await bufferedFile.getInfo()
 
   /** Set of all active client text/even-streams and helpers. */
   const activeStreams = new StreamSubscriberStore()

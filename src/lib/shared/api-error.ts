@@ -1,11 +1,17 @@
 import { Try } from '@asleepace/try'
+import { BufferedFile } from '../server/buffered-file'
 
 function encodeObjectForErrors(obj: unknown): string {
+  console.log('[err] obj:', obj)
   if (typeof obj !== 'object') return String(obj)
+  if (obj instanceof BufferedFile) {
+    return `BufferedFile: path ${obj.filePath}`
+  }
   return Try.catch(() => JSON.stringify(obj)).unwrapOr(String(obj))
 }
 
-export type ErrorResponseInit = Record<string, string | number | boolean> & ResponseInit
+export type ErrorResponseInit = Record<string, string | number | boolean> &
+  ResponseInit
 
 /**
  *  Universal error class for the application.

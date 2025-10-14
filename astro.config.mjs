@@ -5,7 +5,10 @@ import node from '@astrojs/node'
 import react from '@astrojs/react'
 import mdx from '@astrojs/mdx'
 
-export const SITE_ORIGIN = process.env.NODE_ENV === 'development' ? 'http://127.0.0.1:8082' : 'https://consoledump.io'
+export const SITE_ORIGIN =
+  process.env.NODE_ENV === 'development'
+    ? 'http://127.0.0.1:8082'
+    : 'https://consoledump.io'
 
 console.log({ SITE_ORIGIN })
 
@@ -42,9 +45,9 @@ export default defineConfig({
     checkOrigin: false,
   },
   server: {
-    cors: false,
+    cors: true,
     port: 8082,
-    host: '127.0.0.1',
+    host: '0.0.0.0',
   },
   build: {
     inlineStylesheets: 'never',
@@ -56,7 +59,13 @@ export default defineConfig({
     plugins: [tailwindcss()],
     optimizeDeps: {
       // Prebundle common and heavy deps to speed up dev server startup & HMR
-      include: ['react', 'react-dom', 'lucide-react', '@tabler/icons-react', '@asleepace/try'],
+      include: [
+        'react',
+        'react-dom',
+        'lucide-react',
+        '@tabler/icons-react',
+        '@asleepace/try',
+      ],
       exclude: ['bun:sqlite'],
       force: true,
       esbuildOptions: {
@@ -81,7 +90,11 @@ export default defineConfig({
       target: 'es2020',
       rollupOptions: {
         // ignore these files when bundling...
-        external: [/highlight\.js\/styles\/.+\.css$/, /typescript\.js/, /@\/db\/.*/],
+        external: [
+          /highlight\.js\/styles\/.+\.css$/,
+          /typescript\.js/,
+          /@\/db\/.*/,
+        ],
       },
     },
   },
