@@ -59,6 +59,7 @@ export class BufferedFile {
   }
 
   public async getInfo() {
+    console.log('[buffered-file] getting info:', this.filePath)
     const file = Bun.file(this.filePath)
     const fileStat = await file.stat()
     const fileInfo = {
