@@ -98,7 +98,7 @@ export async function runGarbageCollection({ force = false } = {}) {
   try {
     // run only every ~10 mins if no memory warning (or not flagged)
     // or called with `force: true`
-    //if (!force && gc.lastRanInMinutes <= 10 && !gc.hasMemoryWarning) return
+    if (!force && gc.lastRanInMinutes <= 10 && !gc.hasMemoryWarning) return
 
     gc.shouldRunCleanup = false
     gc.lastRanAt = Date.now()
@@ -113,7 +113,7 @@ export async function runGarbageCollection({ force = false } = {}) {
     })
 
     // do nothing if we are under 80% usage
-    // if (!gc.hasMemoryWarning) return
+    if (!gc.hasMemoryWarning) return
 
     console.log('[gc] triggered:', {
       totalBytes: gc.totalBytesOnDisk,
