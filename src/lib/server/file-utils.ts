@@ -1,4 +1,7 @@
 import { siteConfig } from '@/consts'
+import path from 'node:path'
+import { publicDir } from 'astro:config/server'
+import { exists } from 'node:fs/promises'
 
 /** Get timestamp in format `YYY-MM-DD-HH` */
 export function getIsoTimestamp() {
@@ -33,10 +36,15 @@ export async function fileIterator<T>(
   const files = new Bun.Glob('*.log')
   const callbackResults = new Array<T>()
 
+  const pubDir = publicDir.toString()
+  const dumps = path.join(pubDir, 'dumps').replace('file:', '')
+  const doesExist = await exists(dumps)
+  console.log('[dumps] info', { publicDir, filePath: dumps, doesExist })
+
   for await (const filePath of files.scan({
-    cwd: 'public/dumps/',
-    onlyFiles: true,
+    cwd: dumps,
     absolute: true,
+    onlyFiles: true,
   })) {
     try {
       const output = await callbackFn(Bun.file(filePath))

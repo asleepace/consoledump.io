@@ -1,4 +1,5 @@
 import { fileUtils } from '@/lib/server/file-utils'
+import { resolve } from 'bun'
 
 const KB = 1024
 const MB = 1024 * KB
@@ -51,6 +52,8 @@ export const gc = {
   bulkDeletion,
 }
 
+console.log('[gc] dumps dir:', gc.DUMPS_DIR)
+
 async function deleteFile(file: Bun.BunFile) {
   try {
     console.log('[gc] deleting:', file.name)
@@ -65,7 +68,12 @@ async function deleteFile(file: Bun.BunFile) {
 }
 
 async function bulkDeletion(files: Bun.BunFile[]) {
-  await Promise.allSettled(files.map((logFile) => deleteFile(logFile)))
+  await Promise.allSettled(
+    files.map(async (logFile) => {
+      console.log('[gc] bulk deleting:', logFile)
+      return await deleteFile(logFile)
+    })
+  )
 }
 
 /**
@@ -87,50 +95,49 @@ async function bulkDeletion(files: Bun.BunFile[]) {
  * @note add defensive mode against spam.
  */
 export async function runGarbageCollection({ force = false } = {}) {
-  // run only every ~10 mins if no memory warning (or not flagged)
-  // or called with `force: true`
-  if (!force && gc.lastRanInMinutes <= 10 && !gc.hasMemoryWarning) return
+  try {
+    // run only every ~10 mins if no memory warning (or not flagged)
+    // or called with `force: true`
+    if (!force && gc.lastRanInMinutes <= 10 && !gc.hasMemoryWarning) return
 
-  console.log('[gc] running...')
+    gc.shouldRunCleanup = false
+    gc.lastRanAt = Date.now()
+    gc.totalBytesOnDisk = 0
+    gc.totalFiles = 0
 
-  let skipGcForDebug = true
-  if (skipGcForDebug) {
-    return console.warn('[gc] skipping...')
+    // single pass to collect metrics
+    const logFiles = await fileUtils.fileIterator((file) => {
+      gc.totalBytesOnDisk += file.size
+      gc.totalFiles += 1
+      return file
+    })
+
+    // do nothing if we are under 80% usage
+    if (!gc.hasMemoryWarning) return
+
+    console.log('[gc] triggered:', {
+      totalBytes: gc.totalBytesOnDisk,
+      diskUsage: gc.diskUsagePercentage,
+      totalFiles: gc.totalFiles,
+    })
+
+    // otherwie cleanup files over 24 hours
+    await bulkDeletion(
+      logFiles.filter((log) => Date.now() - log.lastModified >= gc.maxAgeInMs)
+    )
+
+    if (!gc.hasMemoryWarning) return
+
+    // otherwise start deleting bulk files
+    await bulkDeletion(
+      logFiles.filter((log) => log.size >= gc.maxFileSizeBytes)
+    )
+
+    if (!gc.hasMemoryWarning) return
+
+    // if we are above memory (> 100%) usage clear everything!
+    await bulkDeletion(logFiles)
+  } catch (e) {
+    console.warn('[gc] collection failed:', e)
   }
-
-  gc.shouldRunCleanup = false
-  gc.lastRanAt = Date.now()
-  gc.totalBytesOnDisk = 0
-  gc.totalFiles = 0
-
-  // single pass to collect metrics
-  const logFiles = await fileUtils.fileIterator((file) => {
-    gc.totalBytesOnDisk += file.size
-    gc.totalFiles += 1
-    return file
-  })
-
-  // do nothing if we are under 80% usage
-  if (!gc.hasMemoryWarning) return
-
-  console.log('[gc] triggered:', {
-    totalBytes: gc.totalBytesOnDisk,
-    diskUsage: gc.diskUsagePercentage,
-    totalFiles: gc.totalFiles,
-  })
-
-  // otherwie cleanup files over 24 hours
-  await bulkDeletion(
-    logFiles.filter((log) => Date.now() - log.lastModified >= gc.maxAgeInMs)
-  )
-
-  if (!gc.hasMemoryWarning) return
-
-  // otherwise start deleting bulk files
-  await bulkDeletion(logFiles.filter((log) => log.size >= gc.maxFileSizeBytes))
-
-  if (!gc.hasMemoryWarning) return
-
-  // if we are above memory (> 100%) usage clear everything!
-  await bulkDeletion(logFiles)
 }
