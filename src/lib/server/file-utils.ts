@@ -43,6 +43,8 @@ export async function fileIterator<T>(
 
   for await (const filePath of files.scan({
     cwd: dumps,
+    absolute: true,
+    onlyFiles: true,
   })) {
     try {
       const output = await callbackFn(Bun.file(filePath))
