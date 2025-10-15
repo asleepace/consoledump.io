@@ -4,6 +4,7 @@ import { BufferedFile } from '../server/buffered-file'
 function encodeObjectForErrors(obj: unknown): string {
   console.log('[err] obj:', obj)
   if (typeof obj !== 'object') return String(obj)
+  if (obj instanceof Error) return obj.message
   if (obj instanceof BufferedFile) {
     return `BufferedFile: path ${obj.filePath}`
   }
@@ -21,7 +22,7 @@ export class ApiError extends Error {
   static from(err: unknown): ApiError {
     if (err instanceof ApiError) return err
     if (err instanceof Error) new ApiError(err.message, err)
-    return new ApiError(err)
+    return new ApiError(String(err))
   }
 
   static throw(...args: any[]): never {
@@ -29,7 +30,7 @@ export class ApiError extends Error {
   }
 
   constructor(...args: any[]) {
-    super(args.map(encodeObjectForErrors).join(' '))
+    super(args.map((item) => encodeObjectForErrors(item)).join(' '))
     console.warn(this)
   }
 
