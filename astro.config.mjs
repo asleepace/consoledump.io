@@ -20,6 +20,7 @@ console.log({ SITE_ORIGIN })
 export default defineConfig({
   site: SITE_ORIGIN,
   trailingSlash: 'never',
+  publicDir: './public',
   integrations: [
     mdx({
       optimize: {

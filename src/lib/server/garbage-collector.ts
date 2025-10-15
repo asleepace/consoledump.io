@@ -1,4 +1,5 @@
 import { fileUtils } from '@/lib/server/file-utils'
+import { resolve } from 'bun'
 
 const KB = 1024
 const MB = 1024 * KB
@@ -51,6 +52,8 @@ export const gc = {
   bulkDeletion,
 }
 
+console.log('[gc] dumps dir:', gc.DUMPS_DIR)
+
 async function deleteFile(file: Bun.BunFile) {
   try {
     console.log('[gc] deleting:', file.name)
@@ -91,8 +94,6 @@ export async function runGarbageCollection({ force = false } = {}) {
     // run only every ~10 mins if no memory warning (or not flagged)
     // or called with `force: true`
     if (!force && gc.lastRanInMinutes <= 10 && !gc.hasMemoryWarning) return
-
-    console.log('[gc] running...')
 
     gc.shouldRunCleanup = false
     gc.lastRanAt = Date.now()
