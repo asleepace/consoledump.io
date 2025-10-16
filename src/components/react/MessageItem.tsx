@@ -7,6 +7,7 @@ import { BtnCopyToClipboard } from './Buttons'
 import { createPatternMatcher } from '@/lib/client/message'
 import { messageParser } from '@/lib/client/message'
 import type { AppSettings } from '@/hooks/useSettings'
+import { JsonNode } from '@/components/react/JsonNode'
 
 interface Props {
   app: AppSettings
@@ -51,6 +52,10 @@ export const MessageItem = memo(({ className, message, app }: Props) => {
     setTimeout(() => setIsCopied(false), 1_000)
   }, [])
 
+  const isJsonData =
+    (msg.content.type === 'array' && typeof msg.content.data[0] === 'object') ||
+    msg.content.type === 'object'
+
   return (
     <div className={cn('w-full font-mono', className)}>
       <div
@@ -81,9 +86,15 @@ export const MessageItem = memo(({ className, message, app }: Props) => {
           </div>
           {/* --- content --- */}
           <div className="flex-1 min-w-0 min-h-6">
+            {isJsonData && msg.content.type === 'array' ? (
+              msg.content.data.map((elem) => <JsonNode data={elem} />)
+            ) : (
+              <JsonNode data={msg.content.data} />
+            )}
+
             <span
               className={cn(
-                'text-xs font-mono break-all text-zinc-600',
+                'text-xs font-mono break-all text-zinc-600 hidden',
                 msg.className
               )}
               dangerouslySetInnerHTML={{ __html: msg.html }}
