@@ -9,7 +9,7 @@ type DumpSession = Awaited<ReturnType<typeof createFileBasedStream>>
  *
  * Store which holds all active console dump sessions and handles
  * creating, reading, updating and deleting.
- * 
+ *
  *  - Runs garbage collection when creating a stream
  *  - Runs garbase collection when deleting a stream
  *
@@ -64,17 +64,19 @@ export class ConsoleDumpSessions {
 
     if (!id) throw new ApiError('Missing required param "id" or valid path.')
 
-    const session = await this.getOrCreate(id)
-
     // handle content
     if (req.method === 'GET' && type === 'text/event-stream') {
+      const session = await this.getOrCreate(id)
       return session.subscribe()
     }
 
     // handle incoming post requests
     if (req.method === 'POST' && req.body) {
+      const session = await this.getOrCreate(id)
       session.publish(req.body)
       return Response.json({ ok: true })
     }
+
+    return Response.json({ error: 'Invalid request.' }, { status: 400 })
   }
 }
