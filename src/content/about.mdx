@@ -30,12 +30,11 @@ The most common way to interact with the remote session is via the REST api and 
 
 ```js
 // copy & paste this snippet
-function dump(...args) {
-  return fetch('http://127.0.0.1:8082/42a66873', {
+const dump = (...args) =>
+  fetch('http://127.0.0.1:8082/42a66873', {
     method: 'POST',
     body: JSON.stringify(args),
   })
-}
 
 // call to pipe data to the session!
 dump('hello, world!')
@@ -163,5 +162,3 @@ Returns the web interface for viewing streamed logs in real-time.
 **Consoledump** is free and open source software available under the MIT license.
 
 **Source code:** [github.com/asleepace/consoledump.io](https://github.com/asleepace/consoledump.io)
-
-<SiteFooter />

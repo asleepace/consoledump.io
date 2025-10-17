@@ -26,25 +26,37 @@ const uniqueRef = crypto.randomUUID().slice(0, 8)
   {
     (title || filename) && (
       <div class="code-header">
-        {filename && <span class="code-filename">{filename}</span>}
-        {title && <span class="code-title">{title}</span>}
-        <span class="code-lang">{lang}</span>
+        <div class="flex items-center gap-3 min-w-0">
+          {filename && <span class="code-filename truncate">{filename}</span>}
+          {title && <span class="code-title truncate">{title}</span>}
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="code-lang">{lang}</span>
+          <button
+            class="copy-btn"
+            type="button"
+            title="Copy code"
+            data-for={uniqueRef}
+          >
+            Copy
+          </button>
+        </div>
       </div>
     )
   }
   <div id={uniqueRef} class="code-wrapper overflow-x-auto">
     <!-- Removed min-w-max -->
-    <pre class="pt-1 px-2 min-w-max" {...props}><slot /></pre>
+    <pre class="pt-1 px-3 min-w-max" {...props}><slot /></pre>
   </div>
 </div>
 
 <script is:inline define:vars={{ uniqueRef }}>
   const codeWrapper = document.getElementById(uniqueRef)
 
-  codeWrapper?.addEventListener('dblclick', async () => {
+  async function doCopy() {
     try {
       const code = document.querySelector(`#${uniqueRef} pre > code`)
-      navigator.clipboard.writeText(code.textContent)
+      await navigator.clipboard.writeText(code.textContent || '')
       codeWrapper.parentElement.setAttribute('data-copied', '1')
     } catch (err) {
       console.warn('[code] failed to save code:', err)
@@ -53,7 +65,12 @@ const uniqueRef = crypto.randomUUID().slice(0, 8)
         codeWrapper.parentElement.removeAttribute('data-copied')
       }, 300)
     }
-  })
+  }
+
+  codeWrapper?.addEventListener('dblclick', doCopy)
+
+  const headerCopyBtn = document.querySelector(`[data-for="${uniqueRef}"]`)
+  headerCopyBtn?.addEventListener('click', doCopy)
 </script>
 
 <style is:global>
@@ -106,6 +123,19 @@ const uniqueRef = crypto.randomUUID().slice(0, 8)
     overflow-x: auto;
   }
 
+  .copy-btn {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: rgba(255, 255, 255, 0.9);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+  }
+
+  .copy-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+  }
+
   pre {
     overflow-x: auto;
     font-size: 14px;
@@ -115,8 +145,14 @@ const uniqueRef = crypto.randomUUID().slice(0, 8)
   }
 
   code {
-    @apply bg-red-500;
-    white-space: pre; /* Added */
+    white-space: pre; /* preserve code formatting */
+  }
+
+  /* Improve small-screen code readability */
+  @media (max-width: 480px) {
+    pre {
+      font-size: 13px;
+    }
   }
 
   /* Scrollbar styles... */

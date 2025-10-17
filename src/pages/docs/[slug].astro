@@ -17,10 +17,10 @@ type Props = CollectionEntry<'docs'>
 
 const post = Astro.props
 
-const { Content } = await render(post)
+const { Content, headings } = await render(post)
 ---
 
-<LayoutDocs {...post.data}>
+<LayoutDocs {...post.data} {headings}>
   <div class="max-w-full overflow-x-auto">
     <Content {...post} {components} />
   </div>
