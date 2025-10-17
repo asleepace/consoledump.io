@@ -1,81 +1,152 @@
 ---
 title: 'Privacy Policy'
-description: 'Privacy policy for Consoledump.'
+description: 'How ConsoleDump handles your data. We collect minimal information, never sell your data, and automatically delete content after 24 hours.'
 pubDate: '9/2/2025'
 heroImage: '/images/cover.png'
-hashTags: 'Consoledump, Docs, About, Terms of Service, ToS, Privacy, Policy, Legal'
+hashTags: 'Consoledump, Privacy Policy, Data Protection, User Privacy'
 slug: 'privacy'
 ---
 
 # Privacy Policy
 
-Last updated <span class="text-blue-500">September 2nd, 2025</span> (9/2/2025)
+<span class="text-orange-400">Last updated: September 2nd, 2025</span>
 
-This Privacy Policy describes how Consoledump ("we," "our," or "us") handles information when you use our service.
+This Privacy Policy explains how ConsoleDump ("we," "our," or "us") collects, uses, and protects information when you use our remote debugging console service. We're committed to transparency and minimizing data collection.
 
 ## Information We Collect
 
-### Content You Submit
-- **Text/code content** you paste or pipe to our service
-- **Timestamps** of when content was submitted
-- **IP addresses** for basic analytics and abuse prevention
+ConsoleDump is designed to collect minimal information. Here's what we gather:
 
-### Automatically Collected Information
-- **Usage analytics** (page views, feature usage)
-- **Basic technical data** (browser type, device type)
-- **Error logs** for debugging purposes
+### Log Content You Submit
+
+When you send data to your debugging session, we temporarily store:
+
+- **Log messages and data** you post to your session
+- **Submission timestamps** for ordering and display
+- **Session IDs** to route messages to the correct session
+
+**Important:** All log content is stored in-memory only and automatically deleted after 24 hours of inactivity.
+
+### Technical Information
+
+For service operation and abuse prevention, we collect:
+
+- **IP addresses** (for rate limiting and preventing abuse)
+- **Basic request metadata** (timestamps, session IDs)
+- **Error logs** (for debugging service issues)
+
+### Analytics (Optional)
+
+We may collect anonymous usage statistics:
+
+- **Page views and feature usage**
+- **Browser type and device type**
+- **Geographic region** (country-level only)
+
+We use analytics to improve the service, not to track individual users.
 
 ## How We Use Information
 
-We use collected information to:
-- Provide and maintain the service
-- Prevent abuse and spam
-- Improve service performance
-- Debug technical issues
+We use collected information solely to operate and improve ConsoleDump:
 
-**We do NOT:**
-- Sell your data to third parties
-- Use your content for training AI models
-- Monitor or read your submitted content
-- Create user profiles or track you across sites
+- **Provide the service** - Route log messages to the correct sessions
+- **Prevent abuse** - Block spam, bots, and malicious activity
+- **Improve performance** - Optimize server resources and response times
+- **Fix bugs** - Diagnose and resolve technical issues
+
+### What We Never Do
+
+We are committed to **never**:
+
+- ❌ Sell or rent your data to anyone
+- ❌ Use your log content to train AI/ML models
+- ❌ Read or monitor your submitted content (except in abuse investigations)
+- ❌ Create user profiles or behavioral tracking
+- ❌ Share your data with advertisers
+- ❌ Track you across other websites
 
 ## Data Storage & Security
 
-- **All submitted content is public** and potentially visible to other users
-- **Content expires automatically** after [TIME PERIOD]
-- **No encryption** - treat all data as publicly readable
-- **No backups** - expired content is permanently deleted
-- **Basic security measures** but no guarantee against breaches
+### How Long We Keep Your Data
+
+- **Log content**: Automatically deleted after **24 hours of inactivity**
+- **Session data**: Expires when the session becomes inactive
+- **Technical logs**: Retained for up to 30 days for debugging
+- **No backups**: Once deleted, data is permanently removed
+
+### Security Measures
+
+We implement standard security practices including:
+
+- HTTPS encryption for data in transit
+- Rate limiting to prevent abuse
+- Regular security updates and patches
+- Memory-only storage (logs never written to disk)
+
+### Important Security Limitations
+
+⚠️ **Your submitted content is not private.** Anyone with your session URL can view your logs. Consider your session URL as public.
+
+- **No end-to-end encryption** - We can technically access your logs
+- **Session URLs are not secret** - Treat them like public links
+- **No authentication** - Anyone with the URL can view the session
+- **No guarantees** - We cannot guarantee absolute security
+
+**Never submit sensitive information** like passwords, API keys, tokens, personal data, or confidential information.
 
 ## Third-Party Services
 
-We may use:
-- **Analytics services** (like Google Analytics) for usage statistics
-- **CDN services** for content delivery
-- **Hosting providers** for infrastructure
+To operate ConsoleDump, we may use trusted third-party services:
 
-These services have their own privacy policies.
+- **Hosting providers** - Cloud infrastructure for running the service
+- **CDN services** - Content delivery for faster global access
+- **Analytics providers** - Anonymous usage statistics (if enabled)
 
-## Your Rights
+Each third-party service has its own privacy policy. We select providers that respect user privacy and minimize data collection.
 
-- **No account required** - we don't store personal profiles
-- **Content deletion** - content expires automatically
-- **Data requests** - email us for questions about your data
+## Your Rights & Control
+
+### No Account Required
+
+ConsoleDump doesn't require registration, so we don't store user accounts or personal profiles. You remain anonymous unless you choose to identify yourself in your logs.
+
+### Automatic Data Deletion
+
+Your log content automatically expires and is permanently deleted after 24 hours of inactivity. No manual deletion is needed.
+
+### Data Access Requests
+
+Under privacy regulations like GDPR and CCPA, you have the right to:
+
+- Request information about data we've collected
+- Request deletion of your data
+- Opt out of analytics tracking
+
+Email us at [contact@consoledump.io](mailto:contact@consoledump.io) for data-related requests.
 
 ## Children's Privacy
 
-Our service is not intended for users under 13. We do not knowingly collect information from children.
+ConsoleDump is not intended for users under 13 years of age. We do not knowingly collect information from children. If we discover we've collected data from a child under 13, we will delete it immediately.
+
+## International Users
+
+ConsoleDump is hosted in the United States. By using our service, you consent to the transfer and processing of your data in the US, which may have different data protection laws than your country.
 
 ## Changes to This Policy
 
-We may update this policy occasionally. Changes will be posted on this page with an updated date.
+We may update this Privacy Policy to reflect changes in our practices or legal requirements. When we make changes:
 
-## Contact
+- We'll update the "Last updated" date at the top
+- Significant changes will be announced on our homepage
+- Continued use after changes means you accept the updated policy
 
-Privacy questions? Email: <a href="mailto:contact@consoledump.io">contact@consoledump.io</a>
+## Contact Us
+
+Questions about privacy or data handling? We're here to help.
+
+**Email:** [contact@consoledump.io](mailto:contact@consoledump.io)  
+**GitHub:** [github.com/asleepace/consoledump.io](https://github.com/asleepace/consoledump.io)
 
 ---
 
-*Last updated: 9/2/2025*
-
-<SiteFooter />
+**Summary:** We collect minimal data, never sell it, automatically delete it after 24 hours, and are transparent about our practices. Your privacy matters to us.
