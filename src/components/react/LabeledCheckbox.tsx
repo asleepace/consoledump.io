@@ -21,12 +21,14 @@ export const LabeledCheckbox = ({
   return (
     <label
       className={cn(
-        'flex items-center gap-x-2 cursor-pointer group',
+        'flex items-center gap-x-2.5 cursor-pointer group',
         disabled && 'cursor-not-allowed opacity-50',
         className
       )}
     >
-      <span className={cn('text-xs text-zinc-500', labelClassName)}>
+      <span
+        className={cn('text-sm text-neutral-300 font-medium', labelClassName)}
+      >
         {label}
       </span>
 
@@ -41,18 +43,18 @@ export const LabeledCheckbox = ({
 
         <div
           className={cn(
-            'w-4 h-4 rounded border-2 transition-all',
-            'border-zinc-600 bg-zinc-800',
-            'peer-checked:bg-indigo-500 peer-checked:border-indigo-500',
-            'peer-focus-visible:ring-2 peer-focus-visible:ring-indigo-500/50',
-            !disabled && 'group-hover:border-zinc-500',
+            'w-5 h-5 rounded-md border-2 transition-all',
+            'border-white/20 bg-white/5',
+            'peer-checked:bg-orange-400 peer-checked:border-orange-400',
+            'peer-focus-visible:ring-2 peer-focus-visible:ring-orange-400/50',
+            !disabled && 'group-hover:border-white/30',
             disabled && 'opacity-50'
           )}
         >
           {checked && (
             <Check
-              size={12}
-              className="text-white absolute inset-0 m-auto"
+              size={14}
+              className="text-black absolute inset-0 m-auto"
               strokeWidth={3}
             />
           )}

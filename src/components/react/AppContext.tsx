@@ -1,7 +1,13 @@
-import React, { createContext, useState, type PropsWithChildren } from 'react'
+import React, {
+  createContext,
+  useState,
+  useEffect,
+  type PropsWithChildren,
+} from 'react'
 import { useEventStream, type ClientStream } from '@/hooks/useEventStream'
 import { useClient } from '@/hooks/useClient'
 import { useSettings, type AppSettings } from '@/hooks/useSettings'
+import { useAutoSave, useRestoreState } from '@/hooks/useAutoSave'
 
 export type AppTheme = {
   mode: 'light' | 'dark'
@@ -60,6 +66,7 @@ export type AppCtx = {
   url: URL
   expandedLogs: Set<string>
   stream: ClientStream | undefined
+  storage: ReturnType<typeof useRestoreState>['storage']
   setTheme: (mode: AppTheme['mode']) => void
   setCopiedId: SetState<string | undefined>
   setSearchTerm: SetState<string | undefined>
@@ -88,6 +95,7 @@ export const AppContext = createContext<AppCtx>({
   sessionId: undefined,
   stream: undefined,
   app: {} as any,
+  storage: {} as any,
   setTheme() {},
   setCopiedId() {},
   setSearchTerm() {},
@@ -111,6 +119,7 @@ export function AppContextProvider(
   const [expandedLogs, setExpandedLogs] = useState<Set<string>>(new Set())
   const [isInfoPanelOpen, setIsInfoPanelOpen] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [isHydrated, setIsHydrated] = useState(false)
 
   const client = useClient()
   const isDark = theme.mode === 'dark'
@@ -119,6 +128,34 @@ export function AppContextProvider(
   const stream = useEventStream()
 
   const app = useSettings()
+
+  // Restore state from local storage on mount
+  const { restoreSessionState, storage } = useRestoreState()
+
+  useEffect(() => {
+    if (!app.isHydrated) return
+
+    // Restore expanded logs for current session
+    if (client.sessionId) {
+      const sessionState = restoreSessionState()
+      if (sessionState && sessionState.sessionId === client.sessionId) {
+        setExpandedLogs(new Set(sessionState.expandedLogs))
+        console.log(
+          `[AppContext] Restored ${sessionState.expandedLogs.length} expanded logs`
+        )
+      }
+    }
+
+    setIsHydrated(true)
+  }, [app.isHydrated, client.sessionId])
+
+  // Auto-save state when "Save Locally" is enabled
+  useAutoSave({
+    settings: app.settings,
+    stream,
+    expandedLogs,
+    enabled: app.settings.saveLocally && isHydrated,
+  })
 
   return (
     <AppContext.Provider
@@ -135,6 +172,7 @@ export function AppContextProvider(
         isInfoPanelOpen,
         isSettingsOpen,
         expandedLogs,
+        storage,
         setTheme: (mode) => setTheme(AppThemes[mode]),
         setIsInfoPanelOpen,
         setCopiedId,
