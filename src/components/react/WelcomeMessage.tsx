@@ -86,14 +86,14 @@ export function WelcomeMessage({ url }: Props) {
     <>
       <div className="min-h-screen w-full inset-0 -z-10 absolute overflow-hidden bg-gradient-radial from-transparent via-neutral-600 to-neutral-950 to-100%">
         <iframe
-          className="bg-transparent pb-64"
+          className="bg-transparent pb-70 hidden md:block"
           src="https://my.spline.design/particles-e60429f4a3023dfeecd4752aea2c7cef/"
           frameBorder="0"
           width="140%"
           height="120%"
         ></iframe>
       </div>
-      <div className="w-full min-h-screen flex z-10 items-center justify-center from-black/0 bg-radial to-black/100 to-100% px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:pb-32">
+      <div className="w-full min-h-screen flex z-10 items-center justify-center from-black/0 bg-radial to-black/100 to-100% px-4 sm:px-6 lg:px-8 py-4 md:py-16 lg:pb-32">
         <div className="max-w-6xl w-full">
           <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
             {/* Left side - Content */}
