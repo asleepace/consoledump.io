@@ -1,6 +1,6 @@
 ---
 title: 'Docs'
-description: "Documentation on how to use the consoledump service and its various features."
+description: 'Documentation on how to use the consoledump service and its various features.'
 pubDate: '9/2/2025'
 heroImage: '/images/cover.png'
 hashTags: 'Consoledump, Docs, About, How'
@@ -9,7 +9,9 @@ slug: 'about'
 
 # Documentation
 
-Last updated on <span class="text-blue-500">September 2nd, 2025</span>
+<span className="italic text-xs">
+  Last updated on <span class="text-orange-400">September 2nd, 2025</span>
+</span>
 
 Stream your application logs and terminal output to a shareable web interface.
 
@@ -23,6 +25,35 @@ curl -d "hello world" https://consoledump.io/42a66873
 ```
 
 Your message will appear in the web interface at `https://consoledump.io/42a66873`
+
+## Basic Usage
+
+The most common way to interact with the remote session is via the REST api and fetch:
+
+```js
+// copy & paste this snippet
+function dump(...args) {
+  return fetch('http://127.0.0.1:8082/42a66873', {
+    method: 'POST',
+    body: JSON.stringify(args),
+  })
+}
+
+// call to pipe data to the session!
+dump('hello, world!')
+dump({ data: 123, name: 'Bob' })
+dump([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+dump('Something happened', { something: true })
+
+// re-map console.logs
+console.log = dump
+
+// re-map other methods + include levels
+console.warn = (...args: any[]) => dump('warn:', ...args)
+console.error = (...args: any[]) => dump('error:', ...args)
+console.info = (...args: any[]) => dump('info:', ...args)
+console.log = (...args: any[]) => dump('log:', ...args)
+```
 
 ## JavaScript/TypeScript Integration
 
@@ -71,6 +102,7 @@ console = new Proxy(console, {
 ```
 
 **Usage:**
+
 ```typescript
 console.sessionId = '42a66873'
 console.log('Hello, world!') // Appears locally AND online
@@ -111,6 +143,7 @@ HEAD https://consoledump.io/api
 The server will respond with a header containing `x-stream-id` which you should use for `{sessionId}`.
 
 #### Send data
+
 ```
 POST https://consoledump.io/api/{sessionId}
 Content-Type: text/plain
@@ -119,6 +152,7 @@ Your log message here
 ```
 
 #### View data
+
 ```
 GET https://consoledump.io/api/{sessionId}
 Accept: text/event-stream

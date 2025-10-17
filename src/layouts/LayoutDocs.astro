@@ -1,6 +1,6 @@
 ---
 import '@/styles/global.css'
-import Navigation from '@/components/astro/Navigation.astro'
+import { AppNavigationBar } from '@/components/react/AppNavigationBar'
 import type { CollectionEntry } from 'astro:content'
 
 type Props = CollectionEntry<'docs'>['data'] & {
@@ -23,7 +23,18 @@ import SiteHead from '@/components/astro/SiteHead.astro'
       className,
     ]}
   >
-    <Navigation class:list={['sticky z-100 w-full top-0 left-0 right-0']} />
+    <AppNavigationBar
+      class:list={['sticky z-100 w-full top-0 left-0 right-0']}
+      onOpenInfoPanel={() => {}}
+      onOpenSettings={() => {}}
+      onSubmitAction={(ev) => {
+        // TODO: Handle search case here...
+      }}
+      downloadLogs={() => {}}
+      clearLogs={() => {}}
+      scrollToBottom={() => {}}
+      isDocsMode
+    />
     <article class="w-full px-4 md:px-6">
       <slot />
     </article>
@@ -36,13 +47,14 @@ import SiteHead from '@/components/astro/SiteHead.astro'
 
   html,
   body {
+    @apply text-neutral-100;
     overflow-x: hidden;
     max-width: 100vw;
   }
 
   /* Article container */
   article {
-    @apply w-full max-w-3xl mx-auto flex flex-col gap-y-4 text-neutral-200;
+    @apply w-full max-w-3xl mx-auto flex flex-col gap-y-4;
     overflow-x: hidden;
   }
 
@@ -82,7 +94,7 @@ import SiteHead from '@/components/astro/SiteHead.astro'
 
   /* Typography */
   article ul {
-    @apply list-disc ms-4 text-neutral-200;
+    @apply list-disc ms-4;
   }
 
   article ol {
@@ -95,7 +107,7 @@ import SiteHead from '@/components/astro/SiteHead.astro'
   }
 
   article li {
-    @apply text-neutral-400;
+    @apply mt-1;
   }
 
   article a {
@@ -108,7 +120,7 @@ import SiteHead from '@/components/astro/SiteHead.astro'
   }
 
   article p {
-    @apply text-neutral-400;
+    @apply text-neutral-200 mt-4 mb-2;
   }
 
   article h1 {
@@ -116,14 +128,14 @@ import SiteHead from '@/components/astro/SiteHead.astro'
   }
 
   article h2 {
-    @apply text-2xl lg:text-3xl font-bold text-neutral-300 mt-8;
+    @apply text-2xl lg:text-3xl font-bold mt-8;
   }
 
   article h3 {
-    @apply text-xl lg:text-2xl font-bold;
+    @apply text-xl lg:text-2xl font-bold mt-6;
   }
 
   article h4 {
-    @apply text-lg lg:text-xl text-blue-500 font-bold;
+    @apply text-lg lg:text-xl text-orange-400 font-bold mt-4;
   }
 </style>
