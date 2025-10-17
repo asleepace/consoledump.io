@@ -83,116 +83,139 @@ export function WelcomeMessage({ url }: Props) {
   }
 
   return (
-    <div className="w-full min-h-screen flex items-center justify-center bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 pb-32">
-      <div className="max-w-6xl w-full">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
-          {/* Left side - Content */}
-          <div className="flex flex-col gap-6 -mt-20">
-            <div className="inline-flex items-center gap-2 bg-zinc-800/50 border border-zinc-700 rounded-full px-4 py-2 w-fit">
-              <Zap className="w-4 h-4 text-yellow-400" />
-              <span className="text-sm text-zinc-300 font-medium">
-                Fast • Simple • Reliable
-              </span>
-            </div>
-
-            <h1 className="font-black text-6xl bg-gradient-to-r from-zinc-100 to-zinc-400 bg-clip-text text-transparent leading-tight">
-              Welcome to dump!
-            </h1>
-
-            <p className="text-lg text-zinc-400 leading-relaxed">
-              Start streaming your logs in seconds. Copy the snippet, paste it
-              in your code, and watch your data flow in real-time.
-            </p>
-
-            <div className="flex flex-col gap-3 my-4">
-              <div className="flex items-start gap-3">
-                <div className="w-6 h-6 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-xs text-zinc-400 shrink-0 mt-0.5">
-                  1
-                </div>
-                <p className="text-zinc-300">Copy the code snippet</p>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="w-6 h-6 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-xs text-zinc-400 shrink-0 mt-0.5">
-                  2
-                </div>
-                <p className="text-zinc-300">Paste it in your project</p>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="w-6 h-6 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-xs text-zinc-400 shrink-0 mt-0.5">
-                  3
-                </div>
-                <p className="text-zinc-300">Start sending logs</p>
-              </div>
-            </div>
-
-            <a className="text-zinc-500 hover:underline" href="/docs">
-              Read documentation
-            </a>
-          </div>
-
-          {/* Right side - Code snippet */}
-          <div className="relative">
-            <div className="absolute -inset-1 bg-gradient-to-r from-zinc-600 to-zinc-700 rounded-xl blur opacity-25"></div>
-            <div className="relative bg-zinc-900 border border-zinc-700 rounded-lg overflow-hidden">
-              <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800 bg-zinc-800/50">
-                <span className="text-sm font-medium text-zinc-400">
-                  {lang === 'typescript'
-                    ? 'index.ts'
-                    : lang === 'javascript'
-                    ? 'index.js'
-                    : lang === 'bash'
-                    ? 'index.sh'
-                    : lang === 'ruby'
-                    ? 'index.rb'
-                    : lang === 'python'
-                    ? 'index.py'
-                    : 'example'}
+    <>
+      <div className="min-h-screen w-full inset-0 -z-10 absolute overflow-hidden bg-gradient-radial from-transparent via-neutral-600 to-neutral-950 to-100%">
+        <iframe
+          className="bg-transparent pb-70 hidden md:block"
+          src="https://my.spline.design/particles-e60429f4a3023dfeecd4752aea2c7cef/"
+          frameBorder="0"
+          width="140%"
+          height="120%"
+        ></iframe>
+      </div>
+      <div className="w-full min-h-screen flex z-10 items-center justify-center from-black/0 bg-radial to-black/100 to-100% px-4 sm:px-6 lg:px-8 py-4 md:py-16 lg:pb-32">
+        <div className="max-w-6xl w-full">
+          <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+            {/* Left side - Content */}
+            <div className="flex flex-col gap-4 sm:gap-6 lg:-mt-20">
+              <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-3 sm:px-4 py-1.5 sm:py-2 w-fit backdrop-blur-sm">
+                <Zap className="w-3 h-3 sm:w-4 sm:h-4 text-orange-400" />
+                <span className="text-xs sm:text-sm text-neutral-300 font-medium">
+                  Fast • Simple • Free
                 </span>
-                <button
-                  onClick={copyToClipboard}
-                  className="flex items-center gap-2 px-3 py-1.5 text-sm bg-zinc-700 hover:bg-zinc-600 text-zinc-200 rounded-lg transition-colors"
-                >
-                  {copied ? (
-                    <>
-                      <CheckCheck className="w-4 h-4" />
-                      Copied!
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-4 h-4" />
-                      Copy
-                    </>
-                  )}
-                </button>
               </div>
-              <CodeSnippet
-                lang={lang}
-                className="p-6 overflow-x-auto aspect-[5/2]"
+
+              <h1 className="font-black text-4xl sm:text-5xl lg:text-6xl text-white leading-tight tracking-tight">
+                Welcome to{' '}
+                <span className="bg-gradient-to-r from-orange-400 to-orange-500 bg-clip-text text-transparent">
+                  ConsoleDump
+                </span>
+              </h1>
+
+              <p className="text-base sm:text-lg text-neutral-300 leading-relaxed">
+                Start streaming your logs in seconds. Copy the snippet, paste it
+                in your code, and watch your data flow in real-time.
+              </p>
+
+              <div className="flex flex-col gap-2.5 sm:gap-3 my-2 sm:my-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-xs text-orange-400 font-semibold shrink-0 mt-0.5">
+                    1
+                  </div>
+                  <p className="text-sm sm:text-base text-neutral-300">
+                    Copy the code snippet below
+                  </p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-xs text-orange-400 font-semibold shrink-0 mt-0.5">
+                    2
+                  </div>
+                  <p className="text-sm sm:text-base text-neutral-300">
+                    Paste it in your project
+                  </p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-xs text-orange-400 font-semibold shrink-0 mt-0.5">
+                    3
+                  </div>
+                  <p className="text-sm sm:text-base text-neutral-300">
+                    Start sending logs instantly
+                  </p>
+                </div>
+              </div>
+
+              <a
+                className="text-sm sm:text-base text-neutral-400 hover:text-orange-400 hover:underline underline-offset-4 transition-colors w-fit"
+                href="/docs/about"
               >
-                {codeMessage}
-              </CodeSnippet>
-              <div className="bg-zinc-950/50 border-t border-t-zinc-800/50 flex gap-x-2 p-4">
-                {supportedLanguages.map((language) => {
-                  return (
-                    <button
-                      className={cn(
-                        'px-3 py-1 text-xs rounded-full tracking-wide font-semibold text-zinc-500 border border-zinc-700',
-                        lang === language.toLowerCase()
-                          ? 'bg-yellow-500 text-zinc-950s'
-                          : 'bg-zinc-800 hover:bg-zinc-700'
-                      )}
-                      onClick={() => setLang(language.toLowerCase())}
-                      key={language}
-                    >
-                      {language}
-                    </button>
-                  )
-                })}
+                Read full documentation →
+              </a>
+            </div>
+
+            {/* Right side - Code snippet */}
+            <div className="relative mt-8 lg:mt-0">
+              <div className="absolute -inset-1 bg-gradient-to-r from-orange-500/20 to-orange-600/20 rounded-xl blur opacity-30"></div>
+              <div className="relative bg-neutral-900/50 backdrop-blur-sm border border-white/10 rounded-xl overflow-hidden shadow-2xl">
+                <div className="flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 border-b border-white/10 bg-white/5">
+                  <span className="text-xs sm:text-sm font-medium text-neutral-400 font-mono">
+                    {lang === 'typescript'
+                      ? 'index.ts'
+                      : lang === 'javascript'
+                      ? 'index.js'
+                      : lang === 'bash'
+                      ? 'index.sh'
+                      : lang === 'ruby'
+                      ? 'index.rb'
+                      : lang === 'python'
+                      ? 'index.py'
+                      : 'example'}
+                  </span>
+                  <button
+                    onClick={copyToClipboard}
+                    className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm bg-white/5 hover:bg-white/10 border border-white/20 hover:border-white/30 text-neutral-200 rounded-lg transition-all active:scale-95"
+                  >
+                    {copied ? (
+                      <>
+                        <CheckCheck className="w-3 h-3 sm:w-4 sm:h-4" />
+                        <span className="hidden sm:inline">Copied!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3 h-3 sm:w-4 sm:h-4" />
+                        <span className="hidden sm:inline">Copy</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+                <CodeSnippet
+                  lang={lang}
+                  className="p-3 sm:p-4 lg:p-6 overflow-x-auto min-h-[200px] sm:min-h-[220px] lg:aspect-[5/2]"
+                >
+                  {codeMessage}
+                </CodeSnippet>
+                <div className="bg-black/30 border-t border-white/10 flex flex-wrap gap-1.5 sm:gap-2 p-2.5 sm:p-3 lg:p-4">
+                  {supportedLanguages.map((language) => {
+                    return (
+                      <button
+                        className={cn(
+                          'px-2.5 sm:px-3 py-1 sm:py-1.5 text-xs rounded-lg tracking-wide font-medium border transition-all',
+                          lang === language.toLowerCase()
+                            ? 'bg-orange-400 text-black border-orange-400'
+                            : 'bg-white/5 text-neutral-400 border-white/10 hover:bg-white/10 hover:text-white hover:border-white/20'
+                        )}
+                        onClick={() => setLang(language.toLowerCase())}
+                        key={language}
+                      >
+                        {language}
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   )
 }

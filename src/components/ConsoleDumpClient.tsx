@@ -10,6 +10,8 @@ import { MessageItem } from './react/MessageItem'
 import { InfoPanel } from './react/InfoPanel'
 import { SettingsPanel } from './react/SettingsPanel'
 import { WelcomeMessage } from './react/WelcomeMessage'
+import { LoadingSpinner } from './react/LoadingSpinner'
+import { useIsMounted } from '@/hooks/useIsMounted'
 
 export type ConsoleDumpClientProps = {
   initialUrl: URL
@@ -42,6 +44,8 @@ export const ConsoleDumpClient = withAppProvider(
     const utils = useUtils()
 
     const scrollContainerRef = useRef<HTMLDivElement>(null)
+
+    const isMounted = useIsMounted()
 
     useEffect(() => {
       // define dump on the client:
@@ -141,6 +145,17 @@ export const ConsoleDumpClient = withAppProvider(
       }
     }, [])
 
+    const hasSavedData =
+      isMounted && !!localStorage?.get?.(`saved:${props.initialUrl}`)
+
+    console.log({ hasSavedData })
+
+    useEffect(() => {
+      if (!ctx.stream?.events.length) return
+      console.log('saving data!')
+      localStorage.setItem(`saved:${props.initialUrl}`, 'true')
+    }, [ctx.stream?.events, props.initialUrl])
+
     const msgs = useMemo(() => {
       let events = ctx.stream?.events ?? []
       const searchTerm = ctx.searchTerm
@@ -182,7 +197,9 @@ export const ConsoleDumpClient = withAppProvider(
         <main className="w-full max-w-full h-full flex-1 flex flex-col overflow-hidden">
           <InfoPanel url={props.initialUrl} />
           <SettingsPanel app={ctx.app} />
-          {msgs.length === 0 ? (
+          {import.meta.env.SSR || !isMounted ? (
+            <LoadingSpinner />
+          ) : msgs.length === 0 && isMounted && !hasSavedData ? (
             <WelcomeMessage url={props.initialUrl.href} />
           ) : (
             <div
