@@ -7,11 +7,9 @@ hashTags: 'Consoledump, Docs, About, How'
 slug: 'about'
 ---
 
-# Documentation
+# Docs
 
-<span className="italic text-xs">
-  Last updated on <span class="text-orange-400">September 2nd, 2025</span>
-</span>
+<span class="text-orange-400">September 2nd, 2025</span>
 
 Stream your application logs and terminal output to a shareable web interface.
 
@@ -48,7 +46,7 @@ dump('Something happened', { something: true })
 // re-map console.logs
 console.log = dump
 
-// re-map other methods + include levels
+// re-map console methods + include levels
 console.warn = (...args: any[]) => dump('warn:', ...args)
 console.error = (...args: any[]) => dump('error:', ...args)
 console.info = (...args: any[]) => dump('info:', ...args)
