@@ -13,7 +13,7 @@ type Props = CollectionEntry<'docs'>['data'] & {
 const className = Astro.props.class
 const headings = (Astro.props as Props).headings ?? []
 
-import SiteHead from '@/components/astro/SiteHead.astro'
+import SiteHead from '@/components/astro/site-head.astro'
 import SiteFooter from '@/components/astro/site-footer.astro'
 import { cn } from '@/lib/utils'
 ---
@@ -63,6 +63,13 @@ import { cn } from '@/lib/utils'
   @import 'tailwindcss';
   @import 'tw-animate-css';
 
+  html {
+    @apply antialiased;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
   html,
   body {
     @apply text-neutral-100;
@@ -71,7 +78,7 @@ import { cn } from '@/lib/utils'
 
   /* Article container */
   article {
-    @apply w-full max-w-3xl mx-auto flex flex-col gap-y-4;
+    @apply w-full max-w-3xl mx-auto flex flex-col gap-y-6;
     overflow-x: hidden;
   }
 
@@ -105,25 +112,32 @@ import { cn } from '@/lib/utils'
 
   /* Inline code */
   :not(pre) > code {
+    @apply bg-white/5 text-orange-300 px-1.5 py-0.5 rounded text-sm border border-white/10;
     word-break: break-all;
     overflow-wrap: break-word;
+    font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
   }
 
   /* Typography */
   article {
-    line-height: 1.7;
+    line-height: 1.75;
+    text-wrap: pretty;
   }
 
   article ul {
-    @apply list-disc ms-5 md:ms-6;
+    @apply list-disc ms-6 space-y-2 my-6;
   }
 
   article ol {
-    @apply list-decimal ms-5 md:ms-6;
+    @apply list-decimal ms-6 space-y-2 my-6;
   }
 
   article li {
-    @apply mt-1.5;
+    @apply text-neutral-300 leading-relaxed;
+  }
+
+  article li::marker {
+    @apply text-neutral-500;
   }
 
   /* Nested list refinements */
@@ -131,27 +145,38 @@ import { cn } from '@/lib/utils'
   article ol ul,
   article ul ol,
   article ol ol {
-    @apply ms-4 mt-1;
+    @apply ms-6 mt-3 mb-0;
+  }
+
+  article li > p {
+    @apply my-1;
   }
 
   article li > p + ul,
   article li > p + ol {
-    @apply mt-2;
+    @apply mt-3;
   }
 
   article a {
-    @apply text-orange-400 underline underline-offset-2 hover:text-orange-300;
+    @apply text-orange-400 underline decoration-orange-400/30 underline-offset-4 hover:decoration-orange-400 hover:text-orange-300;
     word-break: break-word;
+    transition: all 0.2s ease;
   }
 
   article p {
-    @apply text-neutral-200 mt-4 mb-2;
-    font-size: 1.05rem;
+    @apply text-neutral-300 my-6 leading-relaxed;
+    font-size: 1.0625rem;
+    text-wrap: pretty;
+  }
+
+  article p + p {
+    @apply mt-4;
   }
 
   @media (max-width: 480px) {
     article p {
       font-size: 1rem;
+      line-height: 1.7;
     }
   }
 
@@ -161,45 +186,117 @@ import { cn } from '@/lib/utils'
   article h4,
   article h5,
   article h6 {
-    scroll-margin-top: 84px; /* clear sticky navbar on anchor jumps */
+    @apply text-white font-bold tracking-tight;
+    scroll-margin-top: 96px;
+    text-wrap: balance;
   }
 
   article h1 {
-    @apply text-3xl lg:text-5xl font-black pt-6;
+    @apply text-4xl sm:text-5xl lg:text-6xl font-black mt-2 mb-8 pb-4 border-b border-white/10;
+    letter-spacing: -0.025em;
   }
 
   article h2 {
-    @apply text-2xl lg:text-3xl font-bold mt-8;
+    @apply text-3xl sm:text-4xl lg:text-4xl font-bold mt-16 mb-6 pt-4;
+    letter-spacing: -0.02em;
+  }
+
+  article h2::before {
+    content: '';
+    display: block;
+    width: 3rem;
+    height: 3px;
+    background: linear-gradient(90deg, oklch(0.769 0.188 70.08), transparent);
+    margin-bottom: 1.5rem;
+    border-radius: 2px;
   }
 
   article h3 {
-    @apply text-xl lg:text-2xl font-bold mt-6;
+    @apply text-2xl sm:text-2xl lg:text-3xl font-semibold mt-12 mb-4 text-neutral-100;
+    letter-spacing: -0.015em;
   }
 
   article h4 {
-    @apply text-lg lg:text-xl text-orange-400 font-bold mt-4;
+    @apply text-xl sm:text-xl lg:text-2xl font-semibold mt-8 mb-3 text-orange-400;
+  }
+
+  article h5 {
+    @apply text-lg font-semibold mt-6 mb-2 text-neutral-200;
+  }
+
+  article h6 {
+    @apply text-base font-semibold mt-4 mb-2 text-neutral-300;
+  }
+
+  /* Blockquotes */
+  article blockquote {
+    @apply border-l-4 border-orange-400/50 pl-6 pr-4 py-4 my-8 bg-white/5 rounded-r-lg;
+  }
+
+  article blockquote p {
+    @apply text-neutral-300 italic my-2;
+  }
+
+  article blockquote p:first-child {
+    @apply mt-0;
+  }
+
+  article blockquote p:last-child {
+    @apply mb-0;
+  }
+
+  /* Horizontal rule */
+  article hr {
+    @apply border-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent my-12;
+  }
+
+  /* Strong and emphasis */
+  article strong {
+    @apply text-white font-semibold;
+  }
+
+  article em {
+    @apply text-neutral-200 italic;
   }
 
   /* Tables & media */
   article table {
-    width: 100%;
-    border-collapse: collapse;
+    @apply w-full my-8 rounded-lg overflow-hidden;
+    border-collapse: separate;
+    border-spacing: 0;
     display: block;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
   }
 
-  article th,
+  article thead {
+    @apply bg-white/10;
+  }
+
+  article th {
+    @apply border border-white/10 px-4 py-3 text-left font-semibold text-white bg-white/5;
+  }
+
   article td {
-    @apply border border-white/10 px-3 py-2 align-top;
+    @apply border border-white/10 px-4 py-3 align-top text-neutral-300;
+  }
+
+  article tbody tr {
+    @apply hover:bg-white/5 transition-colors;
   }
 
   article img,
   article video,
   article svg,
   article canvas {
+    @apply rounded-lg my-8 shadow-2xl;
     max-width: 100%;
     height: auto;
+  }
+
+  /* Section dividers */
+  article > section {
+    @apply my-12;
   }
 
   /* Table of Contents */

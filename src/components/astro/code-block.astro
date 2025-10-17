@@ -18,9 +18,9 @@ const uniqueRef = crypto.randomUUID().slice(0, 8)
 <div
   id="code-container"
   class={cn(
-    'code-container text-neutral-800 inset-shadow-2xs border-transparent ring-0 transition-all duration-400 ease-in-out rounded-sm',
-    '[&[data-copied]]:scale-[1.01] [&[data-copied]]:opacity-80 [&[data-copied]]:ring-4 [&[data-copied]]:ring-amber-300 [&[data-copied]]:shadow-lg',
-    'max-w-full overflow-hidden' // Changed here
+    'code-container my-8 rounded-xl border border-white/10 bg-neutral-900/50 backdrop-blur-sm shadow-2xl transition-all duration-300 ease-in-out',
+    '[&[data-copied]]:ring-2 [&[data-copied]]:ring-orange-400/50 [&[data-copied]]:border-orange-400/30',
+    'max-w-full overflow-hidden'
   )}
 >
   {
@@ -45,8 +45,7 @@ const uniqueRef = crypto.randomUUID().slice(0, 8)
     )
   }
   <div id={uniqueRef} class="code-wrapper overflow-x-auto">
-    <!-- Removed min-w-max -->
-    <pre class="pt-1 px-3 min-w-max" {...props}><slot /></pre>
+    <pre class="min-w-max" {...props}><slot /></pre>
   </div>
 </div>
 
@@ -78,102 +77,103 @@ const uniqueRef = crypto.randomUUID().slice(0, 8)
 
   pre > code {
     all: unset;
-    display: block; /* Added */
+    display: inline-block;
+    margin: 0;
+    padding: 0;
+    vertical-align: top;
   }
 
   pre {
-    @apply !bg-neutral-800;
+    @apply !bg-transparent;
+    margin: 0;
+    padding: 0;
   }
 
   .code-container {
     max-width: 100%;
     width: 100%;
-    margin: 0.4rem 0;
     overflow: hidden;
+    position: relative;
   }
 
   .code-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0.75rem 1rem;
+    @apply flex items-center justify-between px-4 py-3 bg-white/5 backdrop-blur-sm;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     font-size: 0.875rem;
   }
 
   .code-filename {
-    color: var(--color-primary, #3b82f6);
-    font-weight: 500;
+    @apply text-orange-400 font-semibold;
   }
 
   .code-title {
-    color: var(--color-text-secondary, #94a3b8);
+    @apply text-neutral-300;
   }
 
   .code-lang {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.75rem;
+    @apply px-2 py-1 rounded-md bg-white/10 text-neutral-400 font-medium;
+    font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
   }
 
   .code-wrapper {
     position: relative;
-    max-width: 100%; /* Added */
+    max-width: 100%;
     overflow-x: auto;
   }
 
   .copy-btn {
-    background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    color: rgba(255, 255, 255, 0.9);
-    padding: 0.25rem 0.5rem;
-    border-radius: 4px;
+    @apply px-3 py-1.5 rounded-lg border border-white/20 bg-white/5 text-neutral-200 font-medium;
+    @apply hover:bg-white/10 hover:border-white/30 hover:text-white;
+    @apply active:scale-95;
     font-size: 0.75rem;
+    transition: all 0.2s ease;
+    cursor: pointer;
   }
 
-  .copy-btn:hover {
-    background: rgba(255, 255, 255, 0.08);
-  }
-
-  pre {
+  .code-wrapper pre {
     overflow-x: auto;
     font-size: 14px;
-    line-height: 1.5;
-    margin: 0;
+    line-height: 1.6;
     scrollbar-gutter: stable;
+    font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+    padding: 1rem;
   }
 
   code {
-    white-space: pre; /* preserve code formatting */
+    white-space: pre;
+    font-feature-settings: 'liga' 0;
   }
 
   /* Improve small-screen code readability */
   @media (max-width: 480px) {
-    pre {
+    .code-wrapper pre {
       font-size: 13px;
+      line-height: 1.55;
+      padding: 0.75rem;
     }
   }
 
-  /* Scrollbar styles... */
+  /* Enhanced scrollbar */
   pre::-webkit-scrollbar {
-    height: 6px;
-    background: transparent;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
   }
 
   pre::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.05);
-    margin: 0 4px;
+    background: transparent;
+    margin: 0 8px;
   }
 
   pre::-webkit-scrollbar-thumb {
-    background-color: var(--color-gray-700, #374151);
-    border-radius: 3px;
-    opacity: 0.7;
-    transition: opacity 0.2s ease;
+    background: rgba(251, 146, 60, 0.3);
+    border-radius: 4px;
+    transition: background 0.2s ease;
   }
 
   pre::-webkit-scrollbar-thumb:hover {
-    opacity: 1;
+    background: rgba(251, 146, 60, 0.5);
   }
 </style>
