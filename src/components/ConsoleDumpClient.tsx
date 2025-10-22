@@ -15,6 +15,7 @@ import { useIsMounted } from '@/hooks/useIsMounted'
 
 export type ConsoleDumpClientProps = {
   initialUrl: URL
+  showTutorial: boolean
   className?: string
 }
 
@@ -176,6 +177,10 @@ export const ConsoleDumpClient = withAppProvider(
       )
     }, [ctx.stream?.events, ctx.app.settings, ctx.searchTerm])
 
+    const showTutorialMessages =
+      Boolean(import.meta.env.SSR && props.showTutorial) ||
+      Boolean(msgs.length <= 1)
+
     return (
       <div
         className={cn(
@@ -197,9 +202,7 @@ export const ConsoleDumpClient = withAppProvider(
         <main className="w-full max-w-full h-full flex-1 flex flex-col overflow-hidden">
           <InfoPanel url={props.initialUrl} />
           <SettingsPanel app={ctx.app} />
-          {import.meta.env.SSR || !isMounted ? (
-            <LoadingSpinner />
-          ) : msgs.length === 0 && isMounted && !hasSavedData ? (
+          {showTutorialMessages ? (
             <WelcomeMessage url={props.initialUrl.href} />
           ) : (
             <div

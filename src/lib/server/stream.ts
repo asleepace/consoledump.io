@@ -162,6 +162,7 @@ export async function createFileBasedStream(options: { streamId: string }) {
     streamId: options.streamId,
     createdAt: new Date(),
     updatedAt: new Date(),
+    lastEventId: sse.lastEventId,
     get clients() {
       return activeStreams.size
     },
@@ -243,6 +244,9 @@ export async function createFileBasedStream(options: { streamId: string }) {
   return {
     get id() {
       return options.streamId
+    },
+    get meta() {
+      return meta
     },
     /** publishes data to all streams and persists to file. */
     publish,

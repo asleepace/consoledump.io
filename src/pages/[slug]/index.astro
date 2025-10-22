@@ -40,5 +40,9 @@ const url = new URL(streamId, siteConfig.url)
 ---
 
 <Layout>
-  <ConsoleDumpClient initialUrl={url} client:load />
+  <ConsoleDumpClient
+    initialUrl={url}
+    showTutorial={stream.meta.lastEventId <= 1}
+    client:load
+  />
 </Layout>
