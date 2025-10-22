@@ -52,7 +52,7 @@ export const MessageItem = memo(({ className, message, app }: Props) => {
   }, [])
 
   const timestamp = useMemo(() => {
-    return new Date(Date.now() - message.timeStamp)
+    return new Date()
       .toLocaleString('en-US', {
         timeStyle: 'medium',
       })
