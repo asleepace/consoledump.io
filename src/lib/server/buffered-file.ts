@@ -35,6 +35,7 @@ export class BufferedFile {
 
   private isInMemory = false
   private isHydrated = false
+  private hasWritten = false
   private writePos = 0
   private totalBytesWritten = 0
 
@@ -70,6 +71,7 @@ export class BufferedFile {
       isHydrated: this.isHydrated,
       bufferSize: this.options.bufferSize,
       maxFileSize: this.options.maxFileSize,
+      hasWritten: this.hasWritten,
       createdAt: fileStat.birthtime.toLocaleDateString('en-US', {
         dateStyle: 'medium',
       }),
@@ -116,6 +118,7 @@ export class BufferedFile {
 
   public async write(chunk: Uint8Array) {
     this.writeToCircularBuffer(chunk)
+    this.hasWritten = true
 
     // Write to file immediately
     this.fileWriter.write(chunk)

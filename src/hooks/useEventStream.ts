@@ -25,6 +25,8 @@ const parseSessionMetadata = z.string().transform((str) => {
   return SessionMetaSchema.parse(json)
 })
 
+const FLAG_DISABLE_CLEANUP = true
+
 export type SessionMeta = z.infer<typeof SessionMetaSchema>
 
 export interface ClientStream {
@@ -66,6 +68,7 @@ export function useEventStream(): ClientStream {
 
   useEffect(() => {
     if (!meta) return
+    if (FLAG_DISABLE_CLEANUP) return
     window.addEventListener('beforeunload', () => {
       const cleanupCallbackUrl = new URL('/api/sse', window.location.origin)
       cleanupCallbackUrl.searchParams.set('id', meta.streamId)

@@ -37,12 +37,11 @@ if (method === 'POST') {
 
 // construct url to pass as initial props
 const url = new URL(streamId, siteConfig.url)
+
+// flag if we should show welcome message
+console.log("has data:", stream.info)
 ---
 
 <Layout>
-  <ConsoleDumpClient
-    initialUrl={url}
-    showTutorial={stream.meta.lastEventId <= 1}
-    client:load
-  />
+  <ConsoleDumpClient initialUrl={url} showTutorial={false} client:load />
 </Layout>

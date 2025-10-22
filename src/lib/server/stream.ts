@@ -21,7 +21,7 @@ export type ByteStream = ReadableStream<ByteChunk>
 // --- stream subscriber ---
 
 class StreamSubscriber {
-  public id: string = ids.generateClientId()
+  public clientId: string = ids.generateClientId()
   public readonly createdAt = new Date()
   public updatedAt = new Date()
   public isAlive = true
@@ -31,7 +31,11 @@ class StreamSubscriber {
     return Date.now() - +this.updatedAt
   }
 
-  constructor(public readonly controller: ReadableByteStreamController) {
+  constructor(
+    public readonly controller: ReadableByteStreamController,
+    public readonly streamId: string,
+    public readonly lastEventId: number = 0
+  ) {
     const encoder = new TextEncoder()
     this.keepAliveInterval = setInterval(() => {
       try {
@@ -88,13 +92,23 @@ class StreamSubscriberStore extends Set<StreamSubscriber> {
       subsciber.canBeRemoved()
     )
     closed.forEach((sub) => sub.close())
-    return closed.map((sub) => sub.id)
+    return closed.map((sub) => sub.clientId)
   }
 
   public getClientId(id: string): StreamSubscriber | undefined {
     for (const sub of this) {
-      if (sub.id === id) return sub
+      if (sub.clientId === id) return sub
     }
+  }
+
+  public getLastMessageId(streamId: string): number {
+    let lastEventId = 0
+    for (const sub of this) {
+      if (sub.streamId !== streamId) continue
+      console.log(sub)
+      lastEventId = Math.max(sub.lastEventId, lastEventId)
+    }
+    return lastEventId
   }
 
   public filter(
@@ -147,7 +161,9 @@ export async function createFileBasedStream(options: { streamId: string }) {
 
   /** Hydrate in-memory buffer with persisted data. */
   await bufferedFile.hydrateBuffer()
-  // await bufferedFile.getInfo()
+  const info = await bufferedFile.getInfo()
+
+  console.log(info)
 
   /** Set of all active client text/even-streams and helpers. */
   const activeStreams = new StreamSubscriberStore()
@@ -162,7 +178,6 @@ export async function createFileBasedStream(options: { streamId: string }) {
     streamId: options.streamId,
     createdAt: new Date(),
     updatedAt: new Date(),
-    lastEventId: sse.lastEventId,
     get clients() {
       return activeStreams.size
     },
@@ -211,9 +226,8 @@ export async function createFileBasedStream(options: { streamId: string }) {
     return new ReadableStream({
       type: 'bytes',
       async start(controller) {
-        // instantiate a new subscription with a ref to the controller
-        subscriber = new StreamSubscriber(controller)
-        const clientId = subscriber.id
+        subscriber = new StreamSubscriber(controller, options.streamId)
+        const clientId = subscriber.clientId
 
         try {
           // 1. pass first message with streamId and info and broadcast status
@@ -245,8 +259,8 @@ export async function createFileBasedStream(options: { streamId: string }) {
     get id() {
       return options.streamId
     },
-    get meta() {
-      return meta
+    get info() {
+      return info
     },
     /** publishes data to all streams and persists to file. */
     publish,

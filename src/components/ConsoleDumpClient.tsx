@@ -10,8 +10,6 @@ import { MessageItem } from './react/MessageItem'
 import { InfoPanel } from './react/InfoPanel'
 import { SettingsPanel } from './react/SettingsPanel'
 import { WelcomeMessage } from './react/WelcomeMessage'
-import { LoadingSpinner } from './react/LoadingSpinner'
-import { useIsMounted } from '@/hooks/useIsMounted'
 
 export type ConsoleDumpClientProps = {
   initialUrl: URL
@@ -43,10 +41,7 @@ export const ConsoleDumpClient = withAppProvider(
   (props: ConsoleDumpClientProps) => {
     const ctx = useAppContext()
     const utils = useUtils()
-
     const scrollContainerRef = useRef<HTMLDivElement>(null)
-
-    const isMounted = useIsMounted()
 
     useEffect(() => {
       // define dump on the client:
@@ -146,21 +141,9 @@ export const ConsoleDumpClient = withAppProvider(
       }
     }, [])
 
-    const hasSavedData =
-      isMounted && !!localStorage?.get?.(`saved:${props.initialUrl}`)
-
-    console.log({ hasSavedData })
-
-    useEffect(() => {
-      if (!ctx.stream?.events.length) return
-      console.log('saving data!')
-      localStorage.setItem(`saved:${props.initialUrl}`, 'true')
-    }, [ctx.stream?.events, props.initialUrl])
-
     const msgs = useMemo(() => {
       let events = ctx.stream?.events ?? []
       const searchTerm = ctx.searchTerm
-
       if (searchTerm != null) {
         events = events.filter((ev) =>
           typeof ev.data === 'string'
@@ -179,7 +162,7 @@ export const ConsoleDumpClient = withAppProvider(
 
     const showTutorialMessages =
       Boolean(import.meta.env.SSR && props.showTutorial) ||
-      Boolean(msgs.length <= 1)
+      Boolean(msgs.length <= 1 && props.showTutorial)
 
     return (
       <div
