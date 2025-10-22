@@ -1,42 +1,102 @@
 ---
 title: 'Docs'
-description: "Documentation on how to use the consoledump service and its various features."
+description: 'Free remote debugging console for streaming application logs and terminal output to a shareable web interface. No sign up required - get started in 3 easy steps.'
 pubDate: '9/2/2025'
 heroImage: '/images/cover.png'
-hashTags: 'Consoledump, Docs, About, How'
+hashTags: 'Consoledump, Remote Debugging, Console Logging, Terminal Streaming'
 slug: 'about'
 ---
 
-# Documentation
+<div className="flex items-end gap-x-4 w-full">
+  <Icon size={80} class="text-neutral-600" name="books" />
+  <h1 className="flex-1">Docs</h1>
+</div>
 
-Last updated on <span class="text-blue-500">September 2nd, 2025</span>
+<span class="text-orange-400">September 2nd, 2025</span>
 
-Stream your application logs and terminal output to a shareable web interface.
+**ConsoleDump** is a free, instant remote debugging console that streams your application logs and terminal output to a shareable web interface. No sign up, no installation, no configuration—just three simple steps to start debugging anywhere, anytime.
+
+Perfect for debugging mobile apps, remote servers, embedded devices, or sharing logs with your team. Each session gets a unique URL that updates in real-time as your application sends data.
 
 ## Quick Start
 
-1. [Create a new session](/) to get your unique session ID (e.g., `42a66873`)
-2. Test it with curl:
+Get started with ConsoleDump in three easy steps:
+
+### 1. Start a New Session
+
+Visit [consoledump.io](/) and click "New Session" to instantly create a unique debugging console. You'll receive a session ID like `42a66873` and a dedicated URL where all your logs will appear.
+
+### 2. Copy & Paste the Code Snippet
+
+Choose your preferred method to send logs. The simplest way is with a single curl command:
 
 ```bash
 curl -d "hello world" https://consoledump.io/42a66873
 ```
 
-Your message will appear in the web interface at `https://consoledump.io/42a66873`
+Or integrate directly into your JavaScript/TypeScript code with our ready-to-use snippet (see [Basic Usage](#basic-usage) below).
+
+### 3. View Logs in Real-Time
+
+Open your session URL `https://consoledump.io/42a66873` in any browser. Your logs appear instantly as your application sends them—no page refresh needed. Share the URL with teammates to collaborate on debugging.
+
+## Basic Usage
+
+The most common way to send logs is using a simple JavaScript function with the Fetch API. This works in browsers, Node.js, Deno, Bun, and React Native.
+
+### Quick Integration
+
+Copy and paste this snippet into your code, replacing `42a66873` with your session ID:
+
+```js
+// Create a logging function
+const dump = (...args) =>
+  fetch('https://consoledump.io/42a66873', {
+    method: 'POST',
+    body: JSON.stringify(args),
+  })
+
+// Start logging anything!
+dump('Hello, world!')
+dump({ data: 123, name: 'Bob' })
+dump([1, 2, 3, 4, 5])
+dump('User logged in', { userId: 42, timestamp: Date.now() })
+```
+
+### Replace Console Methods
+
+For existing applications, redirect your console output to ConsoleDump without changing your code:
+
+```js
+// Override console.log
+console.log = (...args) => dump('log:', ...args)
+
+// Override all console methods with level tags
+console.warn = (...args) => dump('warn:', ...args)
+console.error = (...args) => dump('error:', ...args)
+console.info = (...args) => dump('info:', ...args)
+console.debug = (...args) => dump('debug:', ...args)
+```
+
+Now all your existing `console.log()`, `console.error()`, etc. calls will automatically stream to your ConsoleDump session.
 
 ## JavaScript/TypeScript Integration
 
-Override the default console to automatically pipe logs to your session:
+For TypeScript projects or applications that need more control, use this advanced console proxy that keeps local console output while streaming to ConsoleDump.
+
+### Advanced Proxy Setup
+
+This implementation preserves your local console output while simultaneously sending logs to your remote session:
 
 ```typescript
-// Extend Console interface (TypeScript only)
+// TypeScript: Extend Console interface
 declare global {
   interface Console {
     sessionId: string
   }
 }
 
-// Configure your session ID
+// Set your session ID
 Object.defineProperty(console, 'sessionId', {
   value: '42a66873',
   writable: true,
@@ -70,7 +130,10 @@ console = new Proxy(console, {
 })
 ```
 
-**Usage:**
+### Usage
+
+After setting up the proxy, use console methods normally. Logs appear both in your local console and your ConsoleDump session:
+
 ```typescript
 console.sessionId = '42a66873'
 console.log('Hello, world!') // Appears locally AND online
@@ -78,58 +141,132 @@ console.error('Something went wrong')
 console.info({ user: 'colin', status: 'active' })
 ```
 
+This approach is ideal for production debugging where you want to maintain local logs while also streaming to a remote session.
+
 ## Command Line Tool
 
-Install the bash script for piping terminal output:
+Stream terminal output, server logs, or any command-line program directly to ConsoleDump. Perfect for debugging remote servers, CI/CD pipelines, or sharing terminal sessions with your team.
+
+### Installation
+
+Install the ConsoleDump CLI with a single command:
 
 ```bash
 curl -sSL https://consoledump.io/install | bash
 ```
 
-Then pipe any command output:
+The script installs the `consoledump` command to your system, making it available in any terminal session.
+
+### Usage Examples
+
+Pipe any command output to your ConsoleDump session:
 
 ```bash
-# Basic usage
+# Send a simple message
 echo "test message" | consoledump 42a66873
 
-# Long-running processes
+# Stream development server output
 npm run dev | consoledump 42a66873
-tail -f app.log | consoledump 42a66873
-docker logs container | consoledump 42a66873
+
+# Monitor log files in real-time
+tail -f /var/log/app.log | consoledump 42a66873
+
+# Stream Docker container logs
+docker logs -f my-container | consoledump 42a66873
+
+# Debug shell scripts
+bash deploy.sh 2>&1 | consoledump 42a66873
 ```
+
+Open your session URL in a browser to watch the terminal output stream in real-time. Perfect for debugging remote deployments, monitoring background jobs, or sharing command-line sessions without screen sharing.
 
 ## API Reference
 
-The following section describes the generic HTTP/REST endpoints for this application.
+ConsoleDump provides a simple REST API for programmatic access. Use these endpoints to integrate ConsoleDump into custom tools, scripts, or applications.
 
-#### Create a session
+### Create a Session
 
-```
+Generate a new session ID programmatically:
+
+```http
 HEAD https://consoledump.io/api
 ```
 
-The server will respond with a header containing `x-stream-id` which you should use for `{sessionId}`.
+**Response:** The server returns a `x-stream-id` header containing your new session ID.
 
-#### Send data
+**Example:**
+
+```bash
+curl -I https://consoledump.io/api
+# Look for: x-stream-id: 42a66873
 ```
+
+### Send Data
+
+Post log messages to your session:
+
+```http
 POST https://consoledump.io/api/{sessionId}
 Content-Type: text/plain
 
 Your log message here
 ```
 
-#### View data
+**Parameters:**
+
+- `{sessionId}`: Your unique session ID
+- Request body: Any text or JSON data to log
+
+**Example:**
+
+```bash
+curl -X POST https://consoledump.io/api/42a66873 \
+  -H "Content-Type: application/json" \
+  -d '{"level":"info","message":"Server started","port":3000}'
 ```
+
+### Stream Logs (Server-Sent Events)
+
+Connect to your session's event stream to receive logs in real-time:
+
+```http
 GET https://consoledump.io/api/{sessionId}
 Accept: text/event-stream
 ```
 
-Returns the web interface for viewing streamed logs in real-time.
+**Returns:** A Server-Sent Events (SSE) stream that pushes new log entries as they arrive.
+
+**Example:**
+
+```javascript
+const events = new EventSource('https://consoledump.io/api/42a66873')
+events.onmessage = (event) => {
+  console.log('New log:', event.data)
+}
+```
 
 ## About
 
-**Consoledump** is free and open source software available under the MIT license.
+ConsoleDump is **100% free** with no sign up required, no rate limits, and no hidden costs. Built for developers who need instant remote debugging without the hassle of creating accounts or configuring complex tools.
 
-**Source code:** [github.com/asleepace/consoledump.io](https://github.com/asleepace/consoledump.io)
+### Open Source
 
-<SiteFooter />
+ConsoleDump is open source software released under the MIT license. Contributions, bug reports, and feature requests are welcome!
+
+**Source Code:** [github.com/asleepace/consoledump.io](https://github.com/asleepace/consoledump.io)
+
+### Use Cases
+
+- **Mobile Development**: Debug iOS/Android apps without connecting to a computer
+- **Remote Servers**: Monitor logs from cloud instances or edge devices
+- **Team Collaboration**: Share live debugging sessions with colleagues
+- **CI/CD Debugging**: Stream build logs to a persistent URL
+- **IoT Devices**: Log data from embedded systems and Raspberry Pi
+- **Customer Support**: Ask users to share their session URL for troubleshooting
+
+### Privacy & Data Retention
+
+- Sessions are temporary and automatically expire after 24 hours of inactivity
+- Logs are stored in memory only and never written to disk
+- No personal information is collected or stored
+- Session URLs are unique and unguessable (6-character hex IDs = 16.7 million combinations)

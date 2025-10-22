@@ -1,5 +1,7 @@
 import {
+  BookOpenText,
   ChevronsDown,
+  Code,
   Download,
   Info,
   Plus,
@@ -47,6 +49,17 @@ export function IconButton({
   )
 }
 
+export function DocsIndicator() {
+  return (
+    <div
+      className={`flex items-center gap-2 px-2.5 py-1 rounded-full text-xs bg-blue-500/20 text-blue-500`}
+    >
+      <BookOpenText className="w-3 h-3" />
+      <span>Docs</span>
+    </div>
+  )
+}
+
 export function OnlineIndicator({ isConnected }: { isConnected: boolean }) {
   return (
     <div
@@ -79,6 +92,7 @@ export type AppNavigationBarProps = {
   downloadLogs: () => void
   clearLogs: () => void
   isConnected?: boolean
+  isDocsMode?: boolean
   className?: string
 }
 
@@ -94,67 +108,100 @@ export function AppNavigationBar(props: AppNavigationBarProps) {
       )}
     >
       <div className="flex flex-1 w-full">
-        <div className="flex items-center gap-2">
+        <div
+          className={cn(
+            'flex items-center gap-2',
+            props.isDocsMode && 'justify-between'
+          )}
+        >
           <Terminal className="text-blue-400" size={16} />
           <SiteTitle />
-          <OnlineIndicator isConnected={!!props.isConnected} />
+          {props.isDocsMode ? (
+            <DocsIndicator />
+          ) : (
+            <OnlineIndicator isConnected={!!props.isConnected} />
+          )}
         </div>
-        <div className="px-4 flex flex-1">
+        <div className={cn('px-4 flex flex-1', props.isDocsMode && 'hidden')}>
           <ActionBar onSubmit={props.onSubmitAction} />
         </div>
-        <div className="shrink justify-end items-center flex gap-x-1.5">
-          {/* Information button */}
-          <IconButton
-            label="Scroll to bottom"
-            className="text-blue-500 bg-blue-500/20 hover:bg-blue-500/50"
-            onClick={props.onOpenInfoPanel}
-          >
-            <Info size={16} />
-          </IconButton>
-          {/* Scroll to bottom */}
-          <IconButton
-            label="Scroll to bottom"
-            className="text-blue-500 bg-blue-500/20 hover:bg-blue-500/50"
-            onClick={props.scrollToBottom}
-          >
-            <ChevronsDown size={16} />
-          </IconButton>
-          <div className="h-6 w-[0.2px] bg-white/20 mx-1" />
-          {/* Download button */}
-          <IconButton
-            label="Download"
-            className="text-green-500/90 bg-green-500/20 hover:bg-green-500/50"
-            onClick={props.downloadLogs}
-          >
-            <Download size={16} />
-          </IconButton>
-          {/* Trash button */}
-          <IconButton
-            label="Clear logs"
-            className="text-red-500/90 bg-red-500/20 hover:bg-red-500/50"
-            onClick={props.clearLogs}
-          >
-            <Trash size={16} />
-          </IconButton>
-          <div className="h-6 w-[0.2px] bg-white/20 mx-1" />
-          {/* Settings button */}
-          <IconButton
-            label="New Session"
-            className="text-gray-500/90 bg-gray-500/20 hover:bg-gray-500/50"
-            onClick={() => {
-              window.location.href = '/'
-            }}
-          >
-            <Plus size={16} />
-          </IconButton>
-          <IconButton
-            label="Settings"
-            className="text-gray-500/90 bg-gray-500/20 hover:bg-gray-500/50"
-            onClick={props.onOpenSettings}
-          >
-            <Settings size={16} />
-          </IconButton>
-        </div>
+        {props.isDocsMode ? (
+          <div className="flex-1 justify-end items-center flex gap-x-1.5">
+            <IconButton
+              label="View Source Code"
+              className="text-gray-500/90 bg-gray-500/20 hover:bg-gray-500/50"
+              onClick={() => {
+                window.location.href =
+                  'https://github.com/asleepace/consoledump.io'
+              }}
+            >
+              <Code size={16} />
+            </IconButton>
+            <IconButton
+              label="New Session"
+              className="text-gray-500/90 bg-gray-500/20 hover:bg-gray-500/50"
+              onClick={() => {
+                window.location.href = '/'
+              }}
+            >
+              <Plus size={16} />
+            </IconButton>
+          </div>
+        ) : (
+          <div className="shrink justify-end items-center flex gap-x-1.5">
+            {/* Information button */}
+            <IconButton
+              label="Scroll to bottom"
+              className="text-blue-500 bg-blue-500/20 hover:bg-blue-500/50"
+              onClick={props.onOpenInfoPanel}
+            >
+              <Info size={16} />
+            </IconButton>
+            {/* Scroll to bottom */}
+            <IconButton
+              label="Scroll to bottom"
+              className="text-blue-500 bg-blue-500/20 hover:bg-blue-500/50"
+              onClick={props.scrollToBottom}
+            >
+              <ChevronsDown size={16} />
+            </IconButton>
+            <div className="h-6 w-[0.2px] bg-white/20 mx-1" />
+            {/* Download button */}
+            <IconButton
+              label="Download"
+              className="text-green-500/90 bg-green-500/20 hover:bg-green-500/50"
+              onClick={props.downloadLogs}
+            >
+              <Download size={16} />
+            </IconButton>
+            {/* Trash button */}
+            <IconButton
+              label="Clear logs"
+              className="text-red-500/90 bg-red-500/20 hover:bg-red-500/50"
+              onClick={props.clearLogs}
+            >
+              <Trash size={16} />
+            </IconButton>
+            <div className="h-6 w-[0.2px] bg-white/20 mx-1" />
+            {/* Settings button */}
+            <IconButton
+              label="New Session"
+              className="text-gray-500/90 bg-gray-500/20 hover:bg-gray-500/50"
+              onClick={() => {
+                window.location.href = '/'
+              }}
+            >
+              <Plus size={16} />
+            </IconButton>
+            <IconButton
+              label="Settings"
+              className="text-gray-500/90 bg-gray-500/20 hover:bg-gray-500/50"
+              onClick={props.onOpenSettings}
+            >
+              <Settings size={16} />
+            </IconButton>
+          </div>
+        )}
       </div>
     </nav>
   )

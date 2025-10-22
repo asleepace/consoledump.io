@@ -13,6 +13,7 @@ import { WelcomeMessage } from './react/WelcomeMessage'
 
 export type ConsoleDumpClientProps = {
   initialUrl: URL
+  showTutorial: boolean
   className?: string
 }
 
@@ -40,7 +41,6 @@ export const ConsoleDumpClient = withAppProvider(
   (props: ConsoleDumpClientProps) => {
     const ctx = useAppContext()
     const utils = useUtils()
-
     const scrollContainerRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
@@ -144,7 +144,6 @@ export const ConsoleDumpClient = withAppProvider(
     const msgs = useMemo(() => {
       let events = ctx.stream?.events ?? []
       const searchTerm = ctx.searchTerm
-
       if (searchTerm != null) {
         events = events.filter((ev) =>
           typeof ev.data === 'string'
@@ -182,7 +181,7 @@ export const ConsoleDumpClient = withAppProvider(
         <main className="w-full max-w-full h-full flex-1 flex flex-col overflow-hidden">
           <InfoPanel url={props.initialUrl} />
           <SettingsPanel app={ctx.app} />
-          {msgs.length === 0 ? (
+          {props.showTutorial && !msgs.length ? (
             <WelcomeMessage url={props.initialUrl.href} />
           ) : (
             <div
