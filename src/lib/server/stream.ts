@@ -153,8 +153,6 @@ export async function createFileBasedStream(options: { streamId: string }) {
   await bufferedFile.hydrateBuffer()
   const info = await bufferedFile.getInfo()
 
-  console.log(info)
-
   /** Set of all active client text/even-streams and helpers. */
   const activeStreams = new StreamSubscriberStore()
 
