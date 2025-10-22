@@ -39,9 +39,11 @@ if (method === 'POST') {
 const url = new URL(streamId, siteConfig.url)
 
 // flag if we should show welcome message
-console.log("has data:", stream.info)
+const showTutorial = stream.info.fileSize === 0
+
+console.log(stream.info)
 ---
 
 <Layout>
-  <ConsoleDumpClient initialUrl={url} showTutorial={false} client:load />
+  <ConsoleDumpClient initialUrl={url} showTutorial={showTutorial} client:load />
 </Layout>

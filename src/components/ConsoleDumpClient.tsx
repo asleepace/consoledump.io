@@ -160,10 +160,6 @@ export const ConsoleDumpClient = withAppProvider(
       )
     }, [ctx.stream?.events, ctx.app.settings, ctx.searchTerm])
 
-    const showTutorialMessages =
-      Boolean(import.meta.env.SSR && props.showTutorial) ||
-      Boolean(msgs.length <= 1 && props.showTutorial)
-
     return (
       <div
         className={cn(
@@ -185,7 +181,7 @@ export const ConsoleDumpClient = withAppProvider(
         <main className="w-full max-w-full h-full flex-1 flex flex-col overflow-hidden">
           <InfoPanel url={props.initialUrl} />
           <SettingsPanel app={ctx.app} />
-          {showTutorialMessages ? (
+          {props.showTutorial && !msgs.length ? (
             <WelcomeMessage url={props.initialUrl.href} />
           ) : (
             <div

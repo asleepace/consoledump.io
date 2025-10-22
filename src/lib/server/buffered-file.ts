@@ -71,6 +71,7 @@ export class BufferedFile {
       isHydrated: this.isHydrated,
       bufferSize: this.options.bufferSize,
       maxFileSize: this.options.maxFileSize,
+      totalBytesWritten: this.totalBytesWritten,
       hasWritten: this.hasWritten,
       createdAt: fileStat.birthtime.toLocaleDateString('en-US', {
         dateStyle: 'medium',
