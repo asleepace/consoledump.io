@@ -4,7 +4,6 @@ import { copyToClipboard } from '@/lib/client/clipboard'
 import { MessageTimestamp } from '@/components/react/MessageTimestamp'
 import { MessageBadge } from './MessageBadge'
 import { BtnCopyToClipboard } from './Buttons'
-import { createPatternMatcher } from '@/lib/client/message'
 import { messageParser } from '@/lib/client/message'
 import type { AppSettings } from '@/hooks/useSettings'
 
