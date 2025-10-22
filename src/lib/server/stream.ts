@@ -101,16 +101,6 @@ class StreamSubscriberStore extends Set<StreamSubscriber> {
     }
   }
 
-  public getLastMessageId(streamId: string): number {
-    let lastEventId = 0
-    for (const sub of this) {
-      if (sub.streamId !== streamId) continue
-      console.log(sub)
-      lastEventId = Math.max(sub.lastEventId, lastEventId)
-    }
-    return lastEventId
-  }
-
   public filter(
     callback: (subscriber: StreamSubscriber, index?: number) => boolean
   ) {
