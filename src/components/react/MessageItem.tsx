@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils'
-import { memo, useCallback, useState } from 'react'
+import { memo, useCallback, useMemo, useState } from 'react'
 import { copyToClipboard } from '@/lib/client/clipboard'
 import { MessageTimestamp } from '@/components/react/MessageTimestamp'
 import { MessageBadge } from './MessageBadge'
@@ -51,6 +51,15 @@ export const MessageItem = memo(({ className, message, app }: Props) => {
     setTimeout(() => setIsCopied(false), 1_000)
   }, [])
 
+  const timestamp = useMemo(() => {
+    return new Date(Date.now() - message.timeStamp)
+      .toLocaleString('en-US', {
+        timeStyle: 'medium',
+      })
+      .replaceAll(/(AM|PM)/gi, '')
+      .trim()
+  }, [message])
+
   return (
     <div className={cn('w-full font-mono', className)}>
       <div
@@ -64,7 +73,7 @@ export const MessageItem = memo(({ className, message, app }: Props) => {
           {/* --- metadata --- */}
           <div className={'flex flex-row items-center gap-1 h-6'}>
             <MessageTimestamp
-              timestamp={msg.timestamp}
+              timestamp={timestamp}
               className={cn(
                 'text-zinc-400/30',
                 !app.settings.showTimestamp && 'hidden'
