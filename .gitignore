@@ -2,7 +2,8 @@
 dist/
 
 # console dumps
-public/dumps/
+public/dumps/*
+!public/dumps/.gitkeep
 
 # generated types
 .astro/
