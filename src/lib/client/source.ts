@@ -463,6 +463,7 @@ function validEvent(raw: StreamEventRaw | undefined): raw is StreamEventRaw {
 }
 
 const chunk = chunkBy('\n\n')
+
 const messages = publish(data)
   .map((item) => chunk(item))
   .filter(validString)
