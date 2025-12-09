@@ -2,7 +2,7 @@
 dist/
 
 # console dumps
-public/dumps/**/*
+public/dumps/*.log
 
 # generated types
 .astro/
