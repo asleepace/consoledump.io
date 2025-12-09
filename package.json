@@ -8,7 +8,8 @@
     "preview": "bunx --bun astro preview",
     "start": "bunx --bun astro start --port 8082",
     "astro": "bunx --bun astro",
-    "monitor": "htop -p $(pgrep bun)"
+    "monitor": "htop -p $(pgrep bun)",
+    "pm2": "pm2 start --interpreter ~/.bun/bin/bun dist/server/entry.mjs --name consoledump.io"
   },
   "dependencies": {
     "@asleepace/mutex": "^1.0.2",
