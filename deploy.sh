@@ -12,6 +12,7 @@ git pull --force
 echo "building application..."
 
 bun install
+bun run build
 
 echo "restarting..."
 
