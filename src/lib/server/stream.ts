@@ -161,6 +161,9 @@ export async function createFileBasedStream(options: { streamId: string }) {
     activeStreams.publish(chunk)
   )
 
+  /** Publishes in flight; a session mid-publish is never idle. */
+  let publishing = 0
+
   /** Metadata for session. */
   const meta = {
     streamId: options.streamId,
@@ -173,13 +176,19 @@ export async function createFileBasedStream(options: { streamId: string }) {
 
   /** Publishes incoming data to file + live subscribers. */
   async function publish(readableStream: ByteStream): Promise<void> {
-    const lock = await mutex.acquireLock({ timeout: 10_000 })
+    publishing += 1
+    meta.updatedAt = new Date()
+    const lock = await mutex.acquireLock({ timeout: 10_000 }).catch((e) => {
+      publishing -= 1
+      throw e
+    })
     try {
       await readableStream
         .pipeThrough(sse.getServerSideEventTransformer())
         .pipeThrough(bufferedFile.persistTransform())
         .pipeTo(activeStreams.getPublisher(), { preventClose: true })
     } finally {
+      publishing -= 1
       meta.updatedAt = new Date()
       lock.releaseLock()
     }
@@ -230,6 +239,7 @@ export async function createFileBasedStream(options: { streamId: string }) {
 
           // 3. add to subscribers
           activeStreams.add(subscriber)
+          meta.updatedAt = new Date()
         } catch (e) {
           console.error('[subscribe] error:', e)
           Try.catch(() => controller.error(e))
@@ -238,6 +248,7 @@ export async function createFileBasedStream(options: { streamId: string }) {
       cancel() {
         console.log('[subscription] closed!')
         if (subscriber) activeStreams.delete(subscriber)
+        meta.updatedAt = new Date()
         handleGarbageCollection()
       },
     })
@@ -249,6 +260,18 @@ export async function createFileBasedStream(options: { streamId: string }) {
     },
     get info() {
       return info
+    },
+    /** live subscribers right now. */
+    get clients() {
+      return activeStreams.size
+    },
+    /** true while a publish is streaming in. */
+    get isPublishing() {
+      return publishing > 0
+    },
+    /** last publish, subscribe or unsubscribe. */
+    get lastActiveAt() {
+      return meta.updatedAt
     },
     /** publishes data to all streams and persists to file. */
     publish,
