@@ -1,4 +1,5 @@
 import type { BunFile } from 'bun'
+import { open, type FileHandle } from 'node:fs/promises'
 
 /**
  * ## Buffered File
@@ -28,9 +29,21 @@ import type { BunFile } from 'bun'
 export class BufferedFile {
   static readonly outDir: string = './public/dumps'
 
-  private readonly buffer: Uint8Array
+  /**
+   * Allocated on first use: a session that is only viewed (every homepage
+   * visit makes one) shouldn't reserve `bufferSize` bytes of memory.
+   */
+  private _buffer?: Uint8Array
   private readonly file: BunFile
-  private readonly fileWriter: ReturnType<BunFile['writer']>
+  /**
+   * Opened on first write, in append mode. Opening it eagerly created the file
+   * and held a descriptor, so sessions nobody writes to leaked one each; and
+   * `Bun.file().writer()` truncates, which wiped a dump whenever its session
+   * was recreated (e.g. after a restart) before it could be hydrated.
+   */
+  private fileWriter?: Promise<FileHandle>
+  /** Disk writes run one at a time, in order; callers don't always await. */
+  private pendingWrites: Promise<unknown> = Promise.resolve()
   readonly filePath: string
 
   private isInMemory = false
@@ -47,26 +60,34 @@ export class BufferedFile {
     }
   ) {
     const filePath = `${BufferedFile.outDir}/${options.fileName}`
-    console.log('[buffered-file] filePath:', filePath)
-    this.buffer = new Uint8Array(options.bufferSize)
     this.filePath = filePath
-    try {
-      this.file = Bun.file(filePath)
-      this.fileWriter = this.file.writer()
-    } catch (e) {
-      console.warn('[buffered-file] error:', e)
-      throw e
-    }
+    this.file = Bun.file(filePath)
+  }
+
+  private get buffer(): Uint8Array {
+    return (this._buffer ??= new Uint8Array(this.options.bufferSize))
+  }
+
+  private get writer(): Promise<FileHandle> {
+    return (this.fileWriter ??= open(this.filePath, 'a'))
+  }
+
+  /** Whether this file currently holds an open descriptor. */
+  public get isOpen(): boolean {
+    return this.fileWriter !== undefined
   }
 
   public async getInfo() {
     console.log('[buffered-file] getting info:', this.filePath)
     const file = Bun.file(this.filePath)
-    const fileStat = await file.stat()
+    // The file only exists once something has been written to it.
+    const exists = await file.exists()
+    const now = new Date()
+    const fileStat = exists ? await file.stat() : { birthtime: now, atime: now }
     const fileInfo = {
       filePath: this.filePath,
-      fileSize: file.size,
-      exists: await file.exists(),
+      fileSize: exists ? file.size : 0,
+      exists,
       isInMemory: this.isInMemory,
       isHydrated: this.isHydrated,
       bufferSize: this.options.bufferSize,
@@ -122,8 +143,12 @@ export class BufferedFile {
     this.hasWritten = true
 
     // Write to file immediately
-    this.fileWriter.write(chunk)
-    await this.fileWriter.flush()
+    const write = this.pendingWrites.then(async () => {
+      const writer = await this.writer
+      await writer.write(chunk)
+    })
+    this.pendingWrites = write.catch((e) => console.warn('[buffered-file] write failed:', e))
+    await write
 
     // Mark as not in-memory if buffer wrapped
     if (this.hasBufferWrapped) {
@@ -159,6 +184,7 @@ export class BufferedFile {
 
   /** read bytes from in-memory buffer. */
   public readBuffer(): Uint8Array {
+    if (!this._buffer) return new Uint8Array(0)
     if (!this.hasBufferWrapped) {
       return this.buffer.slice(0, this.writePos)
     }
@@ -184,15 +210,19 @@ export class BufferedFile {
 
   public async deleteFile() {
     try {
-      await this.fileWriter.end(new Error('Deleting file.'))
+      await this.close()
+      if (!(await this.file.exists())) return
       return this.file.delete()
     } catch (e) {
       console.warn('[buffered-file] failed to delete:', e)
     }
   }
 
-  /** closes file. */
+  /** Closes the file descriptor, if one is open. Safe to call more than once. */
   public async close() {
-    await this.fileWriter.end()
+    await this.pendingWrites
+    const writer = this.fileWriter
+    this.fileWriter = undefined
+    await (await writer)?.close()
   }
 }

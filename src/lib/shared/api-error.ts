@@ -1,12 +1,13 @@
 import { Try } from '@asleepace/try'
-import { BufferedFile } from '../server/buffered-file'
 
 function encodeObjectForErrors(obj: unknown): string {
   console.log('[err] obj:', obj)
   if (typeof obj !== 'object') return String(obj)
   if (obj instanceof Error) return obj.message
-  if (obj instanceof BufferedFile) {
-    return `BufferedFile: path ${obj.filePath}`
+  // Duck-typed: importing BufferedFile here pulled server code into the
+  // browser bundle (this module is shared).
+  if (obj && obj.constructor?.name === 'BufferedFile' && 'filePath' in obj) {
+    return `BufferedFile: path ${String(obj.filePath)}`
   }
   return Try.catch(() => JSON.stringify(obj)).unwrapOr(String(obj))
 }
