@@ -54,6 +54,9 @@ class StreamSubscriber {
   }
 
   public write(chunk: ByteChunk) {
+    // Byte streams reject empty chunks (Bun 1.4+ throws), which killed the
+    // subscription; an empty history replays as one.
+    if (chunk.byteLength === 0) return
     try {
       this.controller.enqueue(chunk)
       this.updatedAt = new Date()

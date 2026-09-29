@@ -202,7 +202,8 @@ export class BufferedFile {
     if (!this.isInMemory) return this.file.stream()
     return new ReadableStream({
       start: (controller) => {
-        controller.enqueue(this.readBuffer())
+        const history = this.readBuffer()
+        if (history.byteLength > 0) controller.enqueue(history)
         controller.close()
       },
     })

@@ -64,4 +64,22 @@ describe('sessions', () => {
     expect(await sessions.evictIdleSessions(Date.now())).toEqual([])
     expect(sessions.getSession(id)).toBeDefined()
   })
+
+  test('subscribing to a session with no history streams instead of erroring', async () => {
+    const sessions = new ConsoleDumpSessions({ maxSessions: 10, sweep: false })
+    const session = await sessions.createSession(newId())
+    const reader = (await session.subscribe()).body!.getReader()
+    const next = () =>
+      Promise.race([
+        reader.read().then(
+          () => 'frame',
+          () => 'errored'
+        ),
+        Bun.sleep(100).then(() => 'open'),
+      ])
+    // Session info, then the (empty) history: the stream must stay open.
+    const states = [await next(), await next(), await next()]
+    expect(states).not.toContain('errored')
+    await reader.cancel().catch(() => {})
+  })
 })
