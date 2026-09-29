@@ -122,8 +122,11 @@ class StreamSubscriberStore extends Set<StreamSubscriber> {
     })
 
   public publish(chunk: ByteChunk) {
+    // Enqueueing into a byte stream detaches the chunk's buffer, so each
+    // subscriber gets its own copy; sharing one left every later subscriber
+    // (and the file write) with an empty, detached chunk.
     for (const subscriber of this) {
-      subscriber.write(chunk)
+      subscriber.write(chunk.slice())
     }
   }
 }

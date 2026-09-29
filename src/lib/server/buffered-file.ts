@@ -139,6 +139,9 @@ export class BufferedFile {
   }
 
   public async write(chunk: Uint8Array) {
+    // Copy now: the write below runs later, and by then the caller may have
+    // handed `chunk` to a byte stream, which detaches (empties) it.
+    chunk = chunk.slice()
     this.writeToCircularBuffer(chunk)
     this.hasWritten = true
 

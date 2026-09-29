@@ -82,4 +82,38 @@ describe('sessions', () => {
     expect(states).not.toContain('errored')
     await reader.cancel().catch(() => {})
   })
+
+  test('every live viewer receives each published message, and each is saved', async () => {
+    const sessions = new ConsoleDumpSessions({ maxSessions: 10, sweep: false })
+    const id = newId()
+    const session = await sessions.createSession(id)
+    const viewer = async () => {
+      const reader = (await session.subscribe()).body!.getReader()
+      const decoder = new TextDecoder()
+      const state = { text: '', reader }
+      ;(async () => {
+        for (;;) {
+          const { done, value } = await reader.read()
+          if (done) return
+          state.text += decoder.decode(value)
+        }
+      })().catch(() => {})
+      return state
+    }
+    const viewers = [await viewer(), await viewer()]
+    await Bun.sleep(50)
+
+    await session.publish(new Response('["first"]').body!)
+    await session.publish(new Response('["second"]').body!)
+    await Bun.sleep(100)
+
+    for (const v of viewers) {
+      expect(v.text).toContain('first')
+      expect(v.text).toContain('second')
+      await v.reader.cancel().catch(() => {})
+    }
+    const saved = await Bun.file(pathFor(id)).text()
+    expect(saved).toContain('first')
+    expect(saved).toContain('second')
+  })
 })
