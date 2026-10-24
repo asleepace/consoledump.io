@@ -69,9 +69,6 @@ export default defineConfig({
       ],
       exclude: ['bun:sqlite'],
       force: true,
-      esbuildOptions: {
-        target: 'es2020',
-      },
     },
     ssr: {
       external: ['bun:sqlite'],
