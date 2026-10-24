@@ -1,4 +1,4 @@
-import { APIRoute } from 'astro'
+import type { APIRoute } from 'astro'
 
 export const GET: APIRoute = (ctx) => {
   switch (ctx.params.slug) {
